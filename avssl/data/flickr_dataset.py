@@ -90,6 +90,7 @@ class FlickrDataset(BaseDataset):
         tokenizeText: bool = False,
         wav_rm_silence: bool = False,
         clip_image_transform: str = None,
+        alignment_file: str = None,
         **kwargs,
     ):
         if clip_image_transform is not None:
@@ -181,6 +182,27 @@ class FlickrDataset(BaseDataset):
             id2Filename = _data["id2Filename"]
             filename2Id = _data["filename2Id"]
 
+        text_ali = {} if alignment_file is not None else None
+        if text_ali is not None:
+            with open("/mnt/md0/dataset/flickr/Flickr_8k.ctm", "r") as f:
+                for i, _l in enumerate(f):
+                    _l = _l.split(" ")
+                    _img_name = _l[0]
+                    _img_id, _subid = _img_name.split(".")[0], int(_img_name[-1])
+                    if _img_id not in text_ali.keys():
+                        text_ali[_img_id] = {}
+                    _ts, _td = float(_l[2]), float(_l[3])
+                    if _subid not in text_ali[_img_id].keys():
+                        text_ali[_img_id][_subid] = []
+                    text_ali[_img_id][_subid].append([int(_ts*50), int((_ts+ _td)*50)])
+
+            ali_num = {}
+            for _img_id in text_ali.keys():
+                ali_num[_img_id] = {}
+                for _subID in text_ali[_img_id].keys():
+                    ali_num[_img_id][_subID] = len(text_ali[_img_id][_subID])
+
+
         with open(image_list_txt, "r") as fp:
             for line in fp:
                 line = line.strip()
@@ -192,8 +214,6 @@ class FlickrDataset(BaseDataset):
                 if image_name in wav_names:
                     if "audio" in self.modalities or "text" in self.modalities:
                         for p in wav_names_to_paths[image_name]:
-                            _entry = {"id": filename2Id[image_name]}
-
                             if "txt" in os.path.basename(p).split("_")[-1].replace(
                                 ".wav", ""
                             ):
@@ -203,12 +223,26 @@ class FlickrDataset(BaseDataset):
                                 os.path.basename(p).split("_")[-1].replace(".wav", "")
                             )
 
-                            if "audio" in self.modalities:
-                                _entry["wav"] = p
-                            if "image" in self.modalities:
-                                _entry["image"] = image_path
-                            if "text" in self.modalities:
-                                _entry["text"] = imageName2captions[image_name][_subID]
+                            if text_ali is not None:
+                                if _subID in text_ali[image_name].keys():
+                                    _entry = {"id": filename2Id[image_name]}
+                                    if "audio" in self.modalities:
+                                        _entry["wav"] = p
+                                    if "image" in self.modalities:
+                                        _entry["image"] = image_path
+                                    if "text" in self.modalities:
+                                        _entry["text"] = imageName2captions[image_name][_subID]
+                                    _entry["alignments"] = text_ali[image_name][_subID]
+                                    _entry["alignment_num"] = ali_num[image_name][_subID]
+                            else:
+                                _entry = {"id": filename2Id[image_name]}
+                                if "audio" in self.modalities:
+                                    _entry["wav"] = p
+                                if "image" in self.modalities:
+                                    _entry["image"] = image_path
+                                if "text" in self.modalities:
+                                    _entry["text"] = imageName2captions[image_name][_subID]
+
                             self.data.append(_entry)
                     else:
                         self.data.append(
@@ -217,5 +251,4 @@ class FlickrDataset(BaseDataset):
                                 "id": filename2Id[image_name],
                             }
                         )
-
         logger.info(f"Flickr8k ({self.split}): {len(self.data)} samples")

@@ -1,0 +1,772 @@
+CPU(s):                36
+On-line CPU(s) list:   0-35
+NUMA node0 CPU(s):     0-17
+NUMA node1 CPU(s):     18-35
+/work/vjsalt22/atosystem/audio-visual-ssl
+/bin/sh: sox: command not found
+################################################################################
+### WARNING, path does not exist: KALDI_ROOT=/mnt/matylda5/iveselyk/Tools/kaldi-trunk
+###          (please add 'export KALDI_ROOT=<your_path>' in your $HOME/.profile)
+###          (or run as: KALDI_ROOT=<your_path> python <your_script>.py)
+################################################################################
+
+2022-07-29 19:13:58 | WARNING | sox | SoX could not be found!
+
+    If you do not have SoX, proceed here:
+     - - - http://sox.sourceforge.net/ - - -
+
+    If you do (or think that you should) have SoX, double-check your
+    path variables.
+    
+Global seed set to 7122
+2022-07-29 19:14:03 | INFO | torch.distributed.nn.jit.instantiator | Created a temporary directory at /tmp/tmpbxyx2v8s
+2022-07-29 19:14:03 | INFO | torch.distributed.nn.jit.instantiator | Writing /tmp/tmpbxyx2v8s/_remote_module_non_sriptable.py
+2022-07-29 19:14:03 | INFO | avssl.module.speech_encoder_plus | Normalize hidden states (s3prl)
+2022-07-29 19:14:08 | INFO | fairseq.tasks.hubert_pretraining | current directory is /work/vjsalt22/atosystem/audio-visual-ssl
+2022-07-29 19:14:08 | INFO | fairseq.tasks.hubert_pretraining | HubertPretrainingTask Config {'_name': 'hubert_pretraining', 'data': '/checkpoint/wnhsu/data/librispeech/960h/iter/250K_50hz_km100_mp0_65_v2', 'fine_tuning': False, 'labels': ['layer6.km500'], 'label_dir': None, 'label_rate': 50.0, 'sample_rate': 16000, 'normalize': False, 'enable_padding': False, 'max_keep_size': None, 'max_sample_size': 250000, 'min_sample_size': 32000, 'single_target': False, 'random_crop': True, 'pad_audio': False}
+2022-07-29 19:14:08 | INFO | fairseq.models.hubert.hubert | HubertModel Config: {'_name': 'hubert', 'label_rate': 50.0, 'extractor_mode': default, 'encoder_layers': 12, 'encoder_embed_dim': 768, 'encoder_ffn_embed_dim': 3072, 'encoder_attention_heads': 12, 'activation_fn': gelu, 'layer_type': transformer, 'dropout': 0.1, 'attention_dropout': 0.1, 'activation_dropout': 0.0, 'encoder_layerdrop': 0.05, 'dropout_input': 0.1, 'dropout_features': 0.1, 'final_dim': 256, 'untie_final_proj': False, 'layer_norm_first': False, 'conv_feature_layers': '[(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2', 'conv_bias': False, 'logit_temp': 0.1, 'target_glu': False, 'feature_grad_mult': 0.1, 'mask_length': 10, 'mask_prob': 0.8, 'mask_selection': static, 'mask_other': 0.0, 'no_mask_overlap': False, 'mask_min_space': 1, 'mask_channel_length': 10, 'mask_channel_prob': 0.0, 'mask_channel_selection': static, 'mask_channel_other': 0.0, 'no_mask_channel_overlap': False, 'mask_channel_min_space': 1, 'conv_pos': 128, 'conv_pos_groups': 16, 'latent_temp': [2.0, 0.5, 0.999995], 'skip_masked': False, 'skip_nomask': False, 'checkpoint_activations': False, 'required_seq_len_multiple': 2, 'depthwise_conv_kernel_size': 31, 'attn_type': '', 'pos_enc_type': 'abs', 'fp16': True}
+2022-07-29 19:14:09 | INFO | avssl.module.speech_encoder_plus | Normalize waveform = (False)
+2022-07-29 19:14:09 | INFO | avssl.module.speech_encoder_plus | Loaded s3prl speech encoder (hubert): out_dim = 768 layer_drop = 0.0
+2022-07-29 19:14:09 | INFO | avssl.module.speech_encoder_plus | Using weighted sum for all hiddenstates(13)
+2022-07-29 19:14:09 | INFO | avssl.module.weighted_sum | Normalize feature before weighted sum
+2022-07-29 19:14:12 | WARNING | avssl.module.clip_official | Reduce text embedding to size of 8112
+2022-07-29 19:14:12 | INFO | avssl.model.kwClip | Create Cascaded Branch
+2022-07-29 19:14:12 | INFO | avssl.model.kwClip | Using KW_CascadedBranch
+2022-07-29 19:14:12 | INFO | avssl.model.kwClip | Start init [CLS] torch.Size([1, 8, 768])
+2022-07-29 19:14:12 | INFO | avssl.model.kwClip | Using TransformerEncoder as KW_CascadedBranch
+2022-07-29 19:14:12 | INFO | avssl.module.kw_modules.TransformerModels | Using 4 layer transformer encoder
+2022-07-29 19:14:13 | INFO | avssl.model.kwClip | kw_projection not specified, using single linear layer as default
+2022-07-29 19:14:13 | INFO | avssl.module.speechclip_c_modules.gumbel_vector_quantizer | Setting vq temp fixed=0.1
+2022-07-29 19:14:13 | INFO | avssl.module.speechclip_c_modules.kw_bn | Initialize BatchNorm(eachKw) weight and bias learnable=(True) with token embeddings w/ scale=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], parallel=(True)
+2022-07-29 19:14:13 | INFO | avssl.data.flickr_dataset | Load clip (ViT-B/32) for image transform
+2022-07-29 19:14:16 | INFO | avssl.data.flickr_dataset | Flickr8k (test): 5000 samples
+Using 16bit native Automatic Mixed Precision (AMP)
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1]
+wandb: Currently logged in as: atosystem. Use `wandb login --relogin` to force relogin
+[s3prl.downstream.experts] Warning: can not import s3prl.downstream.a2a-vc-vctk.expert: No module named 'resemblyzer'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.speech_commands.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.fluent_commands.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.voxceleb1_framelevel.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.asr.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.voxceleb1.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.a2a-vc-vctk.expert: No module named 'resemblyzer'. Pass.
+[chimeras3prl.s3prl.downstream.experts] Warning: can not import chimeras3prl.s3prl.downstream.emotion.expert: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.dann_experts] Warning: can not import chimeras3prl.s3prl.downstream.speech_commands.expert_dann: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.dann_experts] Warning: can not import chimeras3prl.s3prl.downstream.fluent_commands.expert_dann: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.dann_experts] Warning: can not import chimeras3prl.s3prl.downstream.asr.expert_dann: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.dann_experts] Warning: can not import chimeras3prl.s3prl.downstream.voxceleb1.expert_dann: No module named 'augment'. Pass.
+[chimeras3prl.s3prl.downstream.dann_experts] Warning: can not import chimeras3prl.s3prl.downstream.emotion.expert_dann: No module named 'augment'. Pass.
+Using cache found in /home/vjsalt22/.cache/torch/hub/s3prl_cache/5e6b91abd59b390dc3f89225f0e7d26f5bcb6fac496a08110c8862e3b1bb93e7
+for https://dl.fbaipublicfiles.com/hubert/hubert_base_ls960.pt
+wandb: wandb version 0.12.21 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.12.18
+wandb: Run data is saved locally in exp/4layer/train_Flickr_kwCLIPBase_c4/wandb/run-20220729_191419-29q9700b
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run train_Flickr_kwCLIPBase_c4
+wandb: ⭐️ View project at https://wandb.ai/atosystem/kw-Flickr-2Layer
+wandb: 🚀 View run at https://wandb.ai/atosystem/kw-Flickr-2Layer/runs/29q9700b
+Validating: 0it [00:00, ?it/s]Validating:   0% 0/625 [00:00<?, ?it/s]Validating:   0% 1/625 [00:03<36:40,  3.53s/it]Validating:   0% 2/625 [00:03<15:50,  1.53s/it]Validating:   0% 3/625 [00:03<09:09,  1.13it/s]Validating:   1% 4/625 [00:03<06:03,  1.71it/s]Validating:   1% 5/625 [00:04<04:18,  2.40it/s]Validating:   1% 6/625 [00:04<03:15,  3.16it/s]Validating:   1% 7/625 [00:04<02:36,  3.96it/s]Validating:   1% 8/625 [00:04<02:09,  4.75it/s]Validating:   1% 9/625 [00:04<01:52,  5.48it/s]Validating:   2% 10/625 [00:04<01:40,  6.12it/s]Validating:   2% 11/625 [00:04<01:32,  6.64it/s]Validating:   2% 12/625 [00:04<01:25,  7.19it/s]Validating:   2% 13/625 [00:04<01:20,  7.57it/s]Validating:   2% 14/625 [00:05<01:17,  7.91it/s]Validating:   2% 15/625 [00:05<01:15,  8.10it/s]Validating:   3% 16/625 [00:05<01:13,  8.25it/s]Validating:   3% 17/625 [00:05<01:13,  8.27it/s]Validating:   3% 18/625 [00:05<01:40,  6.04it/s]Validating:   3% 19/625 [00:05<01:33,  6.48it/s]Validating:   3% 20/625 [00:05<01:26,  7.00it/s]Validating:   3% 21/625 [00:06<01:21,  7.41it/s]Validating:   4% 22/625 [00:06<01:17,  7.79it/s]Validating:   4% 23/625 [00:07<04:15,  2.36it/s]Validating:   4% 24/625 [00:07<03:20,  2.99it/s]Validating:   4% 25/625 [00:07<02:42,  3.69it/s]Validating:   4% 26/625 [00:07<02:15,  4.43it/s]Validating:   4% 27/625 [00:07<01:55,  5.17it/s]Validating:   4% 28/625 [00:07<01:41,  5.90it/s]Validating:   5% 29/625 [00:08<01:31,  6.51it/s]Validating:   5% 30/625 [00:08<01:25,  6.93it/s]Validating:   5% 31/625 [00:08<01:22,  7.20it/s]Validating:   5% 32/625 [00:08<01:18,  7.53it/s]Validating:   5% 33/625 [00:08<01:15,  7.82it/s]Validating:   5% 34/625 [00:08<01:14,  7.93it/s]Validating:   6% 35/625 [00:08<01:14,  7.90it/s]Validating:   6% 36/625 [00:08<01:12,  8.11it/s]Validating:   6% 37/625 [00:08<01:11,  8.26it/s]Validating:   6% 38/625 [00:09<01:11,  8.23it/s]Validating:   6% 39/625 [00:09<01:10,  8.26it/s]Validating:   6% 40/625 [00:09<01:13,  7.95it/s]Validating:   7% 41/625 [00:09<01:12,  8.03it/s]Validating:   7% 42/625 [00:09<01:11,  8.15it/s]Validating:   7% 43/625 [00:09<01:10,  8.21it/s]Validating:   7% 44/625 [00:09<01:10,  8.28it/s]Validating:   7% 45/625 [00:09<01:10,  8.28it/s]Validating:   7% 46/625 [00:10<01:08,  8.41it/s]Validating:   8% 47/625 [00:10<01:24,  6.83it/s]Validating:   8% 48/625 [00:10<01:19,  7.22it/s]Validating:   8% 49/625 [00:10<01:15,  7.65it/s]Validating:   8% 50/625 [00:10<01:12,  7.92it/s]Validating:   8% 51/625 [00:10<01:10,  8.10it/s]Validating:   8% 52/625 [00:10<01:11,  8.01it/s]Validating:   8% 53/625 [00:10<01:10,  8.14it/s]Validating:   9% 54/625 [00:11<01:10,  8.15it/s]Validating:   9% 55/625 [00:11<01:08,  8.33it/s]Validating:   9% 56/625 [00:11<01:08,  8.34it/s]Validating:   9% 57/625 [00:11<01:07,  8.37it/s]Validating:   9% 58/625 [00:11<01:07,  8.44it/s]Validating:   9% 59/625 [00:11<01:08,  8.25it/s]Validating:  10% 60/625 [00:11<01:08,  8.30it/s]Validating:  10% 61/625 [00:11<01:07,  8.38it/s]Validating:  10% 62/625 [00:12<01:07,  8.39it/s]Validating:  10% 63/625 [00:12<01:06,  8.39it/s]Validating:  10% 64/625 [00:12<01:05,  8.50it/s]Validating:  10% 65/625 [00:12<01:07,  8.31it/s]Validating:  11% 66/625 [00:12<01:06,  8.40it/s]Validating:  11% 67/625 [00:12<01:07,  8.31it/s]Validating:  11% 68/625 [00:12<01:07,  8.31it/s]Validating:  11% 69/625 [00:12<01:08,  8.10it/s]Validating:  11% 70/625 [00:13<01:07,  8.24it/s]Validating:  11% 71/625 [00:13<01:08,  8.11it/s]Validating:  12% 72/625 [00:13<01:07,  8.14it/s]Validating:  12% 73/625 [00:13<01:07,  8.16it/s]Validating:  12% 74/625 [00:13<01:07,  8.20it/s]Validating:  12% 75/625 [00:13<01:05,  8.33it/s]Validating:  12% 76/625 [00:13<01:05,  8.32it/s]Validating:  12% 77/625 [00:13<01:05,  8.37it/s]Validating:  12% 78/625 [00:13<01:05,  8.40it/s]Validating:  13% 79/625 [00:14<01:04,  8.53it/s]Validating:  13% 80/625 [00:14<01:04,  8.50it/s]Validating:  13% 81/625 [00:14<01:03,  8.55it/s]Validating:  13% 82/625 [00:14<01:03,  8.60it/s]Validating:  13% 83/625 [00:14<01:02,  8.69it/s]Validating:  13% 84/625 [00:14<01:02,  8.61it/s]Validating:  14% 85/625 [00:14<01:02,  8.67it/s]Validating:  14% 86/625 [00:14<01:01,  8.77it/s]Validating:  14% 87/625 [00:15<01:15,  7.16it/s]Validating:  14% 88/625 [00:15<01:11,  7.46it/s]Validating:  14% 89/625 [00:15<01:09,  7.75it/s]Validating:  14% 90/625 [00:15<01:06,  8.04it/s]Validating:  15% 91/625 [00:15<01:05,  8.18it/s]Validating:  15% 92/625 [00:15<01:04,  8.31it/s]Validating:  15% 93/625 [00:15<01:04,  8.30it/s]Validating:  15% 94/625 [00:15<01:02,  8.44it/s]Validating:  15% 95/625 [00:16<01:02,  8.42it/s]Validating:  15% 96/625 [00:16<01:02,  8.42it/s]Validating:  16% 97/625 [00:16<01:02,  8.43it/s]Validating:  16% 98/625 [00:16<01:02,  8.41it/s]Validating:  16% 99/625 [00:16<01:06,  7.93it/s]Validating:  16% 100/625 [00:16<01:07,  7.78it/s]Validating:  16% 101/625 [00:16<01:05,  7.94it/s]Validating:  16% 102/625 [00:16<01:05,  8.00it/s]Validating:  16% 103/625 [00:17<01:03,  8.16it/s]Validating:  17% 104/625 [00:17<01:03,  8.20it/s]Validating:  17% 105/625 [00:17<01:03,  8.21it/s]Validating:  17% 106/625 [00:17<01:03,  8.21it/s]Validating:  17% 107/625 [00:17<01:03,  8.21it/s]Validating:  17% 108/625 [00:17<01:02,  8.24it/s]Validating:  17% 109/625 [00:17<01:02,  8.22it/s]Validating:  18% 110/625 [00:17<01:02,  8.30it/s]Validating:  18% 111/625 [00:18<01:03,  8.09it/s]Validating:  18% 112/625 [00:18<01:02,  8.19it/s]Validating:  18% 113/625 [00:18<01:01,  8.29it/s]Validating:  18% 114/625 [00:18<01:01,  8.29it/s]Validating:  18% 115/625 [00:18<01:01,  8.31it/s]Validating:  19% 116/625 [00:18<01:01,  8.33it/s]Validating:  19% 117/625 [00:18<01:00,  8.34it/s]Validating:  19% 118/625 [00:18<00:59,  8.48it/s]Validating:  19% 119/625 [00:18<00:59,  8.50it/s]Validating:  19% 120/625 [00:19<01:13,  6.86it/s]Validating:  19% 121/625 [00:19<01:09,  7.21it/s]Validating:  20% 122/625 [00:19<01:06,  7.55it/s]Validating:  20% 123/625 [00:19<01:06,  7.50it/s]Validating:  20% 124/625 [00:19<01:04,  7.78it/s]Validating:  20% 125/625 [00:19<01:03,  7.83it/s]Validating:  20% 126/625 [00:19<01:02,  7.94it/s]Validating:  20% 127/625 [00:20<01:01,  8.16it/s]Validating:  20% 128/625 [00:20<01:00,  8.26it/s]Validating:  21% 129/625 [00:20<00:59,  8.30it/s]Validating:  21% 130/625 [00:20<00:59,  8.33it/s]Validating:  21% 131/625 [00:20<00:58,  8.46it/s]Validating:  21% 132/625 [00:20<00:58,  8.44it/s]Validating:  21% 133/625 [00:20<00:58,  8.39it/s]Validating:  21% 134/625 [00:20<00:58,  8.45it/s]Validating:  22% 135/625 [00:20<00:58,  8.44it/s]Validating:  22% 136/625 [00:21<00:57,  8.48it/s]Validating:  22% 137/625 [00:21<00:57,  8.42it/s]Validating:  22% 138/625 [00:21<00:58,  8.34it/s]Validating:  22% 139/625 [00:21<00:58,  8.30it/s]Validating:  22% 140/625 [00:21<00:57,  8.39it/s]Validating:  23% 141/625 [00:21<00:57,  8.41it/s]Validating:  23% 142/625 [00:21<00:56,  8.49it/s]Validating:  23% 143/625 [00:21<00:59,  8.16it/s]Validating:  23% 144/625 [00:22<00:57,  8.38it/s]Validating:  23% 145/625 [00:22<00:57,  8.37it/s]Validating:  23% 146/625 [00:22<00:56,  8.44it/s]Validating:  24% 147/625 [00:22<00:56,  8.51it/s]Validating:  24% 148/625 [00:22<01:08,  6.94it/s]Validating:  24% 149/625 [00:22<01:04,  7.35it/s]Validating:  24% 150/625 [00:22<01:01,  7.67it/s]Validating:  24% 151/625 [00:22<00:59,  7.93it/s]Validating:  24% 152/625 [00:23<00:58,  8.06it/s]Validating:  24% 153/625 [00:23<00:58,  8.09it/s]Validating:  25% 154/625 [00:23<00:56,  8.28it/s]Validating:  25% 155/625 [00:23<00:56,  8.39it/s]Validating:  25% 156/625 [00:23<00:56,  8.33it/s]Validating:  25% 157/625 [00:23<00:56,  8.32it/s]Validating:  25% 158/625 [00:23<00:57,  8.10it/s]Validating:  25% 159/625 [00:23<00:58,  8.01it/s]Validating:  26% 160/625 [00:24<00:57,  8.07it/s]Validating:  26% 161/625 [00:24<00:56,  8.19it/s]Validating:  26% 162/625 [00:24<00:56,  8.14it/s]Validating:  26% 163/625 [00:24<00:56,  8.25it/s]Validating:  26% 164/625 [00:24<00:56,  8.18it/s]Validating:  26% 165/625 [00:24<00:55,  8.28it/s]Validating:  27% 166/625 [00:24<00:54,  8.41it/s]Validating:  27% 167/625 [00:24<00:54,  8.36it/s]Validating:  27% 168/625 [00:25<00:54,  8.34it/s]Validating:  27% 169/625 [00:25<00:54,  8.36it/s]Validating:  27% 170/625 [00:25<00:53,  8.45it/s]Validating:  27% 171/625 [00:25<00:53,  8.45it/s]Validating:  28% 172/625 [00:25<00:53,  8.43it/s]Validating:  28% 173/625 [00:25<00:53,  8.37it/s]Validating:  28% 174/625 [00:25<00:53,  8.35it/s]Validating:  28% 175/625 [00:25<00:54,  8.32it/s]Validating:  28% 176/625 [00:25<00:53,  8.42it/s]Validating:  28% 177/625 [00:26<00:54,  8.29it/s]Validating:  28% 178/625 [00:26<00:53,  8.35it/s]Validating:  29% 179/625 [00:26<00:53,  8.29it/s]Validating:  29% 180/625 [00:26<00:53,  8.38it/s]Validating:  29% 181/625 [00:26<00:54,  8.16it/s]Validating:  29% 182/625 [00:26<00:53,  8.21it/s]Validating:  29% 183/625 [00:26<00:53,  8.29it/s]Validating:  29% 184/625 [00:26<00:53,  8.30it/s]Validating:  30% 185/625 [00:27<00:53,  8.28it/s]Validating:  30% 186/625 [00:27<00:53,  8.21it/s]Validating:  30% 187/625 [00:27<00:53,  8.24it/s]Validating:  30% 188/625 [00:27<00:52,  8.31it/s]Validating:  30% 189/625 [00:27<00:52,  8.26it/s]Validating:  30% 190/625 [00:27<01:03,  6.88it/s]Validating:  31% 191/625 [00:27<00:59,  7.27it/s]Validating:  31% 192/625 [00:27<00:57,  7.54it/s]Validating:  31% 193/625 [00:28<00:54,  7.92it/s]Validating:  31% 194/625 [00:28<00:53,  8.10it/s]Validating:  31% 195/625 [00:28<00:53,  8.08it/s]Validating:  31% 196/625 [00:28<00:54,  7.93it/s]Validating:  32% 197/625 [00:28<00:52,  8.14it/s]Validating:  32% 198/625 [00:28<00:52,  8.15it/s]Validating:  32% 199/625 [00:28<00:52,  8.14it/s]Validating:  32% 200/625 [00:28<00:51,  8.19it/s]Validating:  32% 201/625 [00:29<00:51,  8.29it/s]Validating:  32% 202/625 [00:29<00:51,  8.21it/s]Validating:  32% 203/625 [00:29<00:50,  8.36it/s]Validating:  33% 204/625 [00:29<00:50,  8.35it/s]Validating:  33% 205/625 [00:29<00:50,  8.38it/s]Validating:  33% 206/625 [00:29<00:50,  8.35it/s]Validating:  33% 207/625 [00:29<00:49,  8.44it/s]Validating:  33% 208/625 [00:29<00:49,  8.44it/s]Validating:  33% 209/625 [00:30<00:48,  8.56it/s]Validating:  34% 210/625 [00:30<00:48,  8.52it/s]Validating:  34% 211/625 [00:30<00:49,  8.42it/s]Validating:  34% 212/625 [00:30<00:50,  8.24it/s]Validating:  34% 213/625 [00:30<00:49,  8.28it/s]Validating:  34% 214/625 [00:30<00:49,  8.24it/s]Validating:  34% 215/625 [00:30<00:49,  8.33it/s]Validating:  35% 216/625 [00:30<00:49,  8.31it/s]Validating:  35% 217/625 [00:30<00:48,  8.35it/s]Validating:  35% 218/625 [00:31<00:48,  8.36it/s]Validating:  35% 219/625 [00:31<00:48,  8.32it/s]Validating:  35% 220/625 [00:31<00:48,  8.34it/s]Validating:  35% 221/625 [00:31<00:48,  8.34it/s]Validating:  36% 222/625 [00:31<00:48,  8.30it/s]Validating:  36% 223/625 [00:31<00:58,  6.90it/s]Validating:  36% 224/625 [00:31<00:55,  7.23it/s]Validating:  36% 225/625 [00:32<00:52,  7.65it/s]Validating:  36% 226/625 [00:32<00:50,  7.88it/s]Validating:  36% 227/625 [00:32<00:49,  8.02it/s]Validating:  36% 228/625 [00:32<00:49,  8.07it/s]Validating:  37% 229/625 [00:32<00:47,  8.30it/s]Validating:  37% 230/625 [00:32<00:47,  8.40it/s]Validating:  37% 231/625 [00:32<00:47,  8.34it/s]Validating:  37% 232/625 [00:32<00:47,  8.30it/s]Validating:  37% 233/625 [00:32<00:46,  8.40it/s]Validating:  37% 234/625 [00:33<00:46,  8.42it/s]Validating:  38% 235/625 [00:33<00:45,  8.58it/s]Validating:  38% 236/625 [00:33<00:45,  8.51it/s]Validating:  38% 237/625 [00:33<00:46,  8.42it/s]Validating:  38% 238/625 [00:33<00:45,  8.53it/s]Validating:  38% 239/625 [00:33<00:45,  8.50it/s]Validating:  38% 240/625 [00:33<00:45,  8.46it/s]Validating:  39% 241/625 [00:33<00:45,  8.41it/s]Validating:  39% 242/625 [00:34<00:44,  8.53it/s]Validating:  39% 243/625 [00:34<00:45,  8.47it/s]Validating:  39% 244/625 [00:34<00:44,  8.53it/s]Validating:  39% 245/625 [00:34<00:45,  8.43it/s]Validating:  39% 246/625 [00:34<00:44,  8.51it/s]Validating:  40% 247/625 [00:34<00:43,  8.65it/s]Validating:  40% 248/625 [00:34<00:43,  8.71it/s]Validating:  40% 249/625 [00:34<00:43,  8.67it/s]Validating:  40% 250/625 [00:34<00:43,  8.71it/s]Validating:  40% 251/625 [00:35<00:54,  6.87it/s]Validating:  40% 252/625 [00:35<00:51,  7.30it/s]Validating:  40% 253/625 [00:35<00:49,  7.47it/s]Validating:  41% 254/625 [00:35<00:47,  7.76it/s]Validating:  41% 255/625 [00:35<00:46,  7.89it/s]Validating:  41% 256/625 [00:35<00:45,  8.09it/s]Validating:  41% 257/625 [00:35<00:44,  8.21it/s]Validating:  41% 258/625 [00:35<00:44,  8.33it/s]Validating:  41% 259/625 [00:36<00:43,  8.39it/s]Validating:  42% 260/625 [00:36<00:43,  8.38it/s]Validating:  42% 261/625 [00:36<00:43,  8.37it/s]Validating:  42% 262/625 [00:36<00:43,  8.35it/s]Validating:  42% 263/625 [00:36<00:43,  8.38it/s]Validating:  42% 264/625 [00:36<00:43,  8.36it/s]Validating:  42% 265/625 [00:36<00:42,  8.43it/s]Validating:  43% 266/625 [00:36<00:42,  8.46it/s]Validating:  43% 267/625 [00:37<00:42,  8.45it/s]Validating:  43% 268/625 [00:37<00:42,  8.47it/s]Validating:  43% 269/625 [00:37<00:42,  8.46it/s]Validating:  43% 270/625 [00:37<00:41,  8.50it/s]Validating:  43% 271/625 [00:37<00:41,  8.44it/s]Validating:  44% 272/625 [00:37<00:41,  8.48it/s]Validating:  44% 273/625 [00:37<00:41,  8.54it/s]Validating:  44% 274/625 [00:37<00:41,  8.55it/s]Validating:  44% 275/625 [00:38<00:40,  8.58it/s]Validating:  44% 276/625 [00:38<00:41,  8.48it/s]Validating:  44% 277/625 [00:38<00:40,  8.55it/s]Validating:  44% 278/625 [00:38<00:41,  8.27it/s]Validating:  45% 279/625 [00:38<00:41,  8.27it/s]Validating:  45% 280/625 [00:38<00:41,  8.37it/s]Validating:  45% 281/625 [00:38<00:42,  8.17it/s]Validating:  45% 282/625 [00:38<00:41,  8.26it/s]Validating:  45% 283/625 [00:38<00:40,  8.38it/s]Validating:  45% 284/625 [00:39<00:40,  8.33it/s]Validating:  46% 285/625 [00:39<00:40,  8.43it/s]Validating:  46% 286/625 [00:39<00:41,  8.27it/s]Validating:  46% 287/625 [00:39<00:40,  8.41it/s]Validating:  46% 288/625 [00:39<00:39,  8.44it/s]Validating:  46% 289/625 [00:39<00:39,  8.51it/s]Validating:  46% 290/625 [00:39<00:39,  8.50it/s]Validating:  47% 291/625 [00:39<00:39,  8.42it/s]Validating:  47% 292/625 [00:40<00:39,  8.36it/s]Validating:  47% 293/625 [00:40<00:39,  8.33it/s]Validating:  47% 294/625 [00:40<00:48,  6.85it/s]Validating:  47% 295/625 [00:40<00:45,  7.28it/s]Validating:  47% 296/625 [00:40<00:43,  7.64it/s]Validating:  48% 297/625 [00:40<00:43,  7.62it/s]Validating:  48% 298/625 [00:40<00:41,  7.93it/s]Validating:  48% 299/625 [00:40<00:40,  8.10it/s]Validating:  48% 300/625 [00:41<00:39,  8.29it/s]Validating:  48% 301/625 [00:41<00:38,  8.31it/s]Validating:  48% 302/625 [00:41<00:39,  8.28it/s]Validating:  48% 303/625 [00:41<00:38,  8.28it/s]Validating:  49% 304/625 [00:41<00:38,  8.32it/s]Validating:  49% 305/625 [00:41<00:38,  8.28it/s]Validating:  49% 306/625 [00:41<00:38,  8.23it/s]Validating:  49% 307/625 [00:41<00:38,  8.26it/s]Validating:  49% 308/625 [00:42<00:37,  8.42it/s]Validating:  49% 309/625 [00:42<00:38,  8.24it/s]Validating:  50% 310/625 [00:42<00:38,  8.27it/s]Validating:  50% 311/625 [00:42<00:37,  8.36it/s]Validating:  50% 312/625 [00:42<00:37,  8.26it/s]Validating:  50% 313/625 [00:42<00:37,  8.32it/s]Validating:  50% 314/625 [00:42<00:37,  8.39it/s]Validating:  50% 315/625 [00:42<00:36,  8.38it/s]Validating:  51% 316/625 [00:43<00:37,  8.21it/s]Validating:  51% 317/625 [00:43<00:37,  8.23it/s]Validating:  51% 318/625 [00:43<00:37,  8.21it/s]Validating:  51% 319/625 [00:43<00:37,  8.27it/s]Validating:  51% 320/625 [00:43<00:37,  8.16it/s]Validating:  51% 321/625 [00:43<00:38,  7.91it/s]Validating:  52% 322/625 [00:43<00:37,  8.10it/s]Validating:  52% 323/625 [00:43<00:36,  8.17it/s]Validating:  52% 324/625 [00:43<00:36,  8.29it/s]Validating:  52% 325/625 [00:44<00:35,  8.39it/s]Validating:  52% 326/625 [00:44<00:36,  8.21it/s]Validating:  52% 327/625 [00:44<00:44,  6.72it/s]Validating:  52% 328/625 [00:44<00:41,  7.23it/s]Validating:  53% 329/625 [00:44<00:39,  7.57it/s]Validating:  53% 330/625 [00:44<00:37,  7.88it/s]Validating:  53% 331/625 [00:44<00:36,  8.04it/s]Validating:  53% 332/625 [00:45<00:35,  8.19it/s]Validating:  53% 333/625 [00:45<00:35,  8.22it/s]Validating:  53% 334/625 [00:45<00:34,  8.34it/s]Validating:  54% 335/625 [00:45<00:34,  8.36it/s]Validating:  54% 336/625 [00:45<00:34,  8.46it/s]Validating:  54% 337/625 [00:45<00:34,  8.38it/s]Validating:  54% 338/625 [00:45<00:34,  8.42it/s]Validating:  54% 339/625 [00:45<00:33,  8.57it/s]Validating:  54% 340/625 [00:45<00:33,  8.62it/s]Validating:  55% 341/625 [00:46<00:32,  8.66it/s]Validating:  55% 342/625 [00:46<00:32,  8.72it/s]Validating:  55% 343/625 [00:46<00:32,  8.65it/s]Validating:  55% 344/625 [00:46<00:32,  8.71it/s]Validating:  55% 345/625 [00:46<00:32,  8.66it/s]Validating:  55% 346/625 [00:46<00:39,  6.98it/s]Validating:  56% 347/625 [00:46<00:37,  7.35it/s]Validating:  56% 348/625 [00:46<00:36,  7.58it/s]Validating:  56% 349/625 [00:47<00:35,  7.78it/s]Validating:  56% 350/625 [00:47<00:34,  7.94it/s]Validating:  56% 351/625 [00:47<00:33,  8.21it/s]Validating:  56% 352/625 [00:47<00:32,  8.43it/s]Validating:  56% 353/625 [00:47<00:32,  8.38it/s]Validating:  57% 354/625 [00:47<00:32,  8.39it/s]Validating:  57% 355/625 [00:47<00:32,  8.25it/s]Validating:  57% 356/625 [00:48<00:39,  6.83it/s]Validating:  57% 357/625 [00:48<00:36,  7.29it/s]Validating:  57% 358/625 [00:48<00:35,  7.56it/s]Validating:  57% 359/625 [00:48<00:34,  7.81it/s]Validating:  58% 360/625 [00:48<00:33,  7.95it/s]Validating:  58% 361/625 [00:48<00:32,  8.06it/s]Validating:  58% 362/625 [00:48<00:31,  8.25it/s]Validating:  58% 363/625 [00:48<00:31,  8.37it/s]Validating:  58% 364/625 [00:48<00:30,  8.45it/s]Validating:  58% 365/625 [00:49<00:30,  8.49it/s]Validating:  59% 366/625 [00:49<00:30,  8.58it/s]Validating:  59% 367/625 [00:49<00:30,  8.59it/s]Validating:  59% 368/625 [00:49<00:30,  8.50it/s]Validating:  59% 369/625 [00:49<00:29,  8.57it/s]Validating:  59% 370/625 [00:49<00:32,  7.90it/s]Validating:  59% 371/625 [00:49<00:31,  8.15it/s]Validating:  60% 372/625 [00:49<00:30,  8.34it/s]Validating:  60% 373/625 [00:50<00:29,  8.41it/s]Validating:  60% 374/625 [00:50<00:29,  8.40it/s]Validating:  60% 375/625 [00:50<00:29,  8.49it/s]Validating:  60% 376/625 [00:50<00:28,  8.59it/s]Validating:  60% 377/625 [00:50<00:28,  8.57it/s]Validating:  60% 378/625 [00:50<00:28,  8.57it/s]Validating:  61% 379/625 [00:50<00:29,  8.46it/s]Validating:  61% 380/625 [00:50<00:29,  8.36it/s]Validating:  61% 381/625 [00:50<00:29,  8.37it/s]Validating:  61% 382/625 [00:51<00:28,  8.42it/s]Validating:  61% 383/625 [00:51<00:28,  8.44it/s]Validating:  61% 384/625 [00:51<00:28,  8.45it/s]Validating:  62% 385/625 [00:51<00:28,  8.38it/s]Validating:  62% 386/625 [00:51<00:28,  8.35it/s]Validating:  62% 387/625 [00:51<00:28,  8.26it/s]Validating:  62% 388/625 [00:51<00:28,  8.42it/s]Validating:  62% 389/625 [00:51<00:28,  8.32it/s]Validating:  62% 390/625 [00:52<00:28,  8.39it/s]Validating:  63% 391/625 [00:52<00:27,  8.47it/s]Validating:  63% 392/625 [00:52<00:27,  8.43it/s]Validating:  63% 393/625 [00:52<00:27,  8.36it/s]Validating:  63% 394/625 [00:52<00:27,  8.43it/s]Validating:  63% 395/625 [00:52<00:27,  8.39it/s]Validating:  63% 396/625 [00:52<00:26,  8.51it/s]Validating:  64% 397/625 [00:52<00:33,  6.81it/s]Validating:  64% 398/625 [00:53<00:31,  7.28it/s]Validating:  64% 399/625 [00:53<00:29,  7.60it/s]Validating:  64% 400/625 [00:53<00:28,  7.77it/s]Validating:  64% 401/625 [00:53<00:27,  8.01it/s]Validating:  64% 402/625 [00:53<00:28,  7.86it/s]Validating:  64% 403/625 [00:53<00:27,  8.09it/s]Validating:  65% 404/625 [00:53<00:26,  8.22it/s]Validating:  65% 405/625 [00:53<00:26,  8.32it/s]Validating:  65% 406/625 [00:54<00:26,  8.34it/s]Validating:  65% 407/625 [00:54<00:26,  8.38it/s]Validating:  65% 408/625 [00:54<00:25,  8.41it/s]Validating:  65% 409/625 [00:54<00:25,  8.43it/s]Validating:  66% 410/625 [00:54<00:25,  8.43it/s]Validating:  66% 411/625 [00:54<00:25,  8.51it/s]Validating:  66% 412/625 [00:54<00:26,  8.17it/s]Validating:  66% 413/625 [00:54<00:25,  8.22it/s]Validating:  66% 414/625 [00:55<00:25,  8.22it/s]Validating:  66% 415/625 [00:55<00:25,  8.27it/s]Validating:  67% 416/625 [00:55<00:25,  8.30it/s]Validating:  67% 417/625 [00:55<00:25,  8.19it/s]Validating:  67% 418/625 [00:55<00:25,  8.19it/s]Validating:  67% 419/625 [00:55<00:25,  8.19it/s]Validating:  67% 420/625 [00:55<00:25,  8.11it/s]Validating:  67% 421/625 [00:55<00:24,  8.31it/s]Validating:  68% 422/625 [00:55<00:24,  8.28it/s]Validating:  68% 423/625 [00:56<00:24,  8.35it/s]Validating:  68% 424/625 [00:56<00:23,  8.50it/s]Validating:  68% 425/625 [00:56<00:23,  8.62it/s]Validating:  68% 426/625 [00:56<00:23,  8.52it/s]Validating:  68% 427/625 [00:56<00:23,  8.55it/s]Validating:  68% 428/625 [00:56<00:23,  8.37it/s]Validating:  69% 429/625 [00:56<00:23,  8.41it/s]Validating:  69% 430/625 [00:57<00:28,  6.92it/s]Validating:  69% 431/625 [00:57<00:26,  7.33it/s]Validating:  69% 432/625 [00:57<00:25,  7.69it/s]Validating:  69% 433/625 [00:57<00:24,  7.91it/s]Validating:  69% 434/625 [00:57<00:23,  8.16it/s]Validating:  70% 435/625 [00:57<00:23,  8.24it/s]Validating:  70% 436/625 [00:57<00:22,  8.27it/s]Validating:  70% 437/625 [00:57<00:22,  8.43it/s]Validating:  70% 438/625 [00:57<00:21,  8.58it/s]Validating:  70% 439/625 [00:58<00:21,  8.57it/s]Validating:  70% 440/625 [00:58<00:21,  8.51it/s]Validating:  71% 441/625 [00:58<00:21,  8.61it/s]Validating:  71% 442/625 [00:58<00:21,  8.67it/s]Validating:  71% 443/625 [00:58<00:21,  8.66it/s]Validating:  71% 444/625 [00:58<00:20,  8.71it/s]Validating:  71% 445/625 [00:58<00:20,  8.78it/s]Validating:  71% 446/625 [00:58<00:20,  8.73it/s]Validating:  72% 447/625 [00:58<00:20,  8.57it/s]Validating:  72% 448/625 [00:59<00:20,  8.46it/s]Validating:  72% 449/625 [00:59<00:20,  8.55it/s]Validating:  72% 450/625 [00:59<00:20,  8.58it/s]Validating:  72% 451/625 [00:59<00:20,  8.41it/s]Validating:  72% 452/625 [00:59<00:20,  8.57it/s]Validating:  72% 453/625 [00:59<00:19,  8.62it/s]Validating:  73% 454/625 [00:59<00:19,  8.58it/s]Validating:  73% 455/625 [00:59<00:19,  8.65it/s]Validating:  73% 456/625 [01:00<00:19,  8.54it/s]Validating:  73% 457/625 [01:00<00:19,  8.53it/s]Validating:  73% 458/625 [01:00<00:19,  8.62it/s]Validating:  73% 459/625 [01:00<00:23,  7.06it/s]Validating:  74% 460/625 [01:00<00:21,  7.52it/s]Validating:  74% 461/625 [01:00<00:21,  7.80it/s]Validating:  74% 462/625 [01:00<00:20,  7.94it/s]Validating:  74% 463/625 [01:00<00:19,  8.19it/s]Validating:  74% 464/625 [01:01<00:19,  8.21it/s]Validating:  74% 465/625 [01:01<00:19,  8.27it/s]Validating:  75% 466/625 [01:01<00:18,  8.42it/s]Validating:  75% 467/625 [01:01<00:18,  8.43it/s]Validating:  75% 468/625 [01:01<00:18,  8.33it/s]Validating:  75% 469/625 [01:01<00:18,  8.36it/s]Validating:  75% 470/625 [01:01<00:18,  8.51it/s]Validating:  75% 471/625 [01:01<00:18,  8.48it/s]Validating:  76% 472/625 [01:01<00:18,  8.48it/s]Validating:  76% 473/625 [01:02<00:17,  8.56it/s]Validating:  76% 474/625 [01:02<00:18,  8.37it/s]Validating:  76% 475/625 [01:02<00:17,  8.48it/s]Validating:  76% 476/625 [01:02<00:17,  8.55it/s]Validating:  76% 477/625 [01:02<00:17,  8.67it/s]Validating:  76% 478/625 [01:02<00:17,  8.53it/s]Validating:  77% 479/625 [01:02<00:17,  8.57it/s]Validating:  77% 480/625 [01:02<00:16,  8.69it/s]Validating:  77% 481/625 [01:03<00:16,  8.58it/s]Validating:  77% 482/625 [01:03<00:17,  8.40it/s]Validating:  77% 483/625 [01:03<00:17,  8.20it/s]Validating:  77% 484/625 [01:03<00:16,  8.39it/s]Validating:  78% 485/625 [01:03<00:16,  8.37it/s]Validating:  78% 486/625 [01:03<00:16,  8.34it/s]Validating:  78% 487/625 [01:03<00:16,  8.39it/s]Validating:  78% 488/625 [01:03<00:16,  8.45it/s]Validating:  78% 489/625 [01:03<00:16,  8.48it/s]Validating:  78% 490/625 [01:04<00:15,  8.45it/s]Validating:  79% 491/625 [01:04<00:15,  8.51it/s]Validating:  79% 492/625 [01:04<00:15,  8.52it/s]Validating:  79% 493/625 [01:04<00:15,  8.44it/s]Validating:  79% 494/625 [01:04<00:15,  8.53it/s]Validating:  79% 495/625 [01:04<00:15,  8.43it/s]Validating:  79% 496/625 [01:04<00:15,  8.46it/s]Validating:  80% 497/625 [01:04<00:14,  8.55it/s]Validating:  80% 498/625 [01:05<00:14,  8.49it/s]Validating:  80% 499/625 [01:05<00:14,  8.46it/s]Validating:  80% 500/625 [01:05<00:17,  6.97it/s]Validating:  80% 501/625 [01:05<00:16,  7.30it/s]Validating:  80% 502/625 [01:05<00:16,  7.61it/s]Validating:  80% 503/625 [01:05<00:15,  7.88it/s]Validating:  81% 504/625 [01:05<00:15,  8.04it/s]Validating:  81% 505/625 [01:05<00:14,  8.31it/s]Validating:  81% 506/625 [01:06<00:14,  8.36it/s]Validating:  81% 507/625 [01:06<00:13,  8.49it/s]Validating:  81% 508/625 [01:06<00:13,  8.46it/s]Validating:  81% 509/625 [01:06<00:13,  8.57it/s]Validating:  82% 510/625 [01:06<00:13,  8.58it/s]Validating:  82% 511/625 [01:06<00:13,  8.57it/s]Validating:  82% 512/625 [01:06<00:13,  8.60it/s]Validating:  82% 513/625 [01:06<00:13,  8.47it/s]Validating:  82% 514/625 [01:07<00:13,  8.45it/s]Validating:  82% 515/625 [01:07<00:13,  8.46it/s]Validating:  83% 516/625 [01:07<00:12,  8.47it/s]Validating:  83% 517/625 [01:07<00:12,  8.50it/s]Validating:  83% 518/625 [01:07<00:12,  8.45it/s]Validating:  83% 519/625 [01:07<00:12,  8.29it/s]Validating:  83% 520/625 [01:07<00:12,  8.11it/s]Validating:  83% 521/625 [01:07<00:12,  8.20it/s]Validating:  84% 522/625 [01:07<00:12,  8.28it/s]Validating:  84% 523/625 [01:08<00:12,  8.27it/s]Validating:  84% 524/625 [01:08<00:12,  8.31it/s]Validating:  84% 525/625 [01:08<00:11,  8.34it/s]Validating:  84% 526/625 [01:08<00:11,  8.41it/s]Validating:  84% 527/625 [01:08<00:11,  8.38it/s]Validating:  84% 528/625 [01:08<00:11,  8.35it/s]Validating:  85% 529/625 [01:08<00:11,  8.39it/s]Validating:  85% 530/625 [01:08<00:11,  8.47it/s]Validating:  85% 531/625 [01:09<00:10,  8.64it/s]Validating:  85% 532/625 [01:09<00:10,  8.71it/s]Validating:  85% 533/625 [01:09<00:13,  6.99it/s]Validating:  85% 534/625 [01:09<00:12,  7.30it/s]Validating:  86% 535/625 [01:09<00:11,  7.70it/s]Validating:  86% 536/625 [01:09<00:11,  7.93it/s]Validating:  86% 537/625 [01:09<00:10,  8.07it/s]Validating:  86% 538/625 [01:09<00:10,  8.16it/s]Validating:  86% 539/625 [01:10<00:10,  8.27it/s]Validating:  86% 540/625 [01:10<00:10,  8.32it/s]Validating:  87% 541/625 [01:10<00:10,  8.34it/s]Validating:  87% 542/625 [01:10<00:09,  8.38it/s]Validating:  87% 543/625 [01:10<00:09,  8.51it/s]Validating:  87% 544/625 [01:10<00:09,  8.58it/s]Validating:  87% 545/625 [01:10<00:09,  8.67it/s]Validating:  87% 546/625 [01:10<00:09,  8.60it/s]Validating:  88% 547/625 [01:11<00:08,  8.70it/s]Validating:  88% 548/625 [01:11<00:08,  8.75it/s]Validating:  88% 549/625 [01:11<00:08,  8.71it/s]Validating:  88% 550/625 [01:11<00:08,  8.74it/s]Validating:  88% 551/625 [01:11<00:08,  8.67it/s]Validating:  88% 552/625 [01:11<00:08,  8.71it/s]Validating:  88% 553/625 [01:11<00:08,  8.63it/s]Validating:  89% 554/625 [01:11<00:08,  8.53it/s]Validating:  89% 555/625 [01:11<00:08,  8.42it/s]Validating:  89% 556/625 [01:12<00:08,  8.43it/s]Validating:  89% 557/625 [01:12<00:07,  8.53it/s]Validating:  89% 558/625 [01:12<00:07,  8.53it/s]Validating:  89% 559/625 [01:12<00:07,  8.61it/s]Validating:  90% 560/625 [01:12<00:07,  8.51it/s]Validating:  90% 561/625 [01:12<00:07,  8.63it/s]Validating:  90% 562/625 [01:12<00:09,  6.87it/s]Validating:  90% 563/625 [01:12<00:08,  7.29it/s]Validating:  90% 564/625 [01:13<00:07,  7.69it/s]Validating:  90% 565/625 [01:13<00:07,  7.91it/s]Validating:  91% 566/625 [01:13<00:07,  8.05it/s]Validating:  91% 567/625 [01:13<00:07,  8.14it/s]Validating:  91% 568/625 [01:13<00:06,  8.21it/s]Validating:  91% 569/625 [01:13<00:06,  8.20it/s]Validating:  91% 570/625 [01:13<00:06,  8.17it/s]Validating:  91% 571/625 [01:13<00:06,  7.82it/s]Validating:  92% 572/625 [01:14<00:06,  8.06it/s]Validating:  92% 573/625 [01:14<00:06,  8.25it/s]Validating:  92% 574/625 [01:14<00:06,  8.25it/s]Validating:  92% 575/625 [01:14<00:05,  8.34it/s]Validating:  92% 576/625 [01:14<00:05,  8.46it/s]Validating:  92% 577/625 [01:14<00:05,  8.56it/s]Validating:  92% 578/625 [01:14<00:05,  8.57it/s]Validating:  93% 579/625 [01:14<00:05,  8.33it/s]Validating:  93% 580/625 [01:14<00:05,  8.34it/s]Validating:  93% 581/625 [01:15<00:05,  8.38it/s]Validating:  93% 582/625 [01:15<00:05,  8.50it/s]Validating:  93% 583/625 [01:15<00:04,  8.43it/s]Validating:  93% 584/625 [01:15<00:04,  8.45it/s]Validating:  94% 585/625 [01:15<00:04,  8.54it/s]Validating:  94% 586/625 [01:15<00:04,  8.42it/s]Validating:  94% 587/625 [01:15<00:04,  8.44it/s]Validating:  94% 588/625 [01:15<00:04,  8.36it/s]Validating:  94% 589/625 [01:16<00:04,  8.33it/s]Validating:  94% 590/625 [01:16<00:04,  8.18it/s]Validating:  95% 591/625 [01:16<00:04,  8.28it/s]Validating:  95% 592/625 [01:16<00:03,  8.28it/s]Validating:  95% 593/625 [01:16<00:03,  8.36it/s]Validating:  95% 594/625 [01:16<00:03,  8.44it/s]Validating:  95% 595/625 [01:16<00:03,  8.42it/s]Validating:  95% 596/625 [01:16<00:03,  8.36it/s]Validating:  96% 597/625 [01:17<00:03,  8.48it/s]Validating:  96% 598/625 [01:17<00:03,  8.26it/s]Validating:  96% 599/625 [01:17<00:03,  8.18it/s]Validating:  96% 600/625 [01:17<00:03,  8.09it/s]Validating:  96% 601/625 [01:17<00:02,  8.29it/s]Validating:  96% 602/625 [01:17<00:02,  8.41it/s]Validating:  96% 603/625 [01:17<00:03,  6.89it/s]Validating:  97% 604/625 [01:17<00:02,  7.36it/s]Validating:  97% 605/625 [01:18<00:02,  7.64it/s]Validating:  97% 606/625 [01:18<00:02,  7.73it/s]Validating:  97% 607/625 [01:18<00:02,  7.98it/s]Validating:  97% 608/625 [01:18<00:02,  8.12it/s]Validating:  97% 609/625 [01:18<00:01,  8.23it/s]Validating:  98% 610/625 [01:18<00:01,  8.34it/s]Validating:  98% 611/625 [01:18<00:01,  8.36it/s]Validating:  98% 612/625 [01:18<00:01,  8.32it/s]Validating:  98% 613/625 [01:19<00:01,  8.43it/s]Validating:  98% 614/625 [01:19<00:01,  8.31it/s]Validating:  98% 615/625 [01:19<00:01,  8.46it/s]Validating:  99% 616/625 [01:19<00:01,  8.43it/s]Validating:  99% 617/625 [01:19<00:00,  8.35it/s]Validating:  99% 618/625 [01:19<00:00,  8.38it/s]Validating:  99% 619/625 [01:19<00:00,  8.43it/s]Validating:  99% 620/625 [01:19<00:00,  8.55it/s]Validating:  99% 621/625 [01:19<00:00,  8.41it/s]Validating: 100% 622/625 [01:20<00:00,  8.52it/s]Validating: 100% 623/625 [01:20<00:00,  8.59it/s]Validating: 100% 624/625 [01:20<00:00,  8.38it/s]Validating: 100% 625/625 [01:20<00:00,  7.40it/s]Detokenizing K=5
+
+  0% 0/626 [00:00<?, ?it/s][A
+  0% 1/626 [00:00<02:15,  4.60it/s][A
+  0% 2/626 [00:00<02:10,  4.80it/s][A
+  0% 3/626 [00:00<02:06,  4.93it/s][A
+  1% 4/626 [00:00<02:04,  5.00it/s][A
+  1% 5/626 [00:01<02:03,  5.05it/s][A
+  1% 6/626 [00:01<02:07,  4.87it/s][A
+  1% 7/626 [00:01<02:06,  4.90it/s][A
+  1% 8/626 [00:01<02:04,  4.97it/s][A
+  1% 9/626 [00:01<02:02,  5.02it/s][A
+  2% 10/626 [00:02<02:01,  5.05it/s][A
+  2% 11/626 [00:02<02:00,  5.08it/s][A
+  2% 12/626 [00:02<02:00,  5.10it/s][A
+  2% 13/626 [00:02<02:01,  5.06it/s][A
+  2% 14/626 [00:02<02:00,  5.09it/s][A
+  2% 15/626 [00:02<01:59,  5.10it/s][A
+  3% 16/626 [00:03<02:07,  4.79it/s][A
+  3% 17/626 [00:03<02:04,  4.89it/s][A
+  3% 18/626 [00:03<02:02,  4.96it/s][A
+  3% 19/626 [00:03<02:01,  4.98it/s][A
+  3% 20/626 [00:04<02:01,  4.97it/s][A
+  3% 21/626 [00:04<02:03,  4.91it/s][A
+  4% 22/626 [00:04<02:03,  4.91it/s][A
+  4% 23/626 [00:04<02:01,  4.96it/s][A
+  4% 24/626 [00:04<02:01,  4.97it/s][A
+  4% 25/626 [00:05<02:00,  5.00it/s][A
+  4% 26/626 [00:05<02:05,  4.80it/s][A
+  4% 27/626 [00:05<02:02,  4.89it/s][A
+  4% 28/626 [00:05<02:00,  4.97it/s][A
+  5% 29/626 [00:05<01:58,  5.02it/s][A
+  5% 30/626 [00:06<01:57,  5.07it/s][A
+  5% 31/626 [00:06<01:56,  5.10it/s][A
+  5% 32/626 [00:06<01:56,  5.12it/s][A
+  5% 33/626 [00:06<01:55,  5.13it/s][A
+  5% 34/626 [00:06<01:55,  5.14it/s][A
+  6% 35/626 [00:07<01:54,  5.15it/s][A
+  6% 36/626 [00:07<01:58,  4.97it/s][A
+  6% 37/626 [00:07<01:57,  5.02it/s][A
+  6% 38/626 [00:07<01:57,  5.01it/s][A
+  6% 39/626 [00:07<01:56,  5.04it/s][A
+  6% 40/626 [00:08<01:59,  4.90it/s][A
+  7% 41/626 [00:08<01:57,  4.97it/s][A
+  7% 42/626 [00:08<01:56,  5.01it/s][A
+  7% 43/626 [00:08<01:56,  4.98it/s][A
+  7% 44/626 [00:08<01:55,  5.03it/s][A
+  7% 45/626 [00:09<01:54,  5.06it/s][A
+  7% 46/626 [00:09<01:55,  5.01it/s][A
+  8% 47/626 [00:09<01:59,  4.85it/s][A
+  8% 48/626 [00:09<01:57,  4.93it/s][A
+  8% 49/626 [00:09<01:55,  5.00it/s][A
+  8% 50/626 [00:10<01:54,  5.04it/s][A
+  8% 51/626 [00:10<01:53,  5.07it/s][A
+  8% 52/626 [00:10<01:53,  5.07it/s][A
+  8% 53/626 [00:10<01:53,  5.07it/s][A
+  9% 54/626 [00:10<01:52,  5.06it/s][A
+  9% 55/626 [00:11<01:52,  5.06it/s][A
+  9% 56/626 [00:11<01:52,  5.07it/s][A
+  9% 57/626 [00:11<01:58,  4.79it/s][A
+  9% 58/626 [00:11<01:56,  4.87it/s][A
+  9% 59/626 [00:11<01:55,  4.90it/s][A
+ 10% 60/626 [00:12<01:54,  4.95it/s][A
+ 10% 61/626 [00:12<01:53,  5.00it/s][A
+ 10% 62/626 [00:12<01:55,  4.88it/s][A
+ 10% 63/626 [00:12<01:53,  4.96it/s][A
+ 10% 64/626 [00:12<01:52,  5.02it/s][A
+ 10% 65/626 [00:13<01:51,  5.05it/s][A
+ 11% 66/626 [00:13<01:50,  5.08it/s][A
+ 11% 67/626 [00:13<01:54,  4.90it/s][A
+ 11% 68/626 [00:13<01:52,  4.97it/s][A
+ 11% 69/626 [00:13<01:50,  5.02it/s][A
+ 11% 70/626 [00:14<01:49,  5.06it/s][A
+ 11% 71/626 [00:14<01:48,  5.09it/s][A
+ 12% 72/626 [00:14<01:48,  5.10it/s][A
+ 12% 73/626 [00:14<01:47,  5.12it/s][A
+ 12% 74/626 [00:14<01:47,  5.13it/s][A
+ 12% 75/626 [00:14<01:47,  5.12it/s][A
+ 12% 76/626 [00:15<01:47,  5.13it/s][A
+ 12% 77/626 [00:15<01:51,  4.94it/s][A
+ 12% 78/626 [00:15<01:49,  5.00it/s][A
+ 13% 79/626 [00:15<01:48,  5.04it/s][A
+ 13% 80/626 [00:15<01:47,  5.07it/s][A
+ 13% 81/626 [00:16<01:47,  5.09it/s][A
+ 13% 82/626 [00:16<01:46,  5.10it/s][A
+ 13% 83/626 [00:16<01:46,  5.12it/s][A
+ 13% 84/626 [00:16<01:45,  5.13it/s][A
+ 14% 85/626 [00:16<01:45,  5.13it/s][A
+ 14% 86/626 [00:17<01:45,  5.14it/s][A
+ 14% 87/626 [00:17<01:45,  5.13it/s][A
+ 14% 88/626 [00:17<01:49,  4.92it/s][A
+ 14% 89/626 [00:17<01:48,  4.97it/s][A
+ 14% 90/626 [00:17<01:47,  4.98it/s][A
+ 15% 91/626 [00:18<01:46,  5.01it/s][A
+ 15% 92/626 [00:18<01:46,  5.02it/s][A
+ 15% 93/626 [00:18<01:45,  5.04it/s][A
+ 15% 94/626 [00:18<01:45,  5.05it/s][A
+ 15% 95/626 [00:18<01:45,  5.05it/s][A
+ 15% 96/626 [00:19<01:44,  5.08it/s][A
+ 15% 97/626 [00:19<01:43,  5.10it/s][A
+ 16% 98/626 [00:19<01:47,  4.93it/s][A
+ 16% 99/626 [00:19<01:45,  4.99it/s][A
+ 16% 100/626 [00:19<01:44,  5.03it/s][A
+ 16% 101/626 [00:20<01:43,  5.07it/s][A
+ 16% 102/626 [00:20<01:46,  4.93it/s][A
+ 16% 103/626 [00:20<01:44,  5.00it/s][A
+ 17% 104/626 [00:20<01:43,  5.05it/s][A
+ 17% 105/626 [00:20<01:42,  5.08it/s][A
+ 17% 106/626 [00:21<01:41,  5.10it/s][A
+ 17% 107/626 [00:21<01:41,  5.11it/s][A
+ 17% 108/626 [00:21<01:48,  4.78it/s][A
+ 17% 109/626 [00:21<01:45,  4.89it/s][A
+ 18% 110/626 [00:21<01:43,  4.96it/s][A
+ 18% 111/626 [00:22<01:42,  5.02it/s][A
+ 18% 112/626 [00:22<01:41,  5.05it/s][A
+ 18% 113/626 [00:22<01:41,  5.08it/s][A
+ 18% 114/626 [00:22<01:41,  5.03it/s][A
+ 18% 115/626 [00:22<01:41,  5.05it/s][A
+ 19% 116/626 [00:23<01:40,  5.08it/s][A
+ 19% 117/626 [00:23<01:39,  5.10it/s][A
+ 19% 118/626 [00:23<01:39,  5.12it/s][A
+ 19% 119/626 [00:23<01:43,  4.92it/s][A
+ 19% 120/626 [00:23<01:41,  4.99it/s][A
+ 19% 121/626 [00:24<01:40,  5.02it/s][A
+ 19% 122/626 [00:24<01:40,  5.02it/s][A
+ 20% 123/626 [00:24<01:39,  5.04it/s][A
+ 20% 124/626 [00:24<01:39,  5.05it/s][A
+ 20% 125/626 [00:24<01:39,  5.05it/s][A
+ 20% 126/626 [00:25<01:38,  5.06it/s][A
+ 20% 127/626 [00:25<01:38,  5.07it/s][A
+ 20% 128/626 [00:25<01:38,  5.04it/s][A
+ 21% 129/626 [00:25<01:43,  4.79it/s][A
+ 21% 130/626 [00:25<01:41,  4.88it/s][A
+ 21% 131/626 [00:26<01:39,  4.95it/s][A
+ 21% 132/626 [00:26<01:38,  5.00it/s][A
+ 21% 133/626 [00:26<01:37,  5.03it/s][A
+ 21% 134/626 [00:26<01:37,  5.06it/s][A
+ 22% 135/626 [00:26<01:36,  5.08it/s][A
+ 22% 136/626 [00:27<01:36,  5.09it/s][A
+ 22% 137/626 [00:27<01:35,  5.10it/s][A
+ 22% 138/626 [00:27<01:35,  5.11it/s][A
+ 22% 139/626 [00:27<01:38,  4.93it/s][A
+ 22% 140/626 [00:27<01:37,  4.98it/s][A
+ 23% 141/626 [00:28<01:36,  5.02it/s][A
+ 23% 142/626 [00:28<01:35,  5.05it/s][A
+ 23% 143/626 [00:28<01:35,  5.07it/s][A
+ 23% 144/626 [00:28<01:34,  5.08it/s][A
+ 23% 145/626 [00:28<01:34,  5.10it/s][A
+ 23% 146/626 [00:29<01:33,  5.11it/s][A
+ 23% 147/626 [00:29<01:33,  5.11it/s][A
+ 24% 148/626 [00:29<01:33,  5.11it/s][A
+ 24% 149/626 [00:29<01:35,  4.97it/s][A
+ 24% 150/626 [00:29<01:35,  4.98it/s][A
+ 24% 151/626 [00:30<01:54,  4.16it/s][A
+ 24% 152/626 [00:30<01:48,  4.38it/s][A
+ 24% 153/626 [00:30<01:43,  4.57it/s][A
+ 25% 154/626 [00:30<01:40,  4.71it/s][A
+ 25% 155/626 [00:31<01:38,  4.80it/s][A
+ 25% 156/626 [00:31<01:36,  4.86it/s][A
+ 25% 157/626 [00:31<01:35,  4.90it/s][A
+ 25% 158/626 [00:31<01:35,  4.92it/s][A
+ 25% 159/626 [00:31<01:40,  4.63it/s][A
+ 26% 160/626 [00:32<01:38,  4.75it/s][A
+ 26% 161/626 [00:32<01:36,  4.81it/s][A
+ 26% 162/626 [00:32<01:35,  4.88it/s][A
+ 26% 163/626 [00:32<01:33,  4.94it/s][A
+ 26% 164/626 [00:32<01:32,  4.97it/s][A
+ 26% 165/626 [00:33<01:32,  4.98it/s][A
+ 27% 166/626 [00:33<01:32,  4.99it/s][A
+ 27% 167/626 [00:33<01:31,  4.99it/s][A
+ 27% 168/626 [00:33<01:31,  5.00it/s][A
+ 27% 169/626 [00:33<01:39,  4.60it/s][A
+ 27% 170/626 [00:34<01:36,  4.72it/s][A
+ 27% 171/626 [00:34<01:34,  4.81it/s][A
+ 27% 172/626 [00:34<01:32,  4.89it/s][A
+ 28% 173/626 [00:34<01:32,  4.89it/s][A
+ 28% 174/626 [00:34<01:32,  4.89it/s][A
+ 28% 175/626 [00:35<01:30,  4.96it/s][A
+ 28% 176/626 [00:35<01:29,  5.01it/s][A
+ 28% 177/626 [00:35<01:28,  5.05it/s][A
+ 28% 178/626 [00:35<01:28,  5.07it/s][A
+ 29% 179/626 [00:35<01:31,  4.88it/s][A
+ 29% 180/626 [00:36<01:29,  4.96it/s][A
+ 29% 181/626 [00:36<01:28,  5.00it/s][A
+ 29% 182/626 [00:36<01:28,  5.04it/s][A
+ 29% 183/626 [00:36<01:27,  5.07it/s][A
+ 29% 184/626 [00:36<01:26,  5.08it/s][A
+ 30% 185/626 [00:37<01:26,  5.10it/s][A
+ 30% 186/626 [00:37<01:26,  5.11it/s][A
+ 30% 187/626 [00:37<01:25,  5.12it/s][A
+ 30% 188/626 [00:37<01:25,  5.12it/s][A
+ 30% 189/626 [00:37<01:28,  4.95it/s][A
+ 30% 190/626 [00:38<01:27,  4.96it/s][A
+ 31% 191/626 [00:38<01:27,  4.96it/s][A
+ 31% 192/626 [00:38<01:26,  5.01it/s][A
+ 31% 193/626 [00:38<01:25,  5.05it/s][A
+ 31% 194/626 [00:38<01:24,  5.08it/s][A
+ 31% 195/626 [00:39<01:25,  5.07it/s][A
+ 31% 196/626 [00:39<01:24,  5.08it/s][A
+ 31% 197/626 [00:39<01:24,  5.10it/s][A
+ 32% 198/626 [00:39<01:23,  5.11it/s][A
+ 32% 199/626 [00:39<01:23,  5.10it/s][A
+ 32% 200/626 [00:40<01:26,  4.92it/s][A
+ 32% 201/626 [00:40<01:25,  4.96it/s][A
+ 32% 202/626 [00:40<01:24,  4.99it/s][A
+ 32% 203/626 [00:40<01:24,  5.02it/s][A
+ 33% 204/626 [00:40<01:23,  5.03it/s][A
+ 33% 205/626 [00:41<01:23,  5.04it/s][A
+ 33% 206/626 [00:41<01:22,  5.06it/s][A
+ 33% 207/626 [00:41<01:22,  5.08it/s][A
+ 33% 208/626 [00:41<01:22,  5.09it/s][A
+ 33% 209/626 [00:41<01:21,  5.11it/s][A
+ 34% 210/626 [00:42<01:24,  4.92it/s][A
+ 34% 211/626 [00:42<01:23,  4.96it/s][A
+ 34% 212/626 [00:42<01:22,  5.02it/s][A
+ 34% 213/626 [00:42<01:21,  5.05it/s][A
+ 34% 214/626 [00:42<01:21,  5.08it/s][A
+ 34% 215/626 [00:43<01:20,  5.10it/s][A
+ 35% 216/626 [00:43<01:20,  5.12it/s][A
+ 35% 217/626 [00:43<01:19,  5.12it/s][A
+ 35% 218/626 [00:43<01:19,  5.12it/s][A
+ 35% 219/626 [00:43<01:19,  5.14it/s][A
+ 35% 220/626 [00:44<01:22,  4.93it/s][A
+ 35% 221/626 [00:44<01:21,  4.99it/s][A
+ 35% 222/626 [00:44<01:20,  5.00it/s][A
+ 36% 223/626 [00:44<01:19,  5.04it/s][A
+ 36% 224/626 [00:44<01:19,  5.07it/s][A
+ 36% 225/626 [00:45<01:18,  5.10it/s][A
+ 36% 226/626 [00:45<01:18,  5.11it/s][A
+ 36% 227/626 [00:45<01:17,  5.12it/s][A
+ 36% 228/626 [00:45<01:17,  5.13it/s][A
+ 37% 229/626 [00:45<01:17,  5.13it/s][A
+ 37% 230/626 [00:46<01:17,  5.14it/s][A
+ 37% 231/626 [00:46<01:19,  4.95it/s][A
+ 37% 232/626 [00:46<01:18,  4.99it/s][A
+ 37% 233/626 [00:46<01:18,  5.02it/s][A
+ 37% 234/626 [00:46<01:18,  5.02it/s][A
+ 38% 235/626 [00:47<01:17,  5.03it/s][A
+ 38% 236/626 [00:47<01:17,  5.03it/s][A
+ 38% 237/626 [00:47<01:17,  5.04it/s][A
+ 38% 238/626 [00:47<01:16,  5.05it/s][A
+ 38% 239/626 [00:47<01:16,  5.05it/s][A
+ 38% 240/626 [00:47<01:16,  5.06it/s][A
+ 38% 241/626 [00:48<01:18,  4.89it/s][A
+ 39% 242/626 [00:48<01:17,  4.96it/s][A
+ 39% 243/626 [00:48<01:16,  5.02it/s][A
+ 39% 244/626 [00:48<01:15,  5.06it/s][A
+ 39% 245/626 [00:48<01:15,  5.08it/s][A
+ 39% 246/626 [00:49<01:14,  5.10it/s][A
+ 39% 247/626 [00:49<01:14,  5.11it/s][A
+ 40% 248/626 [00:49<01:13,  5.12it/s][A
+ 40% 249/626 [00:49<01:13,  5.13it/s][A
+ 40% 250/626 [00:49<01:13,  5.13it/s][A
+ 40% 251/626 [00:50<01:16,  4.92it/s][A
+ 40% 252/626 [00:50<01:15,  4.98it/s][A
+ 40% 253/626 [00:50<01:14,  5.03it/s][A
+ 41% 254/626 [00:50<01:13,  5.07it/s][A
+ 41% 255/626 [00:50<01:12,  5.09it/s][A
+ 41% 256/626 [00:51<01:12,  5.11it/s][A
+ 41% 257/626 [00:51<01:12,  5.12it/s][A
+ 41% 258/626 [00:51<01:11,  5.12it/s][A
+ 41% 259/626 [00:51<01:11,  5.12it/s][A
+ 42% 260/626 [00:51<01:11,  5.13it/s][A
+ 42% 261/626 [00:52<01:11,  5.14it/s][A
+ 42% 262/626 [00:52<01:14,  4.91it/s][A
+ 42% 263/626 [00:52<01:13,  4.97it/s][A
+ 42% 264/626 [00:52<01:12,  5.02it/s][A
+ 42% 265/626 [00:52<01:11,  5.03it/s][A
+ 42% 266/626 [00:53<01:11,  5.04it/s][A
+ 43% 267/626 [00:53<01:11,  5.01it/s][A
+ 43% 268/626 [00:53<01:11,  5.01it/s][A
+ 43% 269/626 [00:53<01:10,  5.03it/s][A
+ 43% 270/626 [00:53<01:10,  5.05it/s][A
+ 43% 271/626 [00:54<01:10,  5.06it/s][A
+ 43% 272/626 [00:54<01:12,  4.89it/s][A
+ 44% 273/626 [00:54<01:11,  4.94it/s][A
+ 44% 274/626 [00:54<01:10,  5.00it/s][A
+ 44% 275/626 [00:54<01:09,  5.04it/s][A
+ 44% 276/626 [00:55<01:08,  5.08it/s][A
+ 44% 277/626 [00:55<01:08,  5.10it/s][A
+ 44% 278/626 [00:55<01:08,  5.11it/s][A
+ 45% 279/626 [00:55<01:07,  5.12it/s][A
+ 45% 280/626 [00:55<01:07,  5.13it/s][A
+ 45% 281/626 [00:56<01:07,  5.13it/s][A
+ 45% 282/626 [00:56<01:09,  4.92it/s][A
+ 45% 283/626 [00:56<01:08,  4.99it/s][A
+ 45% 284/626 [00:56<01:07,  5.04it/s][A
+ 46% 285/626 [00:56<01:07,  5.08it/s][A
+ 46% 286/626 [00:57<01:06,  5.11it/s][A
+ 46% 287/626 [00:57<01:06,  5.12it/s][A
+ 46% 288/626 [00:57<01:05,  5.13it/s][A
+ 46% 289/626 [00:57<01:05,  5.14it/s][A
+ 46% 290/626 [00:57<01:05,  5.15it/s][A
+ 46% 291/626 [00:58<01:05,  5.15it/s][A
+ 47% 292/626 [00:58<01:04,  5.16it/s][A
+ 47% 293/626 [00:58<01:07,  4.95it/s][A
+ 47% 294/626 [00:58<01:06,  5.01it/s][A
+ 47% 295/626 [00:58<01:05,  5.06it/s][A
+ 47% 296/626 [00:59<01:04,  5.09it/s][A
+ 47% 297/626 [00:59<01:04,  5.12it/s][A
+ 48% 298/626 [00:59<01:03,  5.13it/s][A
+ 48% 299/626 [00:59<01:03,  5.14it/s][A
+ 48% 300/626 [00:59<01:03,  5.14it/s][A
+ 48% 301/626 [01:00<01:03,  5.11it/s][A
+ 48% 302/626 [01:00<01:03,  5.10it/s][A
+ 48% 303/626 [01:00<01:05,  4.94it/s][A
+ 49% 304/626 [01:00<01:04,  4.96it/s][A
+ 49% 305/626 [01:00<01:04,  4.99it/s][A
+ 49% 306/626 [01:01<01:03,  5.01it/s][A
+ 49% 307/626 [01:01<01:03,  5.03it/s][A
+ 49% 308/626 [01:01<01:03,  5.03it/s][A
+ 49% 309/626 [01:01<01:02,  5.04it/s][A
+ 50% 310/626 [01:01<01:02,  5.05it/s][A
+ 50% 311/626 [01:02<01:02,  5.05it/s][A
+ 50% 312/626 [01:02<01:02,  5.05it/s][A
+ 50% 313/626 [01:02<01:05,  4.75it/s][A
+ 50% 314/626 [01:02<01:04,  4.83it/s][A
+ 50% 315/626 [01:02<01:03,  4.90it/s][A
+ 50% 316/626 [01:03<01:02,  4.94it/s][A
+ 51% 317/626 [01:03<01:03,  4.88it/s][A
+ 51% 318/626 [01:03<01:02,  4.94it/s][A
+ 51% 319/626 [01:03<01:01,  4.99it/s][A
+ 51% 320/626 [01:03<01:02,  4.86it/s][A
+ 51% 321/626 [01:04<01:03,  4.84it/s][A
+ 51% 322/626 [01:04<01:01,  4.92it/s][A
+ 52% 323/626 [01:04<01:05,  4.65it/s][A
+ 52% 324/626 [01:04<01:03,  4.78it/s][A
+ 52% 325/626 [01:04<01:01,  4.89it/s][A
+ 52% 326/626 [01:05<01:00,  4.95it/s][A
+ 52% 327/626 [01:05<00:59,  5.00it/s][A
+ 52% 328/626 [01:05<00:59,  5.04it/s][A
+ 53% 329/626 [01:05<00:58,  5.07it/s][A
+ 53% 330/626 [01:05<00:58,  5.08it/s][A
+ 53% 331/626 [01:06<00:58,  5.07it/s][A
+ 53% 332/626 [01:06<00:58,  5.05it/s][A
+ 53% 333/626 [01:06<01:00,  4.86it/s][A
+ 53% 334/626 [01:06<00:59,  4.92it/s][A
+ 54% 335/626 [01:06<00:58,  4.95it/s][A
+ 54% 336/626 [01:07<00:58,  4.98it/s][A
+ 54% 337/626 [01:07<00:57,  5.00it/s][A
+ 54% 338/626 [01:07<00:57,  5.01it/s][A
+ 54% 339/626 [01:07<00:57,  5.03it/s][A
+ 54% 340/626 [01:07<00:57,  4.99it/s][A
+ 54% 341/626 [01:08<00:57,  4.96it/s][A
+ 55% 342/626 [01:08<00:56,  5.01it/s][A
+ 55% 343/626 [01:08<00:56,  5.00it/s][A
+ 55% 344/626 [01:08<00:58,  4.84it/s][A
+ 55% 345/626 [01:08<00:57,  4.92it/s][A
+ 55% 346/626 [01:09<00:56,  4.98it/s][A
+ 55% 347/626 [01:09<00:55,  5.03it/s][A
+ 56% 348/626 [01:09<00:54,  5.05it/s][A
+ 56% 349/626 [01:09<00:54,  5.08it/s][A
+ 56% 350/626 [01:09<00:54,  5.09it/s][A
+ 56% 351/626 [01:10<00:53,  5.10it/s][A
+ 56% 352/626 [01:10<00:53,  5.11it/s][A
+ 56% 353/626 [01:10<00:53,  5.11it/s][A
+ 57% 354/626 [01:10<00:55,  4.92it/s][A
+ 57% 355/626 [01:10<00:54,  4.98it/s][A
+ 57% 356/626 [01:11<00:53,  5.02it/s][A
+ 57% 357/626 [01:11<00:53,  5.05it/s][A
+ 57% 358/626 [01:11<00:52,  5.07it/s][A
+ 57% 359/626 [01:11<00:52,  5.08it/s][A
+ 58% 360/626 [01:11<00:52,  5.10it/s][A
+ 58% 361/626 [01:12<00:51,  5.11it/s][A
+ 58% 362/626 [01:12<00:51,  5.11it/s][A
+ 58% 363/626 [01:12<00:51,  5.12it/s][A
+ 58% 364/626 [01:12<00:53,  4.91it/s][A
+ 58% 365/626 [01:12<00:52,  4.97it/s][A
+ 58% 366/626 [01:13<00:52,  4.99it/s][A
+ 59% 367/626 [01:13<00:51,  5.00it/s][A
+ 59% 368/626 [01:13<00:51,  5.00it/s][A
+ 59% 369/626 [01:13<00:51,  5.00it/s][A
+ 59% 370/626 [01:13<00:51,  5.01it/s][A
+ 59% 371/626 [01:14<00:50,  5.02it/s][A
+ 59% 372/626 [01:14<00:50,  5.03it/s][A
+ 60% 373/626 [01:14<00:50,  5.03it/s][A
+ 60% 374/626 [01:14<00:51,  4.87it/s][A
+ 60% 375/626 [01:14<00:50,  4.95it/s][A
+ 60% 376/626 [01:15<00:49,  5.00it/s][A
+ 60% 377/626 [01:15<00:49,  5.05it/s][A
+ 60% 378/626 [01:15<00:48,  5.07it/s][A
+ 61% 379/626 [01:15<00:48,  5.09it/s][A
+ 61% 380/626 [01:15<00:48,  5.11it/s][A
+ 61% 381/626 [01:16<00:47,  5.12it/s][A
+ 61% 382/626 [01:16<00:47,  5.13it/s][A
+ 61% 383/626 [01:16<00:47,  5.12it/s][A
+ 61% 384/626 [01:16<00:47,  5.13it/s][A
+ 62% 385/626 [01:16<00:48,  4.94it/s][A
+ 62% 386/626 [01:17<00:48,  5.00it/s][A
+ 62% 387/626 [01:17<00:47,  5.04it/s][A
+ 62% 388/626 [01:17<00:51,  4.63it/s][A
+ 62% 389/626 [01:17<00:49,  4.76it/s][A
+ 62% 390/626 [01:17<00:48,  4.86it/s][A
+ 62% 391/626 [01:18<00:47,  4.94it/s][A
+ 63% 392/626 [01:18<00:46,  4.99it/s][A
+ 63% 393/626 [01:18<00:46,  5.03it/s][A
+ 63% 394/626 [01:18<00:45,  5.05it/s][A
+ 63% 395/626 [01:18<00:47,  4.89it/s][A
+ 63% 396/626 [01:19<00:46,  4.97it/s][A
+ 63% 397/626 [01:19<00:45,  5.01it/s][A
+ 64% 398/626 [01:19<00:45,  5.05it/s][A
+ 64% 399/626 [01:19<00:44,  5.07it/s][A
+ 64% 400/626 [01:19<00:44,  5.06it/s][A
+ 64% 401/626 [01:20<00:44,  5.06it/s][A
+ 64% 402/626 [01:20<00:44,  5.05it/s][A
+ 64% 403/626 [01:20<00:44,  5.05it/s][A
+ 65% 404/626 [01:20<00:44,  5.04it/s][A
+ 65% 405/626 [01:20<00:45,  4.85it/s][A
+ 65% 406/626 [01:21<00:44,  4.90it/s][A
+ 65% 407/626 [01:21<00:44,  4.94it/s][A
+ 65% 408/626 [01:21<00:44,  4.92it/s][A
+ 65% 409/626 [01:21<00:43,  4.97it/s][A
+ 65% 410/626 [01:21<00:43,  5.02it/s][A
+ 66% 411/626 [01:22<00:42,  5.05it/s][A
+ 66% 412/626 [01:22<00:42,  5.05it/s][A
+ 66% 413/626 [01:22<00:41,  5.07it/s][A
+ 66% 414/626 [01:22<00:43,  4.90it/s][A
+ 66% 415/626 [01:22<00:44,  4.71it/s][A
+ 66% 416/626 [01:23<00:43,  4.83it/s][A
+ 67% 417/626 [01:23<00:42,  4.91it/s][A
+ 67% 418/626 [01:23<00:41,  4.98it/s][A
+ 67% 419/626 [01:23<00:41,  4.95it/s][A
+ 67% 420/626 [01:23<00:41,  4.99it/s][A
+ 67% 421/626 [01:24<00:40,  5.03it/s][A
+ 67% 422/626 [01:24<00:40,  5.06it/s][A
+ 68% 423/626 [01:24<00:39,  5.08it/s][A
+ 68% 424/626 [01:24<00:39,  5.09it/s][A
+ 68% 425/626 [01:24<00:41,  4.89it/s][A
+ 68% 426/626 [01:25<00:40,  4.96it/s][A
+ 68% 427/626 [01:25<00:39,  5.01it/s][A
+ 68% 428/626 [01:25<00:39,  5.04it/s][A
+ 69% 429/626 [01:25<00:38,  5.06it/s][A
+ 69% 430/626 [01:25<00:38,  5.08it/s][A
+ 69% 431/626 [01:26<00:38,  5.10it/s][A
+ 69% 432/626 [01:26<00:37,  5.11it/s][A
+ 69% 433/626 [01:26<00:37,  5.11it/s][A
+ 69% 434/626 [01:26<00:37,  5.10it/s][A
+ 69% 435/626 [01:26<00:37,  5.09it/s][A
+ 70% 436/626 [01:27<00:38,  4.89it/s][A
+ 70% 437/626 [01:27<00:38,  4.94it/s][A
+ 70% 438/626 [01:27<00:45,  4.14it/s][A
+ 70% 439/626 [01:27<00:42,  4.38it/s][A
+ 70% 440/626 [01:28<00:40,  4.56it/s][A
+ 70% 441/626 [01:28<00:39,  4.71it/s][A
+ 71% 442/626 [01:28<00:38,  4.83it/s][A
+ 71% 443/626 [01:28<00:37,  4.92it/s][A
+ 71% 444/626 [01:28<00:36,  4.98it/s][A
+ 71% 445/626 [01:29<00:37,  4.84it/s][A
+ 71% 446/626 [01:29<00:36,  4.92it/s][A
+ 71% 447/626 [01:29<00:35,  4.98it/s][A
+ 72% 448/626 [01:29<00:35,  5.02it/s][A
+ 72% 449/626 [01:29<00:35,  5.06it/s][A
+ 72% 450/626 [01:30<00:34,  5.08it/s][A
+ 72% 451/626 [01:30<00:34,  5.09it/s][A
+ 72% 452/626 [01:30<00:34,  5.11it/s][A
+ 72% 453/626 [01:30<00:33,  5.11it/s][A
+ 73% 454/626 [01:30<00:33,  5.11it/s][A
+ 73% 455/626 [01:31<00:34,  4.97it/s][A
+ 73% 456/626 [01:31<00:34,  4.98it/s][A
+ 73% 457/626 [01:31<00:33,  5.02it/s][A
+ 73% 458/626 [01:31<00:33,  5.04it/s][A
+ 73% 459/626 [01:31<00:32,  5.07it/s][A
+ 73% 460/626 [01:31<00:32,  5.08it/s][A
+ 74% 461/626 [01:32<00:32,  5.10it/s][A
+ 74% 462/626 [01:32<00:32,  5.09it/s][A
+ 74% 463/626 [01:32<00:32,  5.08it/s][A
+ 74% 464/626 [01:32<00:31,  5.09it/s][A
+ 74% 465/626 [01:32<00:31,  5.11it/s][A
+ 74% 466/626 [01:33<00:32,  4.92it/s][A
+ 75% 467/626 [01:33<00:32,  4.96it/s][A
+ 75% 468/626 [01:33<00:31,  4.99it/s][A
+ 75% 469/626 [01:33<00:31,  5.00it/s][A
+ 75% 470/626 [01:33<00:31,  5.02it/s][A
+ 75% 471/626 [01:34<00:30,  5.03it/s][A
+ 75% 472/626 [01:34<00:30,  5.04it/s][A
+ 76% 473/626 [01:34<00:30,  5.04it/s][A
+ 76% 474/626 [01:34<00:30,  5.05it/s][A
+ 76% 475/626 [01:34<00:29,  5.07it/s][A
+ 76% 476/626 [01:35<00:31,  4.74it/s][A
+ 76% 477/626 [01:35<00:30,  4.86it/s][A
+ 76% 478/626 [01:35<00:30,  4.93it/s][A
+ 77% 479/626 [01:35<00:29,  4.98it/s][A
+ 77% 480/626 [01:35<00:29,  5.03it/s][A
+ 77% 481/626 [01:36<00:28,  5.05it/s][A
+ 77% 482/626 [01:36<00:28,  5.07it/s][A
+ 77% 483/626 [01:36<00:28,  5.09it/s][A
+ 77% 484/626 [01:36<00:27,  5.10it/s][A
+ 77% 485/626 [01:36<00:27,  5.10it/s][A
+ 78% 486/626 [01:37<00:28,  4.93it/s][A
+ 78% 487/626 [01:37<00:27,  4.99it/s][A
+ 78% 488/626 [01:37<00:27,  5.03it/s][A
+ 78% 489/626 [01:37<00:27,  5.06it/s][A
+ 78% 490/626 [01:37<00:26,  5.09it/s][A
+ 78% 491/626 [01:38<00:26,  5.10it/s][A
+ 79% 492/626 [01:38<00:26,  5.12it/s][A
+ 79% 493/626 [01:38<00:25,  5.12it/s][A
+ 79% 494/626 [01:38<00:25,  5.12it/s][A
+ 79% 495/626 [01:38<00:25,  5.06it/s][A
+ 79% 496/626 [01:39<00:25,  5.07it/s][A
+ 79% 497/626 [01:39<00:26,  4.90it/s][A
+ 80% 498/626 [01:39<00:25,  4.97it/s][A
+ 80% 499/626 [01:39<00:25,  5.02it/s][A
+ 80% 500/626 [01:39<00:24,  5.06it/s][A
+ 80% 501/626 [01:40<00:24,  5.07it/s][A
+ 80% 502/626 [01:40<00:24,  5.07it/s][A
+ 80% 503/626 [01:40<00:24,  5.07it/s][A
+ 81% 504/626 [01:40<00:24,  5.07it/s][A
+ 81% 505/626 [01:40<00:23,  5.07it/s][A
+ 81% 506/626 [01:41<00:23,  5.07it/s][A
+ 81% 507/626 [01:41<00:25,  4.70it/s][A
+ 81% 508/626 [01:41<00:24,  4.78it/s][A
+ 81% 509/626 [01:41<00:24,  4.87it/s][A
+ 81% 510/626 [01:41<00:23,  4.95it/s][A
+ 82% 511/626 [01:42<00:22,  5.00it/s][A
+ 82% 512/626 [01:42<00:22,  5.00it/s][A
+ 82% 513/626 [01:42<00:22,  5.03it/s][A
+ 82% 514/626 [01:42<00:22,  5.06it/s][A
+ 82% 515/626 [01:42<00:21,  5.08it/s][A
+ 82% 516/626 [01:43<00:21,  5.09it/s][A
+ 83% 517/626 [01:43<00:21,  4.96it/s][A
+ 83% 518/626 [01:43<00:21,  5.02it/s][A
+ 83% 519/626 [01:43<00:21,  5.05it/s][A
+ 83% 520/626 [01:43<00:20,  5.08it/s][A
+ 83% 521/626 [01:44<00:20,  5.10it/s][A
+ 83% 522/626 [01:44<00:20,  5.11it/s][A
+ 84% 523/626 [01:44<00:20,  5.12it/s][A
+ 84% 524/626 [01:44<00:19,  5.13it/s][A
+ 84% 525/626 [01:44<00:19,  5.14it/s][A
+ 84% 526/626 [01:45<00:19,  5.14it/s][A
+ 84% 527/626 [01:45<00:20,  4.94it/s][A
+ 84% 528/626 [01:45<00:19,  5.00it/s][A
+ 85% 529/626 [01:45<00:19,  5.04it/s][A
+ 85% 530/626 [01:45<00:18,  5.07it/s][A
+ 85% 531/626 [01:46<00:18,  5.09it/s][A
+ 85% 532/626 [01:46<00:18,  5.11it/s][A
+ 85% 533/626 [01:46<00:18,  5.12it/s][A
+ 85% 534/626 [01:46<00:17,  5.13it/s][A
+ 85% 535/626 [01:46<00:17,  5.12it/s][A
+ 86% 536/626 [01:47<00:17,  5.12it/s][A
+ 86% 537/626 [01:47<00:17,  5.11it/s][A
+ 86% 538/626 [01:47<00:17,  4.93it/s][A
+ 86% 539/626 [01:47<00:17,  4.97it/s][A
+ 86% 540/626 [01:47<00:17,  5.00it/s][A
+ 86% 541/626 [01:48<00:16,  5.03it/s][A
+ 87% 542/626 [01:48<00:16,  5.04it/s][A
+ 87% 543/626 [01:48<00:16,  5.06it/s][A
+ 87% 544/626 [01:48<00:16,  5.09it/s][A
+ 87% 545/626 [01:48<00:15,  5.10it/s][A
+ 87% 546/626 [01:49<00:15,  5.12it/s][A
+ 87% 547/626 [01:49<00:15,  5.13it/s][A
+ 88% 548/626 [01:49<00:15,  4.98it/s][A
+ 88% 549/626 [01:49<00:15,  5.02it/s][A
+ 88% 550/626 [01:49<00:15,  5.05it/s][A
+ 88% 551/626 [01:50<00:14,  5.08it/s][A
+ 88% 552/626 [01:50<00:14,  5.09it/s][A
+ 88% 553/626 [01:50<00:14,  5.10it/s][A
+ 88% 554/626 [01:50<00:14,  5.11it/s][A
+ 89% 555/626 [01:50<00:13,  5.11it/s][A
+ 89% 556/626 [01:51<00:13,  5.12it/s][A
+ 89% 557/626 [01:51<00:13,  5.12it/s][A
+ 89% 558/626 [01:51<00:13,  4.96it/s][A
+ 89% 559/626 [01:51<00:13,  4.97it/s][A
+ 89% 560/626 [01:51<00:13,  5.01it/s][A
+ 90% 561/626 [01:52<00:12,  5.04it/s][A
+ 90% 562/626 [01:52<00:12,  5.07it/s][A
+ 90% 563/626 [01:52<00:12,  5.06it/s][A
+ 90% 564/626 [01:52<00:12,  5.08it/s][A
+ 90% 565/626 [01:52<00:11,  5.10it/s][A
+ 90% 566/626 [01:53<00:11,  5.11it/s][A
+ 91% 567/626 [01:53<00:11,  5.11it/s][A
+ 91% 568/626 [01:53<00:11,  5.12it/s][A
+ 91% 569/626 [01:53<00:11,  4.92it/s][A
+ 91% 570/626 [01:53<00:11,  4.95it/s][A
+ 91% 571/626 [01:54<00:11,  4.92it/s][A
+ 91% 572/626 [01:54<00:10,  4.94it/s][A
+ 92% 573/626 [01:54<00:10,  4.98it/s][A
+ 92% 574/626 [01:54<00:10,  5.00it/s][A
+ 92% 575/626 [01:54<00:10,  5.02it/s][A
+ 92% 576/626 [01:55<00:09,  5.03it/s][A
+ 92% 577/626 [01:55<00:09,  5.05it/s][A
+ 92% 578/626 [01:55<00:09,  5.08it/s][A
+ 92% 579/626 [01:55<00:09,  4.90it/s][A
+ 93% 580/626 [01:55<00:09,  4.96it/s][A
+ 93% 581/626 [01:56<00:08,  5.01it/s][A
+ 93% 582/626 [01:56<00:08,  5.04it/s][A
+ 93% 583/626 [01:56<00:08,  5.06it/s][A
+ 93% 584/626 [01:56<00:08,  5.08it/s][A
+ 93% 585/626 [01:56<00:08,  5.10it/s][A
+ 94% 586/626 [01:57<00:07,  5.11it/s][A
+ 94% 587/626 [01:57<00:07,  5.11it/s][A
+ 94% 588/626 [01:57<00:07,  5.12it/s][A
+ 94% 589/626 [01:57<00:07,  4.89it/s][A
+ 94% 590/626 [01:57<00:07,  4.96it/s][A
+ 94% 591/626 [01:58<00:06,  5.01it/s][A
+ 95% 592/626 [01:58<00:06,  5.04it/s][A
+ 95% 593/626 [01:58<00:06,  5.07it/s][A
+ 95% 594/626 [01:58<00:06,  5.09it/s][A
+ 95% 595/626 [01:58<00:06,  5.10it/s][A
+ 95% 596/626 [01:58<00:05,  5.11it/s][A
+ 95% 597/626 [01:59<00:05,  5.12it/s][A
+ 96% 598/626 [01:59<00:05,  5.12it/s][A
+ 96% 599/626 [01:59<00:05,  5.12it/s][A
+ 96% 600/626 [01:59<00:05,  4.95it/s][A
+ 96% 601/626 [01:59<00:05,  5.00it/s][A
+ 96% 602/626 [02:00<00:04,  5.04it/s][A
+ 96% 603/626 [02:00<00:04,  5.03it/s][A
+ 96% 604/626 [02:00<00:04,  5.04it/s][A
+ 97% 605/626 [02:00<00:04,  5.04it/s][A
+ 97% 606/626 [02:00<00:03,  5.05it/s][A
+ 97% 607/626 [02:01<00:03,  5.05it/s][A
+ 97% 608/626 [02:01<00:03,  5.05it/s][A
+ 97% 609/626 [02:01<00:03,  5.05it/s][A
+ 97% 610/626 [02:01<00:03,  4.86it/s][A
+ 98% 611/626 [02:01<00:03,  4.93it/s][A
+ 98% 612/626 [02:02<00:02,  4.98it/s][A
+ 98% 613/626 [02:02<00:02,  4.98it/s][A
+ 98% 614/626 [02:02<00:02,  5.02it/s][A
+ 98% 615/626 [02:02<00:02,  5.02it/s][A
+ 98% 616/626 [02:02<00:01,  5.06it/s][A
+ 99% 617/626 [02:03<00:01,  5.08it/s][A
+ 99% 618/626 [02:03<00:01,  5.09it/s][A
+ 99% 619/626 [02:03<00:01,  5.10it/s][A
+ 99% 620/626 [02:03<00:01,  4.90it/s][A
+ 99% 621/626 [02:03<00:01,  4.97it/s][A
+ 99% 622/626 [02:04<00:00,  5.02it/s][A
+100% 623/626 [02:04<00:00,  5.05it/s][A
+100% 624/626 [02:04<00:00,  5.07it/s][A
+100% 625/626 [02:04<00:00,  5.08it/s][A100% 625/626 [02:04<00:00,  5.01it/s]kw_hit_rate tensor([ 9.6600, 11.2600, 42.0200, 15.4200,  9.1200, 21.6800, 26.7400, 32.7000])
+[[6226, 6226, 6226, 15150, 1882, 15917, 4570, 31777, 31352, 31777, 3965, 3965, 3965, 12906, 12906, 786, 11075, 23278, 23278, 4570, 2097, 11400, 2724, 786, 40947, 6226, 24083, 24083, 2308, 3835, 786, 2471, 2724, 11476, 7429, 7429, 7429, 11652, 9200, 786, 2153, 2153, 24083, 24083, 2390, 4471, 2477, 4918, 7429, 3470, 8369, 8369, 8369, 23278, 7882, 14400, 786, 786, 786, 3699, 2595, 1794, 9200, 1794, 1794, 1794, 9200, 3424, 786, 786, 2471, 8070, 4610, 31777, 13740, 13740, 31777, 14820, 11476, 11476, 31777, 31777, 13740, 31777, 31777, 1453, 8726, 2477, 4935, 4935, 42800, 786, 3965, 3965, 3965, 5298, 5298, 6226, 22777, 4558, 786, 4233, 4233, 4570, 9227, 2533, 7429, 29141, 31777, 13740, 13740, 31777, 3835, 3835, 3835, 3835, 23278, 11652, 11652, 5873, 5873, 4570, 4570, 4570, 4919, 4233, 4233, 3699, 4935, 4935, 3701, 11652, 11652, 3941, 12745, 13740, 12745, 9877, 11795, 36910, 13740, 31777, 13740, 13740, 29141, 29141, 3965, 11476, 13740, 8853, 11652, 2308, 6226, 6226, 6226, 7429, 23278, 1876, 1794, 2308, 1882, 1882, 11075, 1882, 23449, 2471, 9200, 1794, 3965, 5084, 3490, 1027, 9200, 26760, 31326, 20686, 11652, 11652, 11652, 3965, 31352, 13740, 30337, 13740, 3835, 6765, 2595, 2595, 1771, 1771, 34562, 7429, 7429, 7429, 786, 18911, 1882, 3030, 13740, 3701, 11652, 26760, 3030, 5084, 2153, 29141, 42800, 42800, 15518, 8726, 1771, 25055, 4935, 4935, 2308, 2308, 2308, 2308, 11652, 2308, 4570, 2533, 6226, 6226, 6226, 2595, 36614, 8192, 3965, 786, 23278, 4921, 1047, 786, 3030, 11476, 11075, 1882, 5035, 3255, 3428, 2533, 786, 4233, 1794, 1771, 26760, 3941, 1794, 29098, 3699, 28547, 4935, 3030, 3030, 23278, 3470, 786, 11795, 3030, 786, 23278, 8726, 11652, 22535, 1794, 4233, 24083, 6226, 6559, 2477, 9877, 3965, 3965, 1069, 5873, 3965, 1027, 1027, 1027, 786, 9877, 2724, 6226, 3965, 31352, 31777, 11476, 3490, 1794, 1794, 3941, 23449, 11652, 31777, 1125, 7429, 1069, 25876, 5084, 786, 6348, 29141, 26760, 15861, 23278, 2308, 8726, 20686, 11652, 786, 11652, 3941, 6226, 6226, 6226, 1794, 4935, 4935, 4935, 13740, 13740, 31777, 3965, 3965, 18911, 5035, 2533, 42800, 42800, 42800, 42800, 2054, 4919, 4919, 4570, 9877, 4570, 786, 786, 5035, 3030, 3835, 3835, 3835, 3470, 3470, 11652, 4570, 4570, 786, 786, 6226, 24083, 6226, 1047, 786, 786, 3428, 6765, 10297, 3329, 3701, 11652, 11652, 23278, 9200, 26760, 3965, 786, 786, 2761, 2477, 18911, 4233, 31777, 13740, 31777, 31777, 13740, 2292, 2595, 36614, 5035, 1656, 31352, 31777, 45768, 17054, 18911, 11476, 6226, 23278, 17713, 4610, 3470, 8369, 786, 786, 18911, 10978, 1794, 1794, 45768, 37252, 11286, 1507, 1507, 2700, 3835, 15917, 34562, 786, 6226, 2724, 8726, 23278, 37922, 6116, 1771, 31352, 31352, 31777, 23278, 31777, 31777, 31777, 31777, 27202, 20686, 31352, 31777, 13740, 13740, 1615, 15150, 29141, 1882, 3030, 11122, 3470, 9877, 2308, 5084, 3965, 3965, 4233, 11476, 2120, 37713, 11652, 11652, 11652, 6321, 13740, 3470, 2913, 2913, 786, 786, 6559, 3941, 3424, 30337, 8726, 9200, 786, 2477, 9200, 13740, 13740, 8605, 23449, 6226, 3030, 786, 2533, 2533, 786, 786, 1027, 2477, 18911], [3309, 6226, 3941, 4919, 40947, 9877, 9118, 31777, 31352, 31777, 31777, 2374, 593, 2374, 9877, 9877, 1630, 9877, 9877, 3941, 8605, 23278, 23278, 3941, 9877, 9877, 11444, 2724, 40947, 18911, 11476, 3941, 3941, 8192, 3699, 4919, 6423, 11476, 11476, 2471, 11476, 11476, 6423, 18911, 18911, 2153, 2153, 36910, 6765, 24925, 24925, 3941, 11444, 11476, 11476, 11476, 14400, 7411, 3699, 8192, 32843, 42585, 8070, 4610, 8070, 31777, 13740, 13740, 31777, 13740, 36910, 36910, 14820, 6423, 11476, 31777, 31777, 13740, 31777, 31777, 29751, 13068, 32161, 18021, 42800, 32843, 9877, 9877, 18911, 22777, 29751, 3941, 3941, 8192, 18911, 24925, 24925, 11476, 31777, 31352, 13740, 13740, 31777, 23278, 9661, 40947, 9118, 4919, 3941, 3699, 593, 3941, 3941, 3941, 12745, 13740, 31352, 31352, 29098, 29098, 9877, 9877, 9877, 18911, 11476, 9118, 42585, 46090, 36910, 13740, 31777, 13740, 31777, 13740, 24925, 24925, 24925, 3941, 13740, 31777, 1771, 8853, 2761, 2761, 14894, 3941, 11652, 11476, 29751, 48921, 2724, 3941, 6226, 11476, 23278, 11476, 22107, 22535, 2471, 3941, 1125, 24925, 15762, 15762, 9877, 9877, 9877, 2374, 9200, 22535, 9877, 31352, 13740, 30337, 13740, 6765, 29751, 2595, 3255, 3255, 36309, 34562, 7429, 18911, 8605, 13740, 31352, 13740, 13740, 31777, 36910, 9877, 11476, 2153, 11476, 18911, 11035, 2374, 31777, 31777, 1630, 593, 2153, 27043, 3941, 8192, 3941, 2153, 2153, 46798, 29393, 3941, 2153, 11476, 11476, 3699, 3699, 4935, 4935, 42585, 14400, 14400, 11444, 6423, 1630, 3255, 6226, 2595, 8192, 3941, 8192, 8070, 24925, 15762, 24925, 24925, 15762, 24925, 10176, 23278, 3309, 40947, 9877, 9118, 40947, 15762, 15762, 3428, 3428, 42585, 42585, 42585, 9877, 29098, 10176, 15762, 24925, 3941, 3941, 3941, 29098, 18911, 9877, 9877, 36910, 29098, 9877, 3941, 11476, 9118, 3428, 593, 18911, 23278, 11652, 22535, 11652, 22535, 24083, 6226, 3309, 8809, 3309, 24925, 24925, 29098, 29098, 9877, 9877, 29098, 18911, 34562, 24925, 24925, 3309, 11476, 29098, 29098, 36910, 29098, 2724, 29098, 9877, 31352, 13740, 31777, 31777, 13740, 11476, 6423, 11476, 11476, 29751, 3941, 3941, 11444, 6765, 13740, 31777, 31777, 13740, 13740, 7681, 3699, 9920, 10176, 2578, 10176, 24925, 10176, 10176, 24925, 11444, 6765, 23278, 1507, 3941, 8192, 15762, 24925, 10176, 24925, 11476, 3941, 3941, 6226, 13740, 13740, 13740, 31777, 31777, 40947, 14400, 11476, 11476, 3941, 8192, 3941, 4610, 11476, 18911, 18911, 2471, 4919, 4919, 1911, 29098, 9877, 29098, 24925, 40947, 9118, 40947, 18911, 11476, 11652, 18911, 42585, 14400, 2034, 11476, 6226, 6226, 32843, 3428, 3428, 3428, 10297, 10297, 10297, 10297, 3309, 11476, 11652, 24925, 10176, 24925, 15762, 10176, 11444, 23278, 8192, 6765, 26760, 9877, 27076, 11476, 11476, 7411, 11476, 9877, 16901, 23503, 23503, 23503, 23503, 2761, 6765, 6765, 18911, 31777, 13740, 31777, 31777, 13740, 2913, 1911, 1911, 10176, 2153, 36910, 3941, 3941, 3941, 3941, 3941, 2533, 3941, 3941, 8192, 28160, 11476, 11476, 11476, 18911, 6423, 31352, 31777, 18911, 2759, 11476, 11476, 6446, 3941, 2374, 11476, 3941, 42585, 4610, 18911, 11476, 18911, 18911, 1507, 11476, 593, 12638, 11476, 18911, 23503, 27043, 11476, 11476, 11476, 6226, 11775, 23278, 3255, 32530, 10749, 10749, 3309, 8192, 31352, 31777, 31777, 31352, 31777, 24925, 24925, 15762, 10176, 23278, 31777, 31777, 31777, 31777, 31777, 20686, 31352, 31777, 13740, 31777, 13740, 27043, 6423, 18911, 3309, 3309, 9877, 29098, 9877, 9877, 10176, 40947, 36910, 9877, 9877, 6321, 25475, 13740, 13740, 2913, 6559, 11476, 11476, 3941, 3941, 3941, 3941, 3941, 3941, 3941, 3941, 3941, 3941, 10649, 9877, 9877, 30337, 31777, 42585, 42585, 42585, 13740, 13740, 13740, 13740, 13740, 24925, 24925, 24925, 24925, 593, 23278, 27043, 2533, 15762, 15762, 15762, 7528, 11476, 9200], [3255, 3255, 6226, 786, 6226, 786, 1929, 1611, 1917, 1917, 1917, 1611, 1929, 1929, 1929, 1929, 2308, 786, 786, 786, 786, 786, 1929, 1929, 786, 786, 2308, 1611, 786, 1929, 1929, 1876, 1876, 1876, 1929, 1929, 786, 40947, 786, 2034, 31777, 31352, 1876, 31777, 31777, 1615, 1615, 1611, 1611, 1611, 1611, 1611, 786, 2533, 786, 786, 786, 786, 786, 2308, 9877, 9877, 2308, 1917, 1917, 2308, 2308, 2308, 2308, 2308, 1929, 1929, 1507, 786, 2913, 2913, 786, 1611, 1611, 1876, 1876, 786, 2913, 2913, 1876, 1876, 11400, 11400, 2913, 786, 1611, 1611, 1611, 1611, 1876, 2913, 1876, 1876, 2913, 2913, 1611, 786, 786, 1611, 786, 1929, 2153, 2153, 2153, 2153, 786, 786, 786, 1876, 1876, 2913, 2913, 33341, 10297, 10297, 10297, 3835, 1917, 1656, 1656, 1656, 1656, 42585, 14400, 2153, 8361, 2034, 1876, 2034, 1611, 1611, 1611, 1611, 3701, 3701, 3701, 11652, 1611, 2913, 1611, 33403, 33403, 33403, 2153, 1917, 2153, 1917, 1876, 36910, 2308, 2913, 1876, 786, 1876, 10297, 3701, 3701, 3701, 2153, 1911, 2308, 1611, 2308, 1611, 1611, 1929, 2913, 2034, 2034, 1929, 1929, 1929, 1929, 1929, 1929, 1611, 1611, 2153, 1917, 1876, 1876, 1876, 1876, 1876, 1876, 1876, 1876, 1876, 1876, 2308, 786, 786, 1876, 786, 1929, 1929, 786, 24925, 24925, 1611, 2913, 1611, 1611, 2913, 1611, 1611, 1876, 1611, 2533, 1929, 2913, 1611, 1611, 1611, 2913, 1611, 2308, 1611, 1611, 2308, 1929, 3255, 3255, 14400, 14400, 14400, 14400, 14400, 3255, 1929, 1876, 1876, 2913, 1611, 1876, 1929, 1611, 1917, 1611, 2308, 1917, 1611, 1611, 786, 1794, 1794, 1929, 1929, 1929, 1917, 1917, 1917, 1917, 1917, 1611, 2913, 14400, 32843, 42585, 32843, 42585, 1611, 2308, 1611, 1611, 1611, 1929, 1929, 1929, 1929, 1929, 4610, 3329, 8070, 31777, 13740, 13740, 31777, 13740, 36910, 1611, 1876, 1876, 1876, 2034, 2913, 3701, 2913, 2913, 2913, 14820, 1929, 1929, 1929, 1929, 2308, 2308, 2308, 1507, 2153, 1876, 1876, 1876, 1876, 31777, 31777, 13740, 31777, 31777, 786, 786, 786, 786, 786, 1929, 1929, 1929, 1929, 2153, 2913, 2913, 1876, 1876, 1876, 1876, 1876, 1876, 2913, 2913, 2913, 2913, 1876, 2913, 1611, 2308, 1611, 2913, 1876, 1876, 1876, 1876, 2153, 1917, 1917, 14400, 14400, 32843, 42585, 1876, 2153, 1876, 1876, 1876, 13618, 1929, 1929, 1929, 1929, 1929, 786, 1929, 786, 786, 786, 1929, 1929, 786, 786, 2913, 2913, 786, 2308, 2308, 2308, 24925, 10176, 24925, 1929, 1929, 3255, 1929, 1611, 1507, 1917, 1876, 1876, 2913, 1611, 2913, 2913, 1911, 11652, 9227, 1876, 1876, 1876, 1876, 1876, 2913, 3551, 786, 1615, 1611, 3551, 2913, 2913, 1611, 1929, 1929, 2913, 1911, 2153, 2913, 31777, 31352, 13740, 13740, 31777, 1876, 786, 11652, 11652, 11652, 11652, 11652, 40947, 1611, 1611, 1611, 1917, 2308, 1917, 1917, 2308, 1656, 2308, 2153, 2153, 2153, 2153, 2308, 1611, 1611, 1069, 24869, 786, 786, 786, 4440, 1611, 1611, 1611, 1611, 1611, 1611, 1611, 2153, 1611, 4935, 4935, 1911, 1611, 1611, 1929, 3255, 3701, 11652, 786, 786, 1911, 12745, 13740, 1911, 31352, 1917, 1917, 1929, 3255, 3255, 3701, 3701, 3701, 1929, 1929, 1929, 42585, 1929, 3255, 13740, 31777, 13740, 31777, 13740, 1573, 1794, 2913, 3551, 2913, 2913, 2913, 1611, 1611, 1611, 1611, 1611, 1611, 1876, 2913, 1876, 24925, 24925, 24925, 10176, 24925, 2862, 786, 786, 786, 786, 1929, 2308, 2913, 2308, 2913, 1929, 1929, 3941, 786, 1876, 13740, 31777, 3255, 3255, 1929, 1929, 1929, 2913, 1611, 1876, 2913, 2913, 2913, 1611, 786, 2913, 2913, 1876, 2913, 2913, 1876, 1876, 1876, 2913, 1929, 1611, 1611, 3941, 1611, 1876, 2913, 1876, 1876, 1656, 11652, 11652, 2533, 2308, 2308, 786, 786, 786, 786, 786, 1876, 1876, 1876, 1917, 6226, 6226, 1917, 1876, 1876, 1876, 1876, 1876, 1876, 1876, 3701, 3701, 786, 786, 786, 786, 786, 10297, 1876, 1876, 786, 3551, 2913, 1876, 2913, 31777, 2913, 1611, 32397, 1611, 2913, 3551, 2153, 1876, 2913, 1611, 2153, 1929, 1929, 1929, 786, 786, 786, 1047, 2308, 1611, 1611, 2913, 2913, 1929, 1929, 1929, 1929, 3701, 3701, 11652, 3255, 2913, 2913, 1929, 1929, 1911, 1876, 2034, 1876, 1611, 1611, 1611, 1611, 1929, 1929, 2913, 786, 2913, 2913, 2913, 1917, 24925, 15762, 24925, 15762, 4440, 1611, 1611, 1929, 1929, 1929, 1611, 1911, 1611, 1611, 1794, 1794, 1929, 786, 1794, 1794, 1794, 1794, 9227, 3701, 9877, 9877, 1611, 2913, 2913, 1611, 2308, 1611, 1611, 5084, 5084, 1656, 1656, 1929, 1929, 1929, 2308, 2308, 786, 1929, 3255, 1027, 1929, 1929, 3701, 1611, 3551, 3701, 9227, 2308, 2308, 2308, 2308, 786, 786, 786, 786, 2913, 2913, 3701, 11652, 11652, 11652, 3701, 786, 2913, 1611, 31352, 13740, 13740, 2153, 2913, 2913, 1611, 1611, 10297, 10297, 10297, 10297, 786, 786, 786, 786, 786, 1929, 1929, 3255, 1929, 1929, 1611, 1611, 1611, 1611, 1611, 2153, 2913, 1611, 2913, 1611, 2153, 3255, 3255, 3255, 3255, 1929, 27363, 1929, 1929, 1929, 1929, 2308, 2308, 2308, 2308, 2308, 2308, 2308, 2308, 10297, 10297, 786, 786, 786, 786, 786, 1929, 1929, 1929, 1929, 1876, 1876, 1876, 2913, 1876, 14400, 14400, 14400, 42585, 1929, 1929, 1611, 1611, 1611, 1611, 10297, 1882, 1611, 1611, 1611, 1611, 1929, 1929, 1929, 1929, 1929, 13740, 31352, 13740, 13740, 31777, 1929, 1615, 1615, 1615, 1615, 1611, 1611, 1611, 1876, 1876, 2913, 1876, 1876, 1929, 1929, 1929, 1656, 3701, 11652, 11652, 1876, 1876, 1876, 31777, 1917, 786, 786, 5084, 5084, 1929, 1929, 1929, 2153, 2153, 2153, 2153, 1876, 2913, 2913, 1876, 2913, 1929, 1929, 2153, 1876, 2153, 2153, 1611, 1876, 2913, 1876, 2913, 3255, 3255, 3255, 46798, 46798, 1929, 1929, 1929, 1929, 1794, 2913, 1611, 1656, 2034, 1611, 1611, 1611, 2153, 1911, 1611, 1611, 1611, 1611, 2913, 1876, 3701, 3701, 786, 3551, 2913, 2913, 2913, 1929, 1929, 786, 786, 786, 786, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 1611, 1611, 1611, 1876, 1917, 4935, 4935, 1929, 1929, 1929, 42585, 2308, 14400, 14400, 14400, 2153, 2153, 2153, 1929, 1929, 1876, 1876, 1876, 2913, 2308, 2308, 2308, 2308, 11652, 11652, 11652, 11652, 11652, 1911, 1911, 5299, 1507, 2308, 2308, 2308, 2308, 2308, 786, 786, 786, 786, 786, 786, 786, 786, 2308, 8192, 47648, 2034, 2034, 2308, 2308, 2308, 1611, 10176, 10176, 24925, 15762, 24925, 24925, 24925, 15762, 24925, 10176, 2153, 2153, 2153, 1929, 1929, 1929, 786, 786, 786, 786, 786, 786, 786, 3701, 1917, 1917, 2913, 1876, 2913, 2913, 1876, 2913, 2913, 786, 786, 786, 2913, 2913, 2913, 2913, 2308, 1611, 1876, 1876, 1876, 2913, 786, 786, 786, 786, 10176, 15762, 15762, 1615, 786, 1611, 786, 786, 3255, 1929, 1929, 1611, 1611, 786, 1876, 2913, 17838, 1929, 1929, 1929, 1929, 3428, 42585, 42585, 42585, 29098, 1611, 1611, 2308, 24925, 10176, 15762, 24925, 24925, 2034, 1911, 2034, 1794, 1794, 1794, 1794, 2913, 2308, 2308, 2308, 1611, 1611, 2913, 2913, 786, 1611, 1611, 786, 786, 1611, 1611, 2308, 1611, 1917, 1917, 1917, 1611, 2308, 1611, 1611, 1611, 1929, 1611, 1794, 1794, 1611, 2913, 27363, 1929, 4935, 3835, 1929, 9877, 1917, 1917, 1611, 1917, 1917, 1876, 1876, 1929, 1929, 1929, 2034, 2034, 1611, 2913, 1611, 1611, 1611, 1611, 1917, 1917, 1611, 1917, 1917, 3428, 3551, 1611, 1876, 1876, 2913, 1876, 1876, 6829, 1929, 6829, 2308, 786, 2913, 2913, 786, 786, 786, 786, 786, 1027, 10297, 3701, 1656, 32397, 33403, 33403, 786, 786, 4629, 1929, 1929, 1876, 1876, 1876, 1876, 1876, 2153, 2913, 2913, 2913, 2913, 2308, 2308, 1929, 786, 1929, 786, 11652, 11652, 3701, 786, 786, 786, 2034, 2034, 2034, 2913, 786, 786, 2913, 786, 1611, 2913, 2913, 2913, 3551, 1876, 2913, 1611, 10176, 24925, 24925, 24925, 24925, 1917, 1917, 2153, 1917, 1917, 2153, 1917, 1929, 1929, 1929, 1929, 1929, 1929, 2308, 1611, 1611, 2308, 786, 786, 9877, 2308, 1611, 1611, 2308, 1876, 1876, 1876, 1876, 2913, 2913, 2913, 1929, 1929, 1929, 786, 1929, 1929, 1929, 3701, 10297, 1929, 1929, 1929, 1929, 2153, 2153, 2153, 24925, 36910, 1929, 3255, 3255, 1929, 1929, 1929, 1069, 2913, 3551, 2913, 1611, 1611, 2913, 36910, 31352, 13740, 31777, 31777, 13740, 1876, 1611, 1611, 1929, 1929, 1929, 2308, 2308, 1611, 2308, 6423, 1069, 1929, 1929, 1929, 1929, 1876, 1876, 2913, 1876, 1876, 2913, 1929, 1929, 2308, 1929, 1794, 2308, 2308, 1794, 1929, 1929, 1929, 1929, 786, 1876, 1876, 1929, 1929, 1917, 1911, 1929, 1929, 3701, 11652, 2308, 1611, 1611, 786, 1929, 1876, 2913, 1929, 1917, 1911, 1611, 1611, 1611, 3701, 3701, 3701, 2153, 2153, 2153, 13740, 31777, 31777, 13740, 13740, 2308, 2308, 2913, 2308, 2913, 2913, 2913, 2913, 2034, 1929, 1929, 1929, 1929, 13035, 10176, 2913, 2913, 1876, 1876, 1611, 1917, 1917, 1917, 2153, 2034, 1911, 1929, 10176, 24925, 10176, 10176, 24925, 1611, 1611, 1611, 2913, 2913, 2913, 1876, 1911, 10297, 1611, 1876, 1876, 1929, 2153, 2153, 2153, 2153, 1929, 786, 1611, 786, 786, 1929, 1929, 1917, 1507, 1507, 786, 786, 786, 1611, 1611, 11652, 1929, 1929, 1929, 1929, 1929, 3255, 1929, 1929, 15762, 24925, 10176, 2308, 11652, 2308, 2308, 2308, 2308, 2308, 2153, 1917, 1917, 2913, 1794, 2153, 1611, 1611, 786, 786, 786, 786, 1929, 1929, 1929, 786, 786, 2913, 1876, 2913, 1876, 5170, 786, 4935, 1929, 13740, 13740, 13740, 31777, 31777, 2153, 2153, 2034, 2034, 2153, 1929, 1611, 14400, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 786, 2308, 2308, 3941, 786, 1911, 2153, 2034, 4610, 1615, 1615, 1615, 786, 786, 2153, 1911, 1911, 1911, 2308, 2308, 2308, 1611, 2913, 2913, 1917, 1917, 1929, 1929, 1929, 1929, 1929, 1611, 2913, 1611, 2913, 3701, 3701, 24925, 40947, 40947, 1929, 1929, 1929, 1929, 2913, 1929, 1929, 1929, 1876, 1876, 2913, 1929, 1611, 1611, 1611, 786, 2308, 2308, 786, 786, 3701, 3551, 2913, 1876, 786, 42585, 14400, 14400, 2034, 2034, 2308, 2308, 2308, 1611, 1929, 1929, 1929, 3428, 3428, 3428, 3329, 3329, 3329, 1876, 1876, 1876, 1876, 1876, 2913, 3551, 786, 786, 786, 786, 2913, 1876, 786, 786, 786, 11652, 11652, 3701, 24925, 10176, 24925, 15762, 10176, 2913, 1911, 1611, 2034, 2913, 33403, 1876, 1929, 3701, 10297, 3701, 1929, 1929, 1929, 1611, 1611, 1611, 2153, 2153, 1911, 2153, 2913, 1876, 1876, 1876, 1876, 2153, 2913, 2913, 1611, 1611, 6829, 1929, 1929, 1929, 1929, 3701, 1917, 1917, 1917, 2034, 2034, 2034, 3428, 23503, 23503, 23503, 23503, 786, 1929, 786, 786, 786, 1876, 1876, 3701, 3701, 3701, 3701, 3701, 3551, 1876, 2034, 31777, 13740, 31777, 31777, 13740, 2913, 1611, 1611, 1911, 1911, 1876, 1876, 1876, 1876, 1876, 1911, 2153, 32397, 1929, 1929, 2913, 786, 1047, 786, 786, 1911, 1929, 9877, 10649, 36910, 786, 1917, 1917, 1917, 1917, 1611, 2533, 2533, 3941, 1876, 1876, 2913, 1876, 1876, 1876, 1876, 1876, 1611, 1611, 1611, 1929, 1929, 1929, 1929, 1929, 2308, 2308, 6829, 1929, 786, 786, 1611, 1615, 1615, 1615, 1615, 1876, 2913, 1876, 1876, 786, 786, 31352, 31777, 1929, 1929, 1876, 2913, 1876, 1876, 1876, 2913, 3551, 1929, 3701, 2913, 1876, 2913, 1876, 1929, 1929, 1929, 786, 1929, 786, 786, 786, 1876, 3551, 1876, 1876, 2913, 1876, 1876, 1876, 2913, 1611, 1611, 2308, 1611, 42585, 42585, 42585, 14400, 1876, 1876, 1876, 1876, 1917, 1917, 2724, 1929, 1929, 1929, 1611, 2308, 1611, 1611, 1611, 2308, 2308, 2153, 1794, 1929, 1929, 1929, 786, 1929, 1929, 1929, 1876, 1917, 3701, 3701, 3701, 3701, 1929, 1929, 40645, 786, 786, 786, 786, 786, 786, 1611, 1611, 1611, 1611, 1611, 1611, 1917, 1917, 1917, 1917, 1917, 2913, 1929, 1929, 1929, 1929, 1929, 786, 786, 786, 2913, 1929, 2913, 1876, 1876, 2913, 1929, 1929, 1929, 1929, 1929, 1929, 2913, 1876, 1876, 1876, 2913, 33403, 2308, 2308, 2308, 2308, 2308, 2308, 2308, 2308, 1929, 2308, 2308, 1611, 2308, 2308, 2913, 2913, 2913, 786, 1929, 1929, 1611, 2913, 1611, 2308, 11652, 32843, 3551, 2913, 4440, 4440, 3255, 1929, 786, 1656, 786, 1656, 31352, 31777, 31777, 31352, 31777, 14820, 24925, 10176, 24925, 15762, 10176, 2913, 31777, 31777, 31777, 31777, 1929, 786, 3701, 31352, 31777, 13740, 31777, 13740, 786, 1615, 1615, 1615, 1507, 1917, 1917, 1917, 1611, 1917, 2913, 1876, 1876, 1929, 1929, 1929, 1929, 1027, 11122, 786, 2913, 1876, 1611, 1611, 2913, 1611, 1611, 1611, 1611, 1611, 1611, 2913, 1611, 1876, 1876, 5084, 5084, 2308, 951, 2153, 1876, 2913, 2913, 786, 786, 1929, 1929, 1929, 786, 786, 2913, 2913, 2913, 2913, 2913, 11652, 11652, 11652, 786, 2308, 2308, 1611, 2308, 2308, 3255, 3255, 25475, 7411, 25475, 25475, 2153, 2153, 1911, 33403, 13740, 13740, 1876, 1876, 1876, 1876, 2308, 2913, 2308, 1876, 2913, 786, 786, 2153, 2913, 3551, 2913, 33403, 2308, 1929, 1929, 1929, 1929, 1929, 1929, 1929, 2308, 2308, 1929, 1929, 1929, 1929, 1929, 1929, 2308, 2034, 1876, 33341, 5072, 3701, 2153, 1611, 10649, 1929, 1929, 1929, 1929, 1876, 1876, 31777, 1611, 2913, 1611, 1611, 786, 1929, 1929, 1929, 42585, 42585, 42585, 42585, 32843, 7746, 786, 1611, 1611, 1611, 1611, 1611, 13740, 13740, 13740, 13740, 24925, 24925, 24925, 24925, 24925, 1911, 1911, 1911, 1911, 2153, 1876, 2913, 2913, 3701, 3701, 21951, 23503, 40645, 2533, 786, 786, 786, 786, 786, 2149, 2913, 1876, 2913, 2913, 14400, 1929, 15762, 32843, 1929, 1929, 1929, 1876, 2308, 2308, 2308, 2308, 1876, 1876, 1876, 1876, 1876, 1876, 786, 786, 786, 786, 786, 1929, 1929, 1929, 3255, 1929], [1417, 530, 593, 593, 530, 530, 530, 530, 530, 593, 530, 525, 525, 530, 593, 1519, 530, 593, 593, 530, 530, 1417, 530, 1095, 530, 530, 530, 1095, 530, 5050, 530, 17319, 530, 530, 530, 530, 530, 633, 530, 525, 530, 530, 1952, 533, 593, 530, 593, 2403, 525, 1952, 20857, 530, 267, 8596, 320, 530, 1519, 530, 962, 962, 2403, 5050, 4042, 962, 1952, 267, 5050, 7286, 7286, 5050, 5050, 530, 530, 530, 530, 536, 530, 4265, 530, 530, 530, 267, 4348, 962, 3254, 593, 593, 12164, 593, 267, 1417, 6446, 530, 530, 267, 593, 530, 536, 2862, 530, 5050, 4042, 962, 962, 537, 5050, 7286, 4348, 267, 530, 1417, 5050, 530, 530, 530, 1095, 530, 530, 530, 530, 530, 530, 530, 530, 530, 1417, 530, 530, 530, 530, 5050, 7286, 5050, 530, 525, 530, 530, 530, 530, 530, 2528, 5050, 962, 962, 267, 13519, 530, 530, 530, 530, 6446, 530, 530, 530, 530, 530, 1519, 593, 530, 10359, 2252, 593, 3309, 530, 593, 1952, 2252, 530, 530, 530, 5050, 593, 530, 536, 530, 530, 530, 1417, 530, 320, 267, 593, 530, 530, 13519, 6446, 267, 962, 320, 633, 962, 962, 530, 530, 530, 530, 2862, 2862, 530, 530, 530, 530, 962, 5050, 1095, 5050, 5050, 537, 1095, 530, 530, 530, 17319, 1095, 530, 530, 17319, 4348, 4348, 962, 593, 7286, 7286, 5050, 530, 536, 536, 593, 530, 530, 530, 7286, 5050, 5050, 10359, 4348, 530, 530, 1417, 6446, 530, 530, 530, 267, 531, 530, 530, 530, 530, 2403, 531, 320, 320, 530, 7286, 530, 530, 1095, 5050, 530, 530, 530, 530, 530, 7286, 962, 530, 1417, 530, 5050, 962, 962, 5050, 593, 7286, 962, 7286, 7286, 7286, 7286, 7286, 530, 8596, 5050, 1630, 962, 962, 962, 530, 530, 1095, 1095, 1095, 525, 525, 525, 525, 530, 530, 7286, 5050, 5050, 530, 530, 530, 593, 530, 962, 962, 962, 593, 593, 530, 530, 536, 530, 593, 536, 1417, 5050, 530, 525, 267, 267, 1095, 2252, 6446, 530, 530, 530, 530, 530, 7286, 530, 530, 962, 5050, 5050, 533, 593, 537, 593, 530, 536, 633, 7286, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 530, 6446, 593, 593, 593, 2528, 4348, 593, 593, 536, 530, 530, 525, 530, 2912, 530, 530, 593, 530, 2528, 537, 2862, 962, 530, 525, 530, 962, 530, 2252, 5050, 1095, 530, 530, 530, 530, 593, 7286, 530, 5050, 7286, 5050, 7286, 5050, 962, 530, 530, 593, 20857, 530, 525, 525, 962, 530, 530, 530, 267, 5050, 5050, 962, 962, 593, 530, 530, 1095, 593, 525, 1952, 593, 530, 267, 530, 4042, 5050, 530, 5050, 5050, 5050, 530, 530, 1519, 530, 593, 633, 1417, 1417, 530, 530, 962, 962, 530, 530, 530, 530, 1417, 530, 530, 1417, 530, 525, 530, 530, 530, 537, 530, 593, 962, 530, 530, 530, 530, 593, 537, 530, 530, 530, 530, 530, 536, 536, 536, 5050, 537, 7286, 530, 530, 530, 267, 537, 530, 5050, 530, 525, 962, 962, 5050, 6446, 530, 593, 593, 8596, 536, 3254, 530, 530, 530, 962, 530, 530, 530, 593, 530, 530, 2528, 530, 530, 530, 267, 267, 525, 530, 530, 962, 593, 3309, 525, 537, 530, 530, 530, 1417, 530, 530, 556, 530, 593, 633, 7286, 5050, 6446, 530, 530, 962, 530, 530, 530, 530, 530, 533, 530, 530, 530, 530, 530, 1417, 1417, 530, 1519, 4348, 5050, 593, 962, 962, 7286, 530, 518, 530, 5050, 5050, 962, 5050, 593, 593, 525, 5050, 530, 530, 530, 530, 530, 2912, 530, 530, 530, 530, 962, 5050, 5050, 525, 530, 530, 530, 530, 11953, 962, 530, 320, 320, 1095, 1095, 1095, 1095, 633, 2252, 962, 962, 593, 593, 13519, 13519, 593, 530, 1095, 530, 530, 530, 530, 530, 1095, 6446, 525, 962, 530, 2912, 2912, 530, 530, 530, 530, 536, 530, 537, 593, 530, 530, 530, 518, 320, 2252, 530, 530, 530, 530, 530, 593, 530, 530, 530, 530, 530, 4042, 267, 530, 5050, 530, 530, 962, 530, 530, 5050, 5050, 5050, 5050, 7286, 7286, 530, 530, 530, 530, 530, 530, 530, 530, 530, 536, 2862, 530, 1417, 2862, 525, 530, 530, 320, 556, 633, 1417, 530, 530, 530, 530, 962, 633, 631, 267, 530, 530, 530, 267, 11953, 530, 530, 530, 530, 530, 530, 17319, 1519, 5050, 530, 6446, 5050, 5050, 2862, 530, 267, 5050, 5050, 5050, 5050, 2252, 4348, 530, 530, 593, 267, 267, 530, 1095, 530, 530, 2252, 267, 267, 267, 320, 5050, 7286, 2862, 530, 530, 530, 530, 593, 5050, 593, 267, 530, 530, 530, 593, 525, 17319, 593, 530, 1519, 530, 593, 530, 530, 525, 530, 530, 3309, 2252, 530, 530, 530, 1519, 530, 7286, 5050, 5050, 530, 530, 556], [2583, 2034, 2034, 2034, 2034, 2034, 2034, 11673, 1882, 1882, 530, 3309, 9648, 2583, 2153, 2153, 3699, 1917, 2034, 2034, 2153, 2034, 2153, 1917, 2153, 1917, 9637, 9648, 2172, 1876, 1876, 2034, 2308, 2034, 2034, 2034, 2034, 2034, 2583, 24925, 11444, 5922, 15944, 1917, 1917, 1917, 2913, 3424, 14191, 14191, 2583, 8726, 2172, 1611, 1876, 1876, 2034, 2153, 32161, 2153, 1611, 2153, 2034, 18021, 1611, 4935, 14191, 5922, 5922, 2153, 24925, 10176, 24925, 23056, 1876, 1911, 2153, 2583, 2583, 29141, 1911, 2913, 19282, 9200, 1917, 3699, 1611, 2153, 593, 2153, 2153, 2034, 17648, 17648, 1911, 1611, 2583, 2913, 24925, 24925, 6682, 2913, 2913, 2583, 1611, 9648, 9648, 9648, 9648, 48921, 7429, 1876, 1611, 2153, 2913, 1876, 2034, 2153, 5922, 1917, 24925, 24925, 1611, 1911, 1794, 1794, 17772, 2583, 14191, 2583, 14191, 26760, 31326, 2913, 2913, 9648, 2153, 2153, 2153, 40022, 1876, 1876, 2308, 1876, 2913, 2034, 2034, 1611, 1611, 2583, 9648, 9648, 9648, 2583, 2583, 7429, 7429, 14191, 2583, 14191, 1882, 2471, 36910, 2034, 2913, 1876, 2153, 41906, 1917, 2153, 2153, 2153, 1611, 9648, 1876, 1611, 1611, 2153, 36614, 1876, 1876, 6682, 1876, 1917, 2473, 37194, 2583, 2583, 2583, 2153, 11444, 1911, 2034, 2034, 2583, 2034, 29136, 10176, 24925, 24925, 24925, 15762, 896, 1917, 1917, 11775, 9648, 2583, 4935, 2034, 1876, 15762, 10176, 15762, 15762, 11795, 1611, 9057, 1876, 14191, 2583, 3428, 2583, 24925, 10176, 15762, 24925, 24925, 2034, 2034, 2034, 2583, 2583, 1917, 1917, 3880, 1794, 2034, 2034, 2034, 2034, 2034, 593, 7429, 4852, 7235, 26760, 2034, 2034, 2034, 2034, 37415, 1876, 1876, 8809, 10176, 24925, 24925, 24925, 24925, 1876, 2034, 2034, 2034, 1917, 2153, 2583, 2583, 2583, 1882, 3880, 1611, 1611, 11444, 2034, 6029, 6029, 1876, 2153, 2153, 11775, 2913, 1611, 2913, 1876, 3948, 2034, 10176, 2034, 2034, 10176, 24925, 10176, 24925, 1507, 11444, 26760, 2012, 7429, 15762, 24925, 10176, 24925, 2153, 1917, 1917, 2473, 2153, 2034, 2034, 3383, 14191, 1911, 2034, 2034, 2034, 21524, 1573, 2034, 1876, 1876, 1876, 1876, 2153, 1911, 1911, 2583, 14191, 2913, 24925, 14191, 2034, 2034, 2034, 2034, 4023, 14191, 24925, 10176, 24925, 15762, 10176, 1876, 1876, 1911, 1611, 23278, 2034, 2583, 2583, 14191, 2153, 2153, 2034, 2153, 4023, 1917, 2034, 2034, 2034, 15150, 2473, 2473, 2473, 1876, 2034, 2034, 2034, 2034, 2034, 2913, 1611, 1911, 1911, 1911, 2153, 2153, 2153, 3383, 3383, 3140, 1917, 2595, 2595, 5438, 2583, 14191, 2583, 14191, 5046, 1611, 1794, 1794, 3880, 37194, 12638, 9648, 2473, 2583, 1917, 2913, 1876, 1876, 2583, 1876, 1876, 1876, 14191, 24925, 24925, 10176, 23278, 7235, 2471, 1917, 2473, 2172, 2153, 2034, 2034, 2913, 1876, 2913, 3880, 9648, 3424, 3424, 3424, 1579, 2308, 2308, 1507, 1876, 1876, 3424, 2153, 20589, 1611, 2583, 14191, 24925, 24925, 24925, 24925, 11795, 593, 5928, 1882, 2583, 2583, 2583, 2583, 15762, 1882, 14191, 2583], [3255, 3255, 3255, 1882, 1882, 1882, 1917, 1917, 1611, 2034, 2034, 2034, 2034, 1929, 3255, 1929, 3255, 1929, 1929, 3255, 1929, 2034, 2034, 2034, 2034, 2034, 31777, 31352, 31777, 11795, 11673, 2374, 9877, 1882, 1882, 1882, 1882, 1611, 1917, 1917, 8605, 23278, 11795, 11795, 1611, 1611, 10625, 1876, 2724, 2913, 1876, 1611, 2172, 8605, 3699, 2034, 9227, 1917, 2505, 3255, 3255, 2153, 2471, 11795, 8361, 2471, 2471, 1929, 1929, 2034, 2034, 2153, 2034, 7429, 28556, 1917, 2153, 1917, 2153, 1917, 2012, 9637, 10625, 1876, 1876, 1876, 2172, 2034, 1876, 2390, 23147, 3255, 3255, 2308, 1611, 1611, 2308, 2034, 2034, 2034, 2034, 2034, 1929, 1929, 2583, 1611, 1611, 2153, 3255, 10625, 10625, 1876, 3255, 2583, 6267, 2012, 2471, 2471, 2471, 1929, 1929, 1929, 3255, 3255, 11444, 40022, 12608, 3255, 3255, 3428, 1911, 1929, 3699, 2471, 2471, 3255, 3255, 2595, 2595, 1917, 1917, 1611, 5922, 1917, 1917, 1917, 1611, 2913, 14191, 2471, 2583, 36910, 1611, 1611, 1876, 1876, 1876, 2034, 2913, 3255, 14820, 3255, 14820, 3255, 2153, 2153, 31777, 31777, 13740, 1929, 32161, 2153, 3965, 1876, 1876, 2034, 15861, 4964, 1882, 1882, 1882, 1882, 1882, 1882, 1611, 2913, 1611, 2913, 1611, 2153, 1917, 42800, 1917, 14400, 5922, 5922, 2153, 1069, 22777, 1611, 2913, 2913, 2913, 24925, 24925, 1929, 1929, 3255, 1929, 1929, 1917, 1876, 4233, 4233, 1876, 3255, 3255, 3255, 1771, 1911, 2153, 40022, 2583, 7429, 29141, 29141, 3255, 1929, 2913, 1911, 2153, 2913, 31352, 2012, 11652, 1917, 1917, 1917, 2153, 2153, 2153, 4233, 4233, 4233, 3699, 34562, 11795, 3699, 2012, 1611, 1611, 2153, 593, 593, 2034, 3255, 3255, 1911, 31352, 29098, 29098, 9877, 9877, 9877, 1917, 1917, 1611, 1929, 3255, 3255, 5299, 31777, 13740, 5988, 2913, 1611, 29141, 24925, 24925, 24925, 10176, 1876, 2913, 2913, 1929, 6879, 3255, 3255, 2583, 2583, 1611, 9648, 1876, 4233, 3255, 3255, 3255, 3255, 9648, 9648, 9648, 11652, 48921, 1917, 1876, 1876, 34562, 1794, 31777, 1882, 1882, 1882, 1882, 1882, 1876, 1611, 2153, 4023, 1570, 2153, 2913, 1929, 2913, 1929, 1911, 1876, 2034, 2153, 1876, 5922, 2677, 1929, 1929, 1929, 1929, 2913, 2913, 2913, 1917, 1917, 1917, 1917, 1917, 24925, 15762, 1611, 1911, 1611, 1611, 1794, 1794, 1794, 1794, 11795, 5873, 9877, 9877, 9877, 9877, 1611, 2913, 7235, 7235, 2553, 2583, 2471, 2471, 2471, 14191, 3551, 26760, 9227, 31326, 9227, 2913, 2308, 9877, 2913, 6879, 2153, 2153, 2153, 2153, 1876, 1876, 1876, 1876, 1611, 1929, 1611, 1929, 1929, 3255, 1929, 1929, 2034, 2153, 2153, 2153, 2913, 2034, 1611, 2913, 1611, 2153, 3255, 3255, 3255, 3255, 1929, 27363, 2471, 3699, 1929, 5928, 1929, 3255, 18848, 18848, 2583, 7429, 14191, 14191, 2913, 8605, 6765, 1882, 1882, 1882, 13740, 31777, 3255, 3255, 1929, 36910, 9877, 12608, 3701, 2034, 1876, 1876, 2153, 1611, 1929, 1929, 3255, 1929, 3255, 3255, 3255, 3255, 3255, 26760, 13740, 1027, 1929, 2153, 2153, 2153, 2153, 2153, 1611, 26760, 3255, 1929, 1929, 1929, 3255, 3255, 3255, 3255, 5727, 5727, 1929, 1929, 1929, 1929, 48754, 1876, 2034, 1611, 1611, 1611, 2153, 1911, 1611, 1611, 3551, 3699, 3699, 2471, 3699, 2471, 36614, 1611, 1876, 1876, 1876, 1611, 1876, 6682, 2473, 2473, 1876, 1917, 37194, 2583, 14400, 2153, 2153, 2153, 2153, 5922, 11444, 11652, 1911, 1911, 2034, 2034, 5299, 5299, 3255, 3255, 3255, 2595, 3428, 2034, 2034, 2034, 29136, 10176, 10176, 24925, 24925, 24925, 15762, 24925, 10176, 2153, 11775, 2583, 4935, 2471, 2034, 1876, 10176, 15762, 15762, 11795, 1876, 5928, 2473, 3255, 3255, 1929, 1611, 1611, 9057, 1882, 1882, 2034, 1882, 1876, 14191, 3255, 2583, 2583, 42585, 9877, 24925, 15762, 24925, 2034, 2034, 4233, 1911, 2034, 1794, 1876, 26760, 1917, 2153, 14531, 1794, 2913, 3699, 3699, 23278, 9877, 9877, 36910, 29098, 1917, 2225, 1917, 1917, 1069, 2034, 2034, 2034, 2034, 2034, 3255, 1917, 1917, 1917, 2473, 7429, 11795, 1929, 3255, 3255, 3255, 4852, 1611, 1027, 1570, 7235, 7235, 11819, 26760, 26760, 2153, 2153, 2153, 2153, 15861, 11652, 2034, 2034, 1876, 4233, 2034, 2034, 2034, 2034, 2034, 2913, 1876, 1876, 1876, 8809, 10176, 24925, 24925, 24925, 29098, 29098, 1876, 2034, 2034, 2034, 3255, 3255, 1917, 1917, 1917, 2153, 1917, 1929, 1929, 47212, 9877, 10390, 2682, 2153, 37194, 24925, 1573, 33094, 3255, 2583, 1882, 1882, 1882, 1882, 1882, 1027, 2477, 29098, 36910, 9877, 29098, 9877, 31352, 31777, 31777, 1876, 1611, 1611, 2308, 1794, 1794, 11795, 3255, 3255, 3255, 1929, 1911, 6635, 2034, 2012, 1876, 1876, 6879, 2153, 2153, 1917, 2153, 11775, 11795, 2153, 2153, 2153, 2913, 1611, 1611, 1876, 2913, 1573, 2034, 1573, 3699, 10978, 2471, 3699, 3699, 2631, 2631, 2631, 1876, 10176, 10176, 10176, 1611, 1917, 1917, 1917, 2153, 2034, 2034, 2831, 10176, 24925, 10176, 10176, 24925, 11444, 15861, 26760, 1911, 6879, 2012, 2153, 2153, 2153, 1611, 1917, 2225, 26760, 7429, 7429, 11652, 1929, 1929, 1929, 1929, 1929, 3255, 1929, 15762, 24925, 10176, 24925, 6226, 1917, 1794, 1611, 1917, 1611, 1882, 1882, 1882, 2473, 2473, 2034, 2034, 3383, 14191, 14400, 5035, 1911, 2153, 2034, 2034, 2034, 1573, 1573, 1573, 1573, 2034, 1876, 1876, 1876, 1876, 2471, 2153, 1911, 1911, 1911, 9877, 1917, 1917, 2583, 1611, 1611, 24925, 1929, 3470, 3470, 1611, 8771, 4233, 3551, 6893, 8866, 14191, 3255, 2034, 2034, 2034, 2034, 2553, 4023, 14191, 3255, 11652, 11652, 24925, 10176, 24925, 15762, 10176, 1876, 1876, 1876, 1876, 1911, 1611, 2012, 2034, 3255, 3255, 2583, 11795, 4023, 2913, 1911, 2034, 7411, 2913, 4023, 1917, 1917, 2034, 2034, 2034, 15150, 2473, 2473, 2473, 2682, 3551, 1876, 2034, 2034, 4233, 1876, 2153, 13740, 31777, 31777, 2034, 2034, 2034, 1611, 1611, 1911, 1911, 10176, 10176, 10176, 10176, 1911, 2153, 2153, 2153, 3383, 3383, 3383, 2913, 1876, 2307, 9877, 10649, 1570, 1570, 2292, 1917, 2831, 2831, 1876, 1611, 2595, 4167, 1570, 1929, 1929, 1929, 1573, 1573, 2012, 23278, 5922, 4682, 8369, 2682, 3255, 3255, 3255, 3255, 3255, 1573, 1573, 1573, 1917, 1917, 12638, 10978, 2471, 2471, 10978, 1611, 1611, 1794, 2153, 1794, 1794, 3327, 37194, 3255, 12638, 11795, 1917, 11795, 2473, 1917, 1876, 1876, 1876, 1876, 1876, 5922, 1929, 3255, 1929, 3255, 3255, 1027, 4964, 2583, 11795, 11673, 1876, 1876, 2913, 1876, 1876, 11673, 14191, 14191, 3255, 3255, 3255, 3255, 1929, 31777, 14820, 3255, 24925, 10176, 23278, 31777, 1929, 1929, 3255, 7235, 31352, 13740, 2471, 4921, 40022, 1917, 1917, 1611, 2473, 2473, 1882, 1882, 1882, 1882, 1882, 9877, 1611, 10176, 3255, 3255, 3255, 2034, 2034, 9877, 10625, 2153, 2153, 1911, 3255, 1929, 3255, 3255, 1876, 2153, 2553, 3880, 3880, 1929, 2308, 2308, 1507, 1876, 2034, 1876, 36349, 4921, 2153, 1611, 10649, 9877, 9877, 3255, 1929, 3255, 3255, 1929, 3255, 6879, 6879, 6879, 2583, 24925, 24925, 2153, 1911, 11795, 4440, 593, 1911, 2153, 2153, 2473, 1882, 1882, 1882, 2583, 2583, 2583, 1882, 1882, 1882, 1882, 2583, 2583, 3470, 1876, 1876], [2583, 1573, 2831, 2831, 8771, 1882, 1882, 4023, 5922, 2225, 1573, 1573, 1573, 1573, 2477, 3835, 3835, 8222, 2523, 2840, 8771, 15917, 2307, 1573, 2374, 8866, 12906, 12906, 2523, 12906, 1882, 1882, 1573, 2553, 1573, 1573, 1573, 1573, 5922, 3835, 3835, 3835, 23278, 16451, 10625, 2724, 14191, 2583, 2583, 1573, 2473, 1573, 3835, 3835, 3835, 3835, 2831, 2831, 2831, 23278, 24083, 2831, 2831, 2831, 26760, 26760, 5408, 3965, 6135, 2172, 2117, 2292, 12906, 1573, 8605, 3699, 3835, 3835, 3835, 3835, 9227, 31326, 1573, 8771, 8771, 8771, 5922, 5922, 2471, 8361, 2471, 1573, 7429, 3701, 3701, 3701, 11652, 28556, 28556, 3880, 14191, 3880, 14191, 6135, 2390, 23147, 23147, 1573, 1573, 5922, 2583, 5094, 2117, 5094, 2117, 3835, 3835, 3835, 6927, 2117, 5094, 5922, 10625, 1573, 10625, 10625, 7458, 2583, 2583, 2583, 6267, 2677, 8369, 8369, 23278, 5094, 2471, 2471, 2471, 1573, 1573, 1573, 12608, 2505, 7411, 7411, 7411, 2831, 2471, 3699, 2471, 3699, 2471, 5299, 2595, 6559, 1794, 2117, 2117, 2117, 1573, 2831, 2831, 2831, 1573, 1573, 1573, 1573, 3965, 14191, 2471, 12906, 12906, 12906, 12906, 12906, 45768, 5922, 1530, 3701, 3701, 3701, 3701, 3701, 2583, 2583, 14191, 2831, 2831, 1573, 1573, 1573, 1573, 1573, 2012, 2012, 2012, 29751, 13068, 29751, 3965, 3965, 1674, 15861, 18021, 1882, 1882, 1882, 1882, 1882, 1882, 4935, 4935, 3965, 3880, 3965, 5922, 5922, 5922, 5928, 2225, 1069, 1069, 2307, 22777, 2595, 23278, 2117, 1573, 1573, 1573, 8192, 4233, 4233, 23278, 9227, 9227, 1573, 1573, 1573, 2583, 2583, 2583, 2583, 2583, 1570, 5922, 5922, 7429, 29141, 29141, 5134, 3835, 3835, 3835, 3835, 2012, 23278, 2012, 2292, 11652, 11652, 11652, 11652, 11652, 5873, 2225, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 4233, 4233, 4233, 3699, 2012, 2307, 1573, 1573, 48754, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 8369, 3701, 3701, 11652, 2012, 31352, 3701, 3701, 29098, 9877, 5299, 1615, 2583, 2583, 1573, 1573, 2831, 2831, 2831, 1573, 5988, 1573, 29141, 26760, 1573, 1573, 3965, 3965, 3965, 3965, 12906, 12906, 2523, 1069, 22777, 9577, 1573, 1573, 1573, 1573, 5526, 2473, 1573, 2553, 5035, 6559, 4023, 4023, 2583, 2583, 2583, 5928, 10625, 3965, 3965, 3965, 2553, 1573, 1573, 1615, 1615, 1615, 1573, 11652, 11652, 1452, 48921, 7385, 12498, 6226, 22777, 5408, 9577, 3701, 23278, 3880, 3880, 33403, 3880, 3880, 1573, 1573, 1573, 32397, 1882, 1882, 1882, 1882, 1882, 1069, 4023, 4023, 3979, 1573, 1573, 1573, 1573, 5873, 3965, 3701, 2831, 1573, 1573, 1573, 5922, 5922, 12679, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 9577, 9577, 1794, 1794, 3880, 3880, 3880, 3880, 3880, 2117, 11795, 3965, 5873, 5873, 5873, 5873, 3701, 7235, 7235, 2473, 2553, 1573, 2553, 5084, 5922, 1570, 5922, 2583, 2583, 2225, 2471, 2471, 2471, 1674, 8866, 2583, 1573, 2473, 1573, 3965, 45559, 45559, 5408, 3701, 26760, 26760, 9227, 31326, 9227, 13405, 8771, 11652, 11652, 3701, 9877, 6879, 1573, 1573, 3835, 3835, 3835, 3835, 3835, 1615, 1615, 1615, 2117, 2117, 2471, 2471, 3699, 27486, 29751, 18848, 2583, 2583, 2583, 7429, 7429, 3965, 14191, 1573, 1573, 2553, 1573, 1573, 2722, 8605, 1882, 1882, 1882, 1882, 1882, 13405, 1573, 1573, 1573, 13740, 2583, 2471, 1615, 36910, 12608, 1573, 12608, 3701, 9227, 11652, 12906, 11652, 11652, 26760, 2117, 2117, 2117, 13740, 3030, 1027, 5084, 5084, 1530, 2553, 1573, 1573, 1573, 26760, 26760, 1573, 2553, 1573, 1573, 5727, 1573, 1573, 2553, 1573, 48754, 48754, 48754, 2012, 5094, 2292, 2292, 2292, 2553, 2553, 3701, 11652, 3701, 3699, 3699, 2471, 3699, 2471, 15861, 2677, 2523, 1069, 36614, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 1573, 2473, 2473, 1573, 1573, 1573, 2473, 1573, 3965, 10625, 14400, 5922, 5922, 5922, 1573, 1573, 1573, 1573, 2225, 4167, 11652, 11652, 11652, 13405, 13405, 5299, 5299, 5299, 5299, 2583, 6226, 36614, 14191, 2583, 29136, 5922, 15762, 24925, 1573, 6164, 12906, 3965, 8771, 2831, 2831, 2831, 2831, 12906, 3470, 12906, 2471, 6116, 15762, 3835, 3835, 3835, 3835, 3835, 1615, 2473, 2473, 5239, 2473, 15150, 12906, 2117, 2117, 2117, 5094, 9057, 3835, 3835, 3835, 11075, 1882, 1882, 1882, 1882, 1882, 5922, 5922, 5922, 5922, 2583, 2583, 3880, 3880, 3880, 2583, 42585, 2583, 4233, 2583, 2307, 1573, 26760, 1573, 1573, 1917, 3880, 3880, 3880, 3880, 3880, 2583, 2583, 2583, 2583, 1794, 3699, 3699, 4440, 3835, 3835, 3835, 3835, 23278, 36910, 3470, 3470, 3470, 1069, 1069, 1069, 5035, 2473, 593, 2583, 32397, 3880, 7429, 11795, 2831, 2831, 2831, 1573, 2831, 12906, 2307, 1027, 1027, 3701, 5094, 3880, 3880, 7235, 7235, 23278, 26760, 11652, 3701, 4233, 4233, 4233, 6226, 25757, 1615, 36349, 2553, 2473, 1573, 1573, 1573, 29098, 1573, 1573, 1573, 5922, 5922, 5922, 4266, 1573, 1573, 1573, 2831, 1069, 3701, 45768, 1573, 1573, 1573, 2583, 3965, 2117, 2117, 2583, 14191, 3965, 1882, 1882, 1882, 1882, 1882, 4233, 1027, 4233, 4233, 2117, 2117, 1573, 1573, 1573, 1573, 1573, 3880, 3880, 3880, 3880, 36910, 2831, 2831, 7411, 1573, 2831, 6226, 3965, 31777, 23278, 45768, 2831, 12906, 12906, 1794, 1573, 1573, 1573, 1573, 27486, 5035, 4652, 8184, 5922, 5922, 3701, 11652, 1573, 1573, 1573, 1573, 1573, 8222, 3086, 5922, 13405, 13405, 3701, 1573, 5408, 9577, 22777, 9577, 9577, 7429, 4489, 1573, 1573, 1573, 3699, 10978, 3699, 3699, 2631, 1069, 1069, 4233, 1069, 1570, 5922, 2583, 2583, 1179, 9920, 10176, 2117, 10176, 10176, 1570, 5922, 1573, 2831, 10176, 10176, 6135, 6879, 2307, 2831, 1573, 2831, 1573, 1573, 12906, 12906, 2117, 2117, 2117, 2117, 2225, 2307, 2307, 26760, 7429, 7429, 7429, 3701, 4055, 3701, 11652, 5922, 12679, 12679, 10176, 24925, 1573, 1573, 1573, 1573, 3880, 3880, 3880, 3880, 3880, 11652, 3701, 3701, 6226, 2583, 2583, 14191, 3965, 5873, 2307, 1882, 1882, 1882, 1882, 2473, 2473, 2473, 2473, 5922, 3965, 3965, 5873, 2583, 14191, 2583, 2583, 2583, 14191, 14400, 1069, 5035, 12679, 2677, 1573, 1573, 1573, 1573, 1615, 1911, 14191, 2583, 2583, 2583, 2677, 3701, 24925, 3835, 3835, 3835, 3835, 3835, 3835, 3835, 45768, 3470, 3470, 3470, 1573, 1573, 1573, 1573, 1573, 1573, 8771, 4233, 4233, 6893, 1573, 2473, 1573, 1573, 8866, 2583, 1573, 1573, 1573, 2553, 2307, 4023, 1573, 1573, 5094, 3965, 3701, 3701, 3701, 11652, 1573, 1573, 1573, 1573, 1573, 2831, 7411, 2831, 2831, 8222, 11652, 11652, 3701, 11652, 10176, 24925, 15762, 2012, 2012, 23278, 2583, 2583, 2583, 14191, 26760, 1573, 2831, 2831, 4023, 3965, 4167, 6267, 3965, 14547, 2831, 2831, 7411, 2677, 2677, 15150, 2473, 2473, 2473, 1573, 3701, 3701, 3701, 11652, 1573, 1573, 1573, 4233, 4233, 2471, 12745, 7411, 3880, 3880, 3880, 2583, 2583, 2583, 2583, 2583, 45559, 1573, 1573, 1573, 1573, 25055, 2307, 1573, 2553, 1573, 2553, 3965, 10625, 3965, 2292, 2292, 2831, 2831, 2831, 2831, 1615, 2595, 2595, 4167, 1615, 4167, 5035, 5922, 1570, 5922, 45768, 2583, 1573, 1573, 1573, 1573, 1573, 5922, 5922, 1573, 1573, 4682, 2307, 8866, 4313, 8369, 2682, 1573, 1573, 1573, 1573, 2553, 2553, 2553, 1573, 12638, 10978, 2471, 2471, 2700, 12906, 1794, 3880, 37194, 37252, 1573, 2473, 2583, 1573, 12638, 2700, 3835, 3835, 3835, 2172, 3701, 23503, 2473, 2117, 2583, 2117, 45768, 45768, 45768, 2553, 1573, 2553, 1573, 1573, 23278, 5922, 5922, 5922, 2117, 1069, 1069, 1069, 2583, 3880, 3880, 37922, 2117, 5928, 11795, 11795, 1570, 4023, 1570, 3701, 6116, 3701, 11652, 3701, 2583, 5873, 2583, 14191, 2583, 2583, 5873, 4440, 4440, 12906, 3470, 12906, 8771, 8771, 23278, 31777, 8184, 7235, 3701, 3701, 10978, 1615, 10978, 1615, 1573, 1573, 2583, 2583, 2583, 2583, 14191, 2473, 2473, 2473, 1882, 1882, 1882, 1882, 1882, 3101, 6559, 9877, 10176, 5084, 5084, 27202, 5084, 3965, 14191, 4233, 4233, 4233, 2012, 1573, 2553, 1573, 2307, 2307, 1573, 10625, 10625, 2473, 2473, 1615, 2831, 7411, 2831, 11652, 11652, 3701, 5922, 5922, 5922, 1573, 2831, 25475, 1573, 1573, 1573, 1573, 5408, 5408, 3880, 3470, 3470, 1573, 6559, 1573, 1573, 1573, 2553, 1573, 2583, 3880, 3880, 2583, 16319, 3880, 3880, 1573, 1573, 1573, 2831, 16403, 2553, 1573, 1573, 1573, 2117, 2117, 1069, 1069, 5922, 2117, 36349, 4921, 9877, 5922, 5922, 6267, 6879, 6879, 1573, 2117, 1573, 1573, 27202, 1573, 3965, 3835, 3835, 3835, 9577, 9577, 9577, 22777, 9577, 4440, 593, 4269, 22535, 6226, 2553, 2473, 2473, 5922, 5922, 1882, 1882, 1882, 2583, 2583, 1573, 1573, 1882, 1882, 1882, 14191, 2583, 2583, 3470, 3470, 5922, 5922, 5922, 12906, 12906, 12906, 12906, 1573, 1573, 1573, 1573, 2473, 3835, 3835, 3835, 3835, 6927, 6927], [3255, 2583, 3255, 1573, 2831, 6226, 17061, 6226, 11075, 1882, 1917, 1917, 1929, 1573, 1573, 1573, 1573, 2117, 2034, 3835, 2034, 2523, 2523, 2523, 2840, 8771, 3255, 1929, 2063, 2063, 2063, 5094, 5094, 2034, 2034, 2034, 2034, 2034, 2307, 1573, 1573, 1615, 2374, 12906, 3965, 3965, 786, 2308, 786, 2308, 1573, 3965, 1929, 1929, 1929, 2553, 1573, 1573, 1573, 1573, 2308, 8605, 11075, 23278, 1611, 10625, 2724, 14191, 3965, 2583, 1573, 2473, 1573, 2117, 2117, 2117, 5094, 2117, 1876, 2831, 23278, 24083, 2831, 4167, 2117, 2117, 5094, 1611, 2117, 1573, 3699, 2034, 3835, 9227, 31326, 1917, 31326, 2308, 1656, 1573, 3255, 2153, 8771, 267, 5922, 8361, 2471, 1929, 1929, 2034, 2034, 2153, 2034, 2523, 28556, 14191, 3880, 1917, 2153, 1917, 2153, 2569, 1876, 1876, 1876, 4682, 2390, 23147, 2308, 1611, 1611, 1611, 2308, 1929, 1570, 2034, 2034, 2034, 2034, 2034, 1929, 1929, 1929, 2583, 5094, 5094, 2117, 5094, 1611, 2153, 4471, 6927, 1069, 1573, 2117, 5094, 1573, 3255, 3255, 1573, 3255, 3255, 3255, 3255, 1929, 2677, 2677, 8369, 8369, 23278, 2117, 5094, 2117, 2117, 2471, 2471, 1929, 1929, 1929, 1573, 1573, 1573, 12608, 3255, 14400, 2505, 2505, 2831, 2831, 2831, 1929, 3699, 2471, 5299, 6039, 2595, 1917, 1917, 1611, 1611, 1570, 1570, 5922, 2117, 2117, 2117, 2117, 1573, 2831, 2831, 1917, 1611, 2153, 2913, 1573, 1573, 1573, 1573, 2553, 3965, 3255, 2471, 3255, 2523, 2523, 2523, 1611, 1611, 1876, 1876, 1876, 2034, 2913, 4682, 3701, 3701, 3701, 3701, 3255, 14820, 3255, 14820, 2583, 2583, 14191, 2583, 14191, 2153, 2831, 2831, 1573, 1573, 1573, 1573, 1573, 2012, 2012, 2012, 786, 1929, 2153, 2153, 6635, 3965, 5873, 3965, 5094, 5094, 5094, 5094, 5094, 2034, 1069, 1882, 1882, 1611, 2913, 1611, 2913, 1611, 2117, 2153, 3965, 3965, 3965, 2153, 2117, 2117, 2117, 1069, 1069, 1069, 1069, 1069, 22777, 786, 1611, 1573, 1573, 2117, 1573, 1573, 2913, 2913, 2913, 4558, 4558, 4558, 4558, 24925, 1929, 1929, 1929, 1069, 4233, 1876, 23278, 9227, 1911, 2153, 9227, 1573, 1573, 1573, 2583, 2583, 1570, 5922, 1929, 1929, 1911, 2153, 3835, 11652, 11652, 11652, 1615, 11652, 5873, 5873, 5873, 5873, 2225, 1573, 1573, 1917, 2308, 1917, 1917, 1573, 2153, 2153, 2153, 1573, 1069, 4233, 2117, 3699, 2307, 4440, 4440, 10080, 1573, 48754, 1573, 1573, 1573, 2034, 1573, 1573, 1573, 1573, 1573, 3701, 11652, 786, 2012, 786, 1911, 1917, 3255, 1929, 3255, 3255, 5299, 1573, 1573, 2831, 2831, 2831, 1573, 5988, 13405, 1573, 1573, 1573, 3965, 3965, 3965, 3965, 2523, 2523, 1069, 2913, 2913, 2913, 1929, 1573, 1573, 1573, 1573, 2473, 1573, 2553, 1929, 28556, 1573, 2913, 2117, 4023, 2583, 5928, 2117, 2117, 2117, 5094, 3965, 3965, 5873, 2553, 1573, 1573, 1573, 1615, 1615, 3255, 1573, 1573, 1573, 1573, 1452, 1929, 786, 2308, 1917, 2308, 3814, 4125, 12498, 6226, 6226, 5408, 9577, 1876, 1759, 2569, 1573, 1573, 786, 5094, 1882, 1882, 11075, 1882, 3801, 2153, 1069, 1069, 3979, 1573, 1573, 1573, 1573, 5873, 3965, 2153, 2153, 2913, 1929, 2831, 1573, 1573, 1929, 1573, 1911, 1876, 2034, 2153, 3365, 2172, 1929, 1929, 1929, 2913, 2913, 2913, 1573, 1573, 1573, 1573, 1917, 1917, 1917, 4440, 1573, 1573, 1573, 1573, 9577, 4313, 1911, 2153, 1929, 1929, 1794, 4269, 3880, 1929, 5094, 4558, 4558, 4558, 4558, 4558, 3701, 2569, 2569, 1611, 2913, 7235, 7235, 2913, 2473, 2553, 1573, 1573, 2553, 5084, 5084, 5084, 5084, 4682, 5922, 2012, 2471, 1929, 2471, 2583, 1573, 2473, 1573, 3701, 9227, 9227, 13405, 2523, 1929, 8771, 2913, 2913, 2308, 3701, 2569, 2153, 2153, 1573, 1876, 1929, 2523, 3801, 3801, 2523, 1929, 1929, 1929, 2117, 2117, 2117, 2117, 2034, 2153, 2034, 2913, 1611, 2153, 3255, 3255, 3255, 3255, 1929, 27363, 2471, 1929, 1573, 5928, 5928, 1929, 2473, 2308, 786, 1929, 2583, 2583, 3965, 3965, 1573, 1573, 2553, 1573, 1573, 2913, 2722, 8605, 1882, 1573, 1573, 1573, 1573, 2117, 3255, 6829, 3255, 1929, 2583, 1615, 1615, 1615, 1615, 1615, 2172, 3965, 12608, 1573, 12608, 3701, 2034, 2913, 1876, 2153, 1929, 3255, 1929, 1929, 11652, 16451, 14547, 2117, 2117, 2117, 2117, 2117, 3030, 5084, 5084, 1929, 2153, 2153, 2153, 2153, 2553, 1573, 1876, 4313, 1573, 1573, 1573, 2153, 2117, 2153, 2153, 3255, 1929, 1929, 1929, 1573, 2553, 1573, 1573, 3255, 1573, 1573, 2553, 1573, 1929, 1929, 1929, 1929, 4313, 1876, 3941, 5094, 1611, 2153, 1911, 2553, 2553, 3701, 11652, 1611, 3701, 3699, 1929, 267, 2677, 2677, 2523, 1069, 1069, 1069, 36614, 3965, 5873, 530, 1611, 1573, 1573, 1876, 1573, 1573, 1573, 1573, 1573, 1573, 2473, 2473, 1573, 1573, 1876, 1917, 1573, 2473, 1573, 267, 3965, 4682, 2583, 2153, 2153, 267, 1573, 1573, 1573, 1573, 2225, 4682, 4167, 1911, 1911, 2034, 5299, 5299, 5299, 1507, 1507, 2308, 786, 2583, 3801, 786, 3801, 3801, 6226, 6226, 2583, 3965, 2505, 1573, 1570, 5922, 1573, 1069, 1069, 1069, 1069, 1069, 11455, 4682, 3965, 4682, 1573, 2831, 14547, 5922, 1570, 2583, 4440, 2471, 2034, 2913, 2523, 786, 15762, 3835, 28695, 2473, 2473, 2473, 15150, 2308, 2553, 3255, 2117, 2117, 2117, 2117, 1611, 1611, 2308, 3835, 11075, 1882, 1876, 2583, 2583, 4558, 4558, 4167, 4167, 15762, 24925, 2034, 2034, 2034, 5094, 2583, 3965, 3965, 1876, 2523, 2523, 1573, 1573, 1573, 2477, 2583, 2583, 3941, 2913, 3699, 3699, 23503, 3835, 23278, 2569, 1917, 1917, 1917, 1069, 1069, 1069, 2034, 2034, 2034, 2034, 2034, 1917, 1917, 1611, 4167, 1573, 2473, 3880, 5299, 1929, 1759, 2831, 2831, 2831, 1573, 2831, 1069, 1069, 2308, 1611, 3801, 2523, 3030, 1027, 1573, 1573, 7235, 7235, 23278, 4629, 1929, 1929, 1069, 1929, 2569, 786, 4233, 2034, 2034, 2034, 2034, 2034, 2913, 25757, 1876, 8809, 8809, 8809, 2553, 2473, 1573, 1573, 1573, 2117, 24925, 24925, 24925, 2569, 2569, 2569, 2569, 1876, 2034, 2034, 2034, 2117, 1573, 1917, 1917, 1917, 2153, 1917, 1929, 1929, 1929, 3365, 2569, 1573, 1573, 1573, 2831, 4125, 1069, 1069, 1069, 1069, 1069, 2682, 2153, 1573, 1573, 1573, 14547, 5873, 3965, 5873, 3965, 2117, 11075, 1882, 1069, 2523, 1069, 2117, 2117, 2117, 2117, 1573, 1573, 1573, 1573, 1573, 3965, 2569, 2831, 1573, 2724, 6226, 3965, 1069, 1069, 1069, 1069, 2175, 2175, 1929, 1929, 1929, 1794, 1794, 1573, 1573, 1573, 1573, 3255, 1929, 2374, 2374, 1911, 2034, 3701, 1573, 1573, 1573, 1573, 1573, 1876, 48754, 2153, 1573, 2913, 1611, 1611, 2913, 2913, 2913, 1573, 2034, 1573, 1573, 3699, 1069, 1069, 1069, 1069, 1570, 1570, 2583, 2583, 1179, 5084, 5084, 2117, 2117, 1570, 1570, 1917, 1917, 1917, 2153, 2034, 2034, 1573, 1573, 2831, 10176, 24925, 15150, 6879, 2153, 2153, 2153, 1573, 1573, 1573, 2308, 2308, 2117, 2117, 2117, 2117, 1917, 2307, 3701, 4055, 3701, 11652, 1570, 1929, 1929, 1929, 1929, 1929, 3255, 1929, 15762, 1573, 1573, 1573, 1573, 3880, 2569, 2012, 11652, 6226, 2153, 2153, 1611, 1611, 2583, 2583, 2583, 14191, 786, 4558, 5873, 3965, 5873, 4558, 2569, 2307, 5094, 1882, 2117, 2117, 2473, 2473, 2473, 2473, 5922, 2569, 2569, 3965, 3965, 3965, 3965, 5873, 5873, 2153, 2153, 2034, 2034, 2153, 2583, 14191, 2583, 2583, 2583, 3965, 1069, 1069, 1069, 6267, 12679, 2677, 5094, 5094, 2117, 2117, 1911, 2153, 2034, 2034, 2034, 4964, 1573, 1573, 1573, 1573, 2034, 1876, 1876, 1876, 1876, 1615, 1615, 1615, 2153, 1911, 1911, 1911, 2569, 1917, 1917, 14191, 2583, 2583, 1611, 6267, 2677, 1929, 3470, 3470, 3470, 1573, 1573, 1573, 1573, 1573, 1573, 1611, 8771, 1069, 1069, 6893, 1573, 2473, 1573, 1573, 2445, 2583, 2034, 2034, 2034, 2034, 1573, 1573, 1573, 1573, 2553, 4023, 2569, 1573, 1573, 2117, 5094, 5094, 32843, 3965, 3965, 3701, 3701, 11652, 1573, 1573, 1573, 2523, 1573, 786, 2308, 1573, 786, 786, 786, 24925, 10176, 15762, 1911, 1611, 23278, 2034, 12608, 1929, 2677, 2153, 2153, 1911, 2034, 1573, 1573, 2153, 4023, 3965, 1570, 4167, 3965, 5873, 3965, 3965, 14547, 1917, 2034, 2034, 2034, 2677, 3255, 1929, 15150, 1929, 2473, 2473, 2473, 2473, 1573, 2012, 11122, 3701, 3701, 11652, 1069, 1573, 1876, 2034, 2034, 2034, 2034, 2034, 2913, 1611, 2117, 1911, 1911, 2117, 2117, 1911, 2153, 2153, 1573, 2153, 3880, 2583, 2583, 2583, 2583, 2583, 2913, 1876, 786, 1573, 4440, 4440, 4440, 2307, 1573, 2553, 1573, 2553, 1573, 1573, 1573, 3965, 3965, 3965, 2117, 1573, 6068, 2117, 2523, 2523, 2831, 2831, 1611, 1570, 6829, 786, 2523, 1615, 1615, 1570, 1570, 1570, 23050, 2913, 3255, 3255, 1929, 2583, 3255, 1929, 1573, 1573, 1573, 1573, 1573, 23278, 1573, 3255, 786, 786, 4682, 2523, 4313, 8369, 4682, 3255, 3255, 3255, 3255, 3255, 1573, 1573, 1573, 1573, 1573, 2553, 2553, 2553, 2553, 1573, 1917, 1917, 2724, 10978, 2471, 2700, 1611, 1611, 1069, 1069, 2153, 1794, 1794, 37194, 1929, 1929, 1573, 2473, 1929, 2583, 1573, 1573, 12638, 1917, 2172, 23503, 2473, 2117, 1573, 2117, 5094, 2117, 786, 786, 786, 786, 2117, 2117, 16366, 16366, 2553, 1573, 2553, 1573, 1573, 23278, 1876, 2117, 5922, 5922, 1929, 3255, 1929, 3255, 2117, 2117, 2117, 2117, 2117, 1069, 1069, 1069, 1069, 1069, 1929, 1929, 1929, 2117, 2117, 3801, 5299, 2913, 3365, 1570, 3801, 3701, 11652, 2583, 1929, 1929, 1929, 1929, 2583, 14191, 2583, 2583, 3965, 3965, 5873, 14547, 4440, 4440, 4440, 4440, 3255, 1929, 14820, 14820, 23278, 1929, 1929, 7235, 2307, 3701, 1615, 1615, 1615, 1615, 1573, 1573, 1917, 1917, 15150, 1611, 2583, 2583, 2583, 14191, 2473, 2473, 2473, 2473, 1882, 1882, 2569, 3470, 3470, 3470, 2117, 5094, 2117, 2117, 3255, 3255, 5084, 5084, 5084, 5084, 3965, 5873, 3965, 2034, 2034, 1573, 2553, 1573, 1573, 2569, 2473, 2473, 1615, 2831, 11652, 2308, 1069, 1069, 2831, 1573, 1573, 1573, 1573, 1573, 2153, 1911, 5408, 3880, 1929, 3255, 1573, 2913, 1573, 1573, 1573, 1573, 2583, 3880, 2583, 3880, 1573, 1573, 1573, 2553, 1573, 1573, 1573, 1573, 2117, 2117, 2117, 1069, 1069, 1069, 2308, 1929, 2117, 2117, 2117, 2117, 5928, 267, 1876, 2034, 1876, 36349, 4921, 4682, 6267, 4167, 5035, 2153, 2553, 1611, 2569, 2569, 2569, 2569, 267, 1929, 1929, 1573, 1573, 1573, 1573, 1573, 1573, 1069, 1069, 3965, 1069, 11075, 24925, 1573, 1917, 4440, 4440, 4440, 4440, 6226, 2473, 2553, 2473, 2473, 5922, 1570, 3801, 3030, 1882, 1570, 1570, 2583, 1929, 1573, 1573, 1882, 2583, 2583, 2583, 3470, 2308, 12906, 1573, 1573, 1573, 1573, 2473, 1876, 2523, 6927, 6927, 6927, 6927, 6927]]
+Total #1000 images, #5000 audio
+recall_results_AI {'recall@1': 6.759999692440033, 'recall@5': 23.62000048160553, 'recall@10': 36.5200012922287, 'recall_random@1': 0.2}
+val_recall_IA {'recall@1': 8.500000089406967, 'recall@5': 30.09999990463257, 'recall@10': 42.80000030994415, 'recall_random@1': 0.10000000000000009}
+val_recall_mean {'recall@1': 7.6299998909235, 'recall@5': 26.86000019311905, 'recall@10': 39.660000801086426}
+--------------------------------------------------------------------------------
+DATALOADER:0 VALIDATE RESULTS
+{'kw_hit_rate': {'kw_0': tensor(9.6600, device='cuda:0'),
+                 'kw_1': tensor(11.2600, device='cuda:0'),
+                 'kw_2': tensor(42.0200, device='cuda:0'),
+                 'kw_3': tensor(15.4200, device='cuda:0'),
+                 'kw_4': tensor(9.1200, device='cuda:0'),
+                 'kw_5': tensor(21.6800, device='cuda:0'),
+                 'kw_6': tensor(26.7400, device='cuda:0'),
+                 'kw_7': tensor(32.7000, device='cuda:0')},
+ 'kw_mean_mse': 0.04262242466211319,
+ 'val_c_cl_loss': 0.6098336577415466,
+ 'val_c_cl_loss_epoch': 0.6098336577415466,
+ 'val_cl_temp': 19.53328514099121,
+ 'val_cl_temp_epoch': 19.53328514099121,
+ 'val_loss': 0.6098336577415466,
+ 'val_loss_epoch': 0.6098336577415466,
+ 'val_recall_AI': {'recall@1': tensor(6.7600, device='cuda:0'),
+                   'recall@10': tensor(36.5200, device='cuda:0'),
+                   'recall@5': tensor(23.6200, device='cuda:0'),
+                   'recall_random@1': tensor(0.2000, device='cuda:0')},
+ 'val_recall_IA': {'recall@1': tensor(8.5000, device='cuda:0'),
+                   'recall@10': tensor(42.8000, device='cuda:0'),
+                   'recall@5': tensor(30.1000, device='cuda:0'),
+                   'recall_random@1': tensor(0.1000, device='cuda:0')},
+ 'val_recall_mean': {'recall@1': tensor(7.6300, device='cuda:0'),
+                     'recall@10': tensor(39.6600, device='cuda:0'),
+                     'recall@5': tensor(26.8600, device='cuda:0')},
+ 'val_recall_mean_10': 39.65999984741211,
+ 'val_softmax_temp': 0.09999939054250717,
+ 'val_softmax_temp_epoch': 0.09999939054250717}
+--------------------------------------------------------------------------------
+Validating: 100% 625/625 [03:29<00:00,  2.98it/s]
+
+wandb: Waiting for W&B process to finish... (success).
+wandb: - 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.014 MB uploaded (0.000 MB deduped)wandb: - 0.001 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: | 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: / 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: - 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: \ 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: | 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: / 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: - 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb: \ 0.065 MB of 0.065 MB uploaded (0.000 MB deduped)wandb:                                                                                
+wandb: 
+wandb: Run history:
+wandb:                  epoch ▁
+wandb:            kw_mean_mse ▁
+wandb:    trainer/global_step ▁▁▁▁▂▂▂▂▂▃▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇▇███
+wandb:    val_c_cl_loss_epoch ▁
+wandb:     val_c_cl_loss_step ▃▂▃▂▂▁▂▂▇▃▄▄▃▁▃▄▁▃▄▄▂▂▃▃▂▇▆▂▃▃▁▄▄▂█▃▁▅▃▄
+wandb:      val_cl_temp_epoch ▁
+wandb:       val_cl_temp_step ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:         val_loss_epoch ▁
+wandb:          val_loss_step ▃▂▃▂▂▁▂▂▇▃▄▄▃▁▃▄▁▃▄▄▂▂▃▃▂▇▆▂▃▃▁▄▄▂█▃▁▅▃▄
+wandb:     val_recall_mean_10 ▁
+wandb: val_softmax_temp_epoch ▁
+wandb:  val_softmax_temp_step ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:                  epoch 0
+wandb:            kw_mean_mse 0.04262
+wandb:    trainer/global_step 0
+wandb:    val_c_cl_loss_epoch 0.60983
+wandb:     val_c_cl_loss_step 0.23439
+wandb:      val_cl_temp_epoch 19.53329
+wandb:       val_cl_temp_step 19.53343
+wandb:         val_loss_epoch 0.60983
+wandb:          val_loss_step 0.23439
+wandb:     val_recall_mean_10 39.66
+wandb: val_softmax_temp_epoch 0.1
+wandb:  val_softmax_temp_step 0.1
+wandb: 
+wandb: Synced train_Flickr_kwCLIPBase_c4: https://wandb.ai/atosystem/kw-Flickr-2Layer/runs/29q9700b
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: exp/4layer/train_Flickr_kwCLIPBase_c4/wandb/run-20220729_191419-29q9700b/logs

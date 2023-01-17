@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import torch
 import tqdm
+import random
 from torch.utils.data import Dataset, DataLoader
 logger = logging.getLogger(__name__)
 
@@ -31,12 +32,11 @@ class Task_base():
         self.inference_bsz = inference_bsz
         self.my_model = my_model
         self.output_result_dir = output_result_dir
-
-        if os.path.exists(self.output_result_dir):
-            print("output_result_dir({}) exists!".format(self.output_result_dir))
-            exit(1)
-        else:
-            os.makedirs(self.output_result_dir,exist_ok=True)
+        # if os.path.exists(self.output_result_dir):
+        #     print("output_result_dir({}) exists!".format(self.output_result_dir))
+        #     exit(1)
+        # else:
+        os.makedirs(self.output_result_dir,exist_ok=True)
 
         for _tn in self.TASKS_NAME:
             os.makedirs(os.path.join(self.output_result_dir,_tn),exist_ok=True)
@@ -64,8 +64,6 @@ class Task_semantic(Task_base):
         self.task_root_dir = os.path.join(self.output_result_dir,"semantic")
 
         assert os.path.exists(self.task_root_dir)
-
-
 
         self.audio_wav_paths = {}
         if self.run_dev:
@@ -109,7 +107,9 @@ class Task_semantic(Task_base):
 
                 for i in tqdm.tqdm(range(0,len(self.audio_wav_paths["{}_{}".format("dev",_split)])+self.inference_bsz,self.inference_bsz)):
                 # for _data,_wavpaths in tqdm.tqdm(dev_dataloader):
-                    _wavpaths = self.audio_wav_paths["{}_{}".format("dev",_split)][i:i+self.inference_bsz+self.inference_bsz]
+                    _wavpaths = self.audio_wav_paths["{}_{}".format("dev",_split)][i:i+self.inference_bsz]
+                    # print(_wavpaths)[0]
+                    # exit()
                     if len(_wavpaths) == 0 : continue
                     _data = []
                     for _w in _wavpaths:
@@ -119,11 +119,13 @@ class Task_semantic(Task_base):
                     # _data = [x.cuda() for x in _data]
                     with torch.no_grad():
                         embeddings = self.my_model.feature_extractor_zerospeech(wav=_data)
-                        embeddings = embeddings.cpu().float().numpy()
+                        if isinstance(embeddings, torch.Tensor):
+                            embeddings = embeddings.cpu().float().numpy()
 
                     # print(embeddings.shape)
                     for _embs, _wavpath in zip(embeddings,_wavpaths):
-                        # print("embs",_embs.shape)
+                        assert _embs.shape[0] > 1, _embs.shape
+                        _embs = np.atleast_2d(_embs)
                         txt_path = os.path.join(self.task_root_dir,"dev",_split,os.path.basename(_wavpath).replace(".wav",".txt"))
                         np.savetxt(txt_path,_embs)
 

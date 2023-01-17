@@ -12,6 +12,7 @@ from clip.simple_tokenizer import SimpleTokenizer
 from importlib_metadata import distribution
 from PIL import Image
 from torch import nn
+from clip.model import VisionTransformer
 
 _clip_models = {
     "RN50",
@@ -63,7 +64,7 @@ class ClipModel(nn.Module):
         if reduce_subword_embbedding is not None:
             if not os.path.exists(reduce_subword_embbedding):
                 reduce_subword_embbedding = os.path.join(
-                    "/work/{}/atosystem/audio-visual-ssl/".format(os.environ["USER"]),
+                    "/mnt/md0/user_jeff/audio-visual-ssl",
                     reduce_subword_embbedding,
                 )
 
@@ -221,7 +222,59 @@ class ClipModel(nn.Module):
             torch.Tensor: Image features. (B, D)
         """
         return self.model.encode_image(image)
+    
+    def extract_image_features(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode a batch of images.
 
+        Args:
+            image (torch.Tensor): Images. (B, 3, H, W)
+
+        Returns:
+            torch.Tensor: Patch Embeddings. (B, L-1, D=768), torch.Tensor: Image features. (B, L, D=512)
+        """
+        assert isinstance(self.model.visual, VisionTransformer)
+        x = self.model.visual.conv1(x)  # shape = [*, width, grid, grid]
+        x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
+        x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+        x = torch.cat([self.model.visual.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+        x = x + self.model.visual.positional_embedding.to(x.dtype)
+        x = self.model.visual.ln_pre(x)
+
+        x = x.permute(1, 0, 2)  # NLD -> LND
+        x = self.model.visual.transformer(x)
+        x = x.permute(1, 0, 2)  # LND -> NLD
+
+        x = self.model.visual.ln_post(x)
+        # x = self.model.visual.ln_post(x[:, 0, :])
+
+        if self.model.visual.proj is not None:
+            x = x @ self.model.visual.proj
+
+        return x[:, 0, :], x[:, 1:, :]
+
+    def get_keypadding_mask(self, text: torch.Tensor) -> torch.Tensor:
+        text_len = text.argmax(dim=-1) + 1
+        bsz, max_length = text.shape[0], text.shape[1]
+        key_padding_mask = torch.ones([bsz, max_length])
+        for mask, len in zip(key_padding_mask, text_len):
+            mask[:len] = 0.0
+        key_padding_mask = key_padding_mask.type_as(text).bool()
+        return key_padding_mask
+
+    def transformer_with_masks(self, x: torch.Tensor, attn_mask: torch.Tensor=None, key_padding_mask: torch.Tensor=None) -> torch.Tensor:
+        # 12 layers, 8 heads
+        key_padding_mask = key_padding_mask.to(device=x.device) if key_padding_mask is not None else None
+        attn_mask = attn_mask.to(dtype=x.dtype, device=x.device) if attn_mask is not None else None
+        
+        features = []
+        for module in self.model.transformer.resblocks:
+            module.attn_mask = module.attn_mask.to(dtype=x.dtype, device=x.device)
+            x = x + module.attn(module.ln_1(x), module.ln_1(x), module.ln_1(x), need_weights=False, key_padding_mask=key_padding_mask, attn_mask=module.attn_mask)[0]
+            x = x + module.mlp(module.ln_2(x))
+            features.append(x)
+
+        return x, features
+        
     def encode_subword_prob(
         self, subword_prob: torch.Tensor, audio_len: torch.Tensor
     ) -> torch.Tensor:
@@ -322,7 +375,7 @@ class ClipModel(nn.Module):
         """
         return self.model.encode_text(text)
 
-    def encode_keywords(self, keywords: torch.Tensor, keyword_num: int) -> torch.Tensor:
+    def encode_keywords(self, keywords: torch.Tensor, keyword_num) -> torch.Tensor:
 
         if isinstance(keywords, torch.Tensor):
             bsz = keywords.size(0)
@@ -344,14 +397,32 @@ class ClipModel(nn.Module):
             sot_token, eot_token = self.startOfTxt_reduced, self.endOfTxt_reduced
 
         text[:, 0] = torch.full(text[:, 0].size(), sot_token, device=self.device)
-        text[:, keyword_num + 1] = torch.full(
-            text[:, keyword_num + 1].size(), eot_token, device=self.device
-        )
+
+        if isinstance(keyword_num, torch.Tensor):
+            index = keyword_num.to(self.device)
+            index = torch.add(index, 1)
+            text = text.scatter(1, index.unsqueeze(1), eot_token)
+        else:
+            text[:, keyword_num + 1] = torch.full(
+                text[:, keyword_num + 1].size(), eot_token, device=self.device
+            )
 
         x = self.model.token_embedding(text)
-        x[:, 1 : 1 + keyword_num] = keywords
+
+        if isinstance(keyword_num, torch.Tensor):
+            for i in range(keywords.shape[0]):
+                x[i, 1 : index[i], :] = keywords[i, : index[i] - 1, :]
+        else:
+            x[:, 1 : 1 + keyword_num] = keywords
+            
         x = x + self.model.positional_embedding
         x = x.permute(1, 0, 2)  # NLD -> LND
+        
+        # outputs = []
+        # for module in self.model.transformer.resblocks:
+        #     outputs.append(module(x))
+        # return outputs
+
         x = self.model.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
         x = self.model.ln_final(x)
@@ -361,7 +432,10 @@ class ClipModel(nn.Module):
         # x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.model.text_projection
 
         # take features from the eot embedding
-        x = x[:, 1 + keyword_num] @ self.model.text_projection
+        if isinstance(keyword_num, torch.Tensor):
+            x = x[torch.arange(x.shape[0]), index] @ self.model.text_projection
+        else:
+            x = x[:, 1 + keyword_num] @ self.model.text_projection
 
         return x
 

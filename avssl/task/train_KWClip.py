@@ -18,6 +18,7 @@ from ..data import (
 from ..model import (
     KWClip_CLIP_Original,
     KWClip_GeneralTransformer,
+    KWClip_GeneralTransformer_plus,
     KWClip_GeneralTransformer_SpeechText,
     KWClip_SpeechText,
 )
@@ -108,3 +109,11 @@ class TrainKWClip_GeneralSpeechText(TrainSpeechClipBaseTask):
 
     def run(self):
         super().run(KWClip_GeneralTransformer_SpeechText)
+
+
+class TrainKWClip_KWClip_GeneralTransformer_plus(TrainSpeechClipBaseTask):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        super().run(KWClip_GeneralTransformer_plus)

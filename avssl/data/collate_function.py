@@ -44,9 +44,11 @@ def collate_general(batch: Tuple):
     return_dict = {k: [] for k in keysInBatch}
     for _row in batch:
         for _key in keysInBatch:
+            # assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
             if _key == "wav_len":
                 return_dict[_key].append(len(_row["wav"]))
             else:
+                assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
                 return_dict[_key].append(_row[_key])
 
     for key in return_dict:
@@ -56,6 +58,13 @@ def collate_general(batch: Tuple):
             else:
                 return_dict[key] = torch.stack(return_dict[key], dim=0)
         else:
-            return_dict[key] = torch.LongTensor(return_dict[key])
+            if key == "alignments":
+                max_len = max([len(_ali) for _ali in return_dict[key]])
+                for i in range(len(return_dict[key])):
+                    _len = len(return_dict[key][i]) 
+                    return_dict[key][i] = return_dict[key][i] +  [[-1, -1]] * (max_len - _len)
+                return_dict[key] = torch.LongTensor(return_dict[key])
+            else:
+                return_dict[key] = torch.LongTensor(return_dict[key])
 
     return return_dict

@@ -4,9 +4,12 @@ Date: May 07, 2020
 """
 from __future__ import print_function
 
+import math
+
 import numpy as np
 import torch
 import torch.nn as nn
+from fairseq.criterions import FairseqCriterion
 
 
 class SupConLoss(nn.Module):
@@ -243,3 +246,184 @@ class MaskedContrastiveLoss(nn.Module):
             loss = loss / 2
 
         return loss
+
+
+class HybridLoss(nn.Module):
+    def __init__(
+        self, init_temp=0.05, warmup_step=5000, max_temp=10, criterion=nn.MSELoss()
+    ):
+        super().__init__()
+        self.criterion = getattr(nn, criterion)(reduction="mean")
+        self.init_temp = init_temp
+        self.temp = init_temp
+        self.warmup_step = warmup_step
+        self.max_temp = max_temp
+
+    @property
+    def current_temperature(self) -> float:
+        """Current Temperature
+
+        Returns:
+            float: Temperature
+        """
+
+        # if self.temperature_trainable:
+        #     temp = self.temperature.data.cpu().detach().float().exp().item()
+        # else:
+        # assert self.temp > 0, f"{self.temp}"
+        temp = self.temp
+
+        return float(temp)
+
+    def forward(self, input, target, global_step):
+        assert (
+            global_step > self.warmup_step
+        ), f"current step is {global_step}, but warmup step is {self.warmup_step}"
+        loss = self.criterion(input, target)
+        loss = loss * self.temp
+        self.temp = min(
+            self.init_temp + 0.001 * (global_step - self.warmup_step), self.max_temp
+        )
+        return loss
+
+
+# source: https://github.com/facebookresearch/fairseq/blob/main/fairseq/criterions/hubert_criterion.py
+class HubertCriterion(FairseqCriterion):
+    def __init__(
+        self,
+        task,
+        pred_masked_weight,
+        pred_nomask_weight,
+        loss_weights=None,
+        log_keys=None,
+    ):
+        super().__init__(task)
+        self.pred_masked_weight = pred_masked_weight
+        self.pred_nomask_weight = pred_nomask_weight
+        self.loss_weights = loss_weights
+        self.log_keys = [] if log_keys is None else log_keys
+
+    def forward(self, model, sample, reduce=True, log_pred=False):
+        """Compute the loss for the given sample.
+        Returns a tuple with three elements:
+        1) the loss
+        2) the sample size, which is used as the denominator for the gradient
+        3) logging outputs to display while training
+        """
+        net_output = model(target_list=sample["target_list"], **sample["net_input"])
+        loss = 0.0
+        sample_size = 0
+        logging_output = {}
+        reduction = "sum" if reduce else "none"
+
+        loss_m_list = []
+        logp_m_list = model.get_logits(net_output, True)
+        targ_m_list = model.get_targets(net_output, True)
+        assert self.pred_masked_weight == 0 or len(logp_m_list) > 0
+        for i, (logp_m, targ_m) in enumerate(zip(logp_m_list, targ_m_list)):
+            loss_m = F.cross_entropy(logp_m, targ_m, reduction=reduction)
+            loss_m_list.append(loss_m)
+            logging_output[f"loss_m_{i}"] = loss_m.detach().item()
+        if self.pred_masked_weight > 0:
+            loss += self.pred_masked_weight * sum(loss_m_list)
+            sample_size += targ_m_list[0].numel()
+
+        loss_u_list = []
+        logp_u_list = model.get_logits(net_output, False)
+        targ_u_list = model.get_targets(net_output, False)
+        assert self.pred_nomask_weight == 0 or len(logp_u_list) > 0
+        for i, (logp_u, targ_u) in enumerate(zip(logp_u_list, targ_u_list)):
+            loss_u = F.cross_entropy(logp_u, targ_u, reduction=reduction)
+            loss_u_list.append(loss_u)
+            logging_output[f"loss_u_{i}"] = loss_u.detach().item()
+        if self.pred_nomask_weight > 0:
+            loss += self.pred_nomask_weight * sum(loss_u_list)
+            sample_size += targ_u_list[0].numel()
+
+        if self.loss_weights is not None:
+            assert hasattr(model, "get_extra_losses")
+            extra_losses, names = model.get_extra_losses(net_output)
+            if torch.is_tensor(extra_losses):
+                extra_losses = [extra_losses]
+                names = [names]
+            if len(self.loss_weights) == 1 and len(extra_losses) != 1:
+                self.loss_weights = [self.loss_weights[0]] * len(extra_losses)
+            assert len(extra_losses) == len(
+                self.loss_weights
+            ), f"{len(extra_losses)}, {len(self.loss_weights)}"
+            for p, n, coef in zip(extra_losses, names, self.loss_weights):
+                if coef != 0 and p is not None:
+                    p = coef * p.float() * sample_size
+                    loss += p
+                    logging_output[f"loss_{n}"] = p.item()
+
+        logging_output = {
+            "loss": loss.item() if reduce else loss,
+            "ntokens": sample_size,
+            "nsentences": sample["id"].numel(),
+            "sample_size": sample_size,
+            **logging_output,
+        }
+
+        for lk in self.log_keys:
+            if lk in net_output:
+                logging_output[lk] = float((net_output[lk]))
+
+        def compute_correct(logits):
+            if logits.numel() == 0:
+                return 0, 0
+            else:
+                assert logits.dim() > 1, logits.shape
+                max = logits.argmax(-1) == 0
+                min = logits.argmin(-1) == 0
+                both = max & min
+                corr = max.long().sum().item() - both.long().sum().item()
+                count = max.numel()
+                return corr, count
+
+        with torch.no_grad():
+            for i, logp_m in enumerate(logp_m_list):
+                corr_m, count_m = compute_correct(logp_m)
+                logging_output[f"correct_m_{i}"] = corr_m
+                logging_output[f"count_m_{i}"] = count_m
+
+            for i, logp_u in enumerate(logp_u_list):
+                corr_u, count_u = compute_correct(logp_u)
+                logging_output[f"correct_u_{i}"] = corr_u
+                logging_output[f"count_u_{i}"] = count_u
+
+        return loss, sample_size, logging_output
+
+
+class DiversityLoss(nn.Module):
+    def __init__(self, loss_weight=10):
+        super().__init__()
+        self.loss_weight = loss_weight
+
+    def current_loss_weight(self):
+        return self.loss_weight
+
+    def forward(self, target=torch.Tensor, target_len=torch.Tensor, score_type=str, eps=1e-8):
+        assert target.dim() == 3, target.shape
+        score = 0
+        for _tar, _len in zip(target, target_len):
+            _tar = _tar[:_len]
+
+            if score_type == "corr":
+                _score_mtx = torch.corrcoef(_tar)
+            elif score_type == "cos":
+                _tar_norm = _tar.norm(dim=-1)[:, None]
+                _tar = _tar / torch.clamp(_tar_norm, min=eps)
+                _score_mtx = _tar @ _tar.T
+            else:
+                raise NotImplementedError(score_type)
+                
+            if _len == 1:
+                continue
+            else:
+                _identity_mtx = torch.eye(_len, device=_score_mtx.device)
+                assert _identity_mtx.shape == _score_mtx.shape
+                # _score_mtx = torch.square(_score_mtx - _identity_mtx)
+            score += torch.sum(_score_mtx - _identity_mtx) / (_len * (_len-1))
+
+        return score / torch.sum(target_len != 1)

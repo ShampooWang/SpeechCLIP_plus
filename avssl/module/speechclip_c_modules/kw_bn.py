@@ -126,3 +126,40 @@ class Kw_BatchNorm(nn.Module):
             raise NotImplementedError()
 
         return keywords
+
+
+class Kw_BatchNorm_plus(nn.Module):
+    def __init__(
+        self,
+        kw_dim,
+        init_bias,
+        init_scale,
+        std_scale=1,
+        learnable=True,
+    ):
+        super().__init__()
+        self.kw_dim = kw_dim
+        self.learnable = learnable
+        assert std_scale > 0, f"std scale must > 0, but input std scale is {std_scale}"
+        self.std_scale = std_scale
+
+        self.bn_layer = nn.BatchNorm1d(kw_dim)
+
+        self.init_bn(init_bias, init_scale)
+        logger.info(
+            "Initialize BatchNorm weight and bias learnable=({}) with token embeddings w/ scale={}".format(
+                self.learnable, self.std_scale
+            )
+        )
+
+    def init_bn(self, init_bias, init_scale):
+        self.bn_layer.weight.data.copy_(init_scale * self.std_scale)
+        self.bn_layer.bias.data.copy_(init_bias)
+        self.bn_layer.weight.requires_grad = self.learnable
+        self.bn_layer.bias.requires_grad = self.learnable
+
+    def forward(self, audio_feats):
+        assert audio_feats.dim() == 3
+        output = self.bn_layer(audio_feats.permute(0, 2, 1)).permute(0, 2, 1)
+
+        return output

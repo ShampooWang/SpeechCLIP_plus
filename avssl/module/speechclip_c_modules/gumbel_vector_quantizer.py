@@ -314,7 +314,7 @@ class SimpleVectorQuantizer(nn.Module):
                 self.max_temp * self.temp_decay**num_updates, self.min_temp
             )
 
-    def forward(self, x, prob_msk=[0, 2, 3], produce_targets=True):
+    def forward(self, x, prob_msk=[0, 2, 3], feat_len=None, produce_targets=True):
 
         if not self.time_first:
             x = x.transpose(1, 2)
@@ -327,9 +327,18 @@ class SimpleVectorQuantizer(nn.Module):
         x = x.view(bsz * tsz * 1, -1)
         # x.shape = (bsz * tsz * grps, num_vars)
 
-        # exclude special token
-        for i in prob_msk:
-            x[:, i] += float("-inf")
+        if feat_len is not None:
+            start = 0
+            for _l, start in zip(feat_len, range(0, bsz * tsz, tsz)):
+                for i in prob_msk:
+                    # exclude special token
+                    x[start : start + _l, i] += float("-inf")
+                # include pad token
+                x[start + _l : start + tsz, 0] += float("inf")
+        else:
+            # exclude special token
+            for i in prob_msk:
+                x[:, i] += float("-inf")
 
         # k is the indices of the largest logits among num_vars
         _, k = x.max(-1)

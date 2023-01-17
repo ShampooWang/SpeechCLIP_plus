@@ -2,7 +2,10 @@ from typing import List, Union
 
 import editdistance as ed
 import sacrebleu
-
+import clip
+import torch
+import numpy as np
+from clip.simple_tokenizer import SimpleTokenizer
 
 def ter(hyps: List[Union[str, List[str]]], refs: List[Union[str, List[str]]]) -> float:
     """Token error rate calculator.
@@ -75,3 +78,27 @@ def report_bleu(hyps: List[str], refs: List[str]) -> None:
     """
 
     print(sacrebleu.corpus_bleu(hyps, [refs]))
+
+def cosine_semantics(results: list) -> list:
+    cos_score = torch.load("/mnt/md0/user_jeff/Checkpoints/ViT-B32_cos_score.pt")
+    cos_score = cos_score.cpu().detach().numpy()
+    gt_tokens = np.load("/mnt/md0/user_jeff/audio-visual-ssl/avssl/data/gt_tokens.npy", allow_pickle=True)
+    encoder = SimpleTokenizer().encoder
+
+    cos_semantic_list = []
+    for i, res in enumerate(results):
+        text_toks = gt_tokens[i]
+        score = 0
+        counted_token = []
+        for keywords in res["neighbors"].values():
+            wordpeice = keywords[0][0]
+            keywords_token = encoder[wordpeice]
+            if keywords_token not in counted_token:
+                counted_token.append(keywords_token)
+                score += np.max(cos_score[keywords_token, text_toks])
+        score = score / len(res["neighbors"])
+        cos_semantic_list.append(score)
+    del cos_score
+    del gt_tokens
+
+    return cos_semantic_list

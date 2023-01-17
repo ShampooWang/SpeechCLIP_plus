@@ -3,10 +3,12 @@ from typing import Optional
 
 import torch
 from torch import nn
+import torch.nn.functional as F
+from .lxmert import LXMERTXLayer
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["TransformerEncoder", "MultiheadAttentionAndNorm"]
+__all__ = ["TransformerEncoder", "MultiheadAttentionAndNorm", "CrossEncoder"]
 
 
 class nnTransformerEncoder(nn.TransformerEncoder):
@@ -33,12 +35,12 @@ class nnTransformerEncoder(nn.TransformerEncoder):
         hidden_states = []
 
         for mod in self.layers:
-            hidden_states.append(output)
             output = mod(
                 output, src_mask=mask, src_key_padding_mask=src_key_padding_mask
             )
+            hidden_states.append(output)
 
-        hidden_states.append(output)
+        # hidden_states.append(output)
         if self.norm is not None:
             output = self.norm(output)
 
@@ -74,9 +76,10 @@ class TransformerEncoder(nn.Module):
         encoder_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.model = nnTransformerEncoder(encoder_layer, n_layers, encoder_norm)
 
-    def forward(self, src: torch.Tensor, key_padding_mask: torch.Tensor):
+    def forward(self, src: torch.Tensor, key_padding_mask: torch.Tensor, mask: torch.Tensor=None):
         return self.model(
             src=src,
+            mask=mask,
             src_key_padding_mask=key_padding_mask,
         )
 
@@ -90,6 +93,7 @@ class TransformerEncoder(nn.Module):
         Returns:
             tuple: (output,hidden_states)
         """
+
         return self.model.extract_hidden_states(
             src=src,
             src_key_padding_mask=key_padding_mask,
@@ -133,3 +137,34 @@ class MultiheadAttentionAndNorm(nn.Module):
         )
         _out = self.attentionBlock_Norm(_out + src)
         return _out, _att_weight
+
+class CrossEncoder(nn.Module):
+    def __init__(self, config) -> None:
+        super().__init__()
+        self.config = config
+        self.nheads = config.num_attention_heads
+        self.xtrm_layers = nn.ModuleList([LXMERTXLayer(config) for _ in range(config.n_layer)])
+        self.audio_cls = torch.nn.Parameter(torch.randn([1, 1, config.hidden_size]))
+
+    def forward(self, audio_feats, audio_attention_mask, vision_feats, vision_attention_mask, return_attention_weight=False, return_cls=False): 
+        if return_cls:
+            cls = torch.cat([self.audio_cls] * audio_feats.shape[0], dim=0)
+            audio_feats = torch.cat([cls, audio_feats], dim=1)
+        # We create a 3D attention mask from a 2D tensor mask.
+        # Sizes are [batch_size, 1, 1, to_seq_length]
+        # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
+        # this attention mask is more simple than the triangular masking of causal attention
+        # used in OpenAI GPT, we just need to prepare the broadcast dimension here.
+        audio_attention_mask = audio_attention_mask.unsqueeze(1).unsqueeze(2)
+
+        # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
+        # masked positions, this operation will create a tensor which is 0.0 for
+        # positions we want to attend and -10000.0 for masked positions.
+        # Since we are adding it to the raw scores before the softmax, this is
+        # effectively the same as removing these entirely.
+        audio_attention_mask = (1.0 - audio_attention_mask) * -10000.0
+
+        for mod in self.xtrm_layers:
+            audio_feats, vision_feats = mod(audio_feats, audio_attention_mask, vision_feats, vision_attention_mask)
+
+        return audio_feats, vision_feats

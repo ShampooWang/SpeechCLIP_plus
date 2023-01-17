@@ -1,5 +1,7 @@
 import json
 import logging
+from gc import freeze
+from multiprocessing.dummy import freeze_support
 
 logger = logging.getLogger(__name__)
 import math
@@ -13,6 +15,7 @@ import torch
 import tqdm
 from jiwer import cer, wer
 from pytorch_lightning.loggers.wandb import WandbLogger
+from s3prl.downstream.specaug import SpecAug
 from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_sequence
@@ -21,7 +24,9 @@ from ..base import OrderedNamespace
 from ..data import random_crop_max_length
 from ..module import (
     ClipModel,
+    Custom_WavLM,
     FairseqSpeechEncoder_Hubert,
+    HybridLoss,
     MLPLayers,
     S3prlSpeechEncoder,
     S3prlSpeechEncoderPlus,
@@ -33,10 +38,12 @@ from ..module import (
 from ..module.fast_vgs_modules import DualEncoder, Wav2Vec2Model_cls
 from ..module.kw_modules import TransformerModels
 from ..module.speechclip_c_modules import vector_quantizers
+from ..module.speechclip_c_modules.cif import CIF, CNN
 from ..module.speechclip_c_modules.kw_bn import Kw_BatchNorm
 from ..optim import get_scheduler
 from ..util import freeze_model, get_keypadding_mask
 from ..util.embedding_visualization import draw_embedding_space_PCA
+from ..util.metric import cosine_semantics
 from .base_model import BaseLightningModel
 
 __all__ = [
@@ -97,14 +104,18 @@ class KWClipBase(BaseLightningModel):
             self.audio_encoder = S3prlSpeechEncoderPlus(**config.audio_encoder)
         elif self.audio_encoder_type == "FairseqHubert":
             self.audio_encoder = FairseqSpeechEncoder_Hubert(**config.audio_encoder)
+        elif self.audio_encoder_type == "custom_wavlm":
+            self.audio_encoder = Custom_WavLM(**config.audio_encoder)
         else:
             logger.warning("No audio encoder loaded")
+
         self.clip = ClipModel(
             **config.clip,
         )
 
         if hasattr(self, "audio_encoder"):
             self.audio_embd_dim = self.audio_encoder.out_dim
+
         self.subword_embd_dim = self.clip.model.token_embedding.weight.size(-1)
 
         self.recall_at = config.retrieval.recall_at
@@ -115,7 +126,12 @@ class KWClipBase(BaseLightningModel):
             "log_detokenize_results", True
         )
 
-        self.keyword_num = self.config.model_settings.cascaded_branch.keyword.number
+        self.keyword_num = self.config.model_settings.cascaded_branch.keyword.get("number", None)
+        self.spec_aug_config = config.audio_encoder.get("spec_aug")
+        if hasattr(config.audio_encoder, "spec_aug"):
+            logger.info("Using SpecAug")
+            spec_aug_config = config.audio_encoder.get("spec_aug")
+            self.spec_aug = SpecAug(**spec_aug_config)
 
     def forward_audio(
         self,
@@ -124,7 +140,7 @@ class KWClipBase(BaseLightningModel):
         return_hidden_states: bool = False,
     ) -> Union[Tuple[Union[torch.Tensor, list], torch.Tensor], torch.Tensor]:
 
-        if self.audio_encoder_type in ["s3prl_plus", "FairseqHubert"]:
+        if self.audio_encoder_type in ["s3prl_plus", "FairseqHubert", "custom_wavlm"]:
             return self.audio_encoder(
                 wav, wav_len, return_hidden_states=return_hidden_states
             )
@@ -245,6 +261,16 @@ class KWClipBase(BaseLightningModel):
         return outputs["others"]
 
     def validation_epoch_end(self, outputs):
+        """
+        outputs:
+            id
+            audio_feat
+            image_feat: optional
+            text_feat: optional
+            keywords: optional
+            gold_text: optional
+        """
+
         if "keywords" in outputs[0].keys():
             if not os.path.exists(
                 os.path.join(self.config.trainer.default_root_dir, "retokenizeText")
@@ -513,6 +539,15 @@ class KWClipBase(BaseLightningModel):
                     "w",
                 ) as f:
                     json.dump(kw_top_ret, f)
+
+                cos_semantic_list = cosine_semantics(all_retok_outputs)
+                val_cos_semantics = sum(cos_semantic_list) / len(cos_semantic_list)
+                print("val_cos_semantics", val_cos_semantics)
+                self.log(
+                    "val_cos_semantics",
+                    val_cos_semantics,
+                    sync_dist=True,
+                )
 
                 with open(
                     os.path.join(
@@ -799,7 +834,7 @@ class KW_CascadedBranch(nn.Module):
             )
         )
 
-    def extract_hidden_states(self, audio_feat, audio_len):
+    def extract_hidden_states(self, audio_feat, audio_len, use_kw=False):
         bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + self.keyword_num
         cls = torch.cat([self.cls] * bsz, dim=0)
         src = torch.cat([cls, audio_feat], dim=1)
@@ -811,7 +846,11 @@ class KW_CascadedBranch(nn.Module):
         hidden_states = self.self_att.extract_hidden_states(
             src=src, key_padding_mask=key_padding_mask
         )
-        hidden_states = [x[:, self.keyword_num :, ...] for x in hidden_states]
+
+        if not use_kw:
+            hidden_states = [x[:, self.keyword_num :, ...] for x in hidden_states]
+        else:
+            hidden_states = [x[:, : self.keyword_num, ...] for x in hidden_states]
 
         return tuple(hidden_states)
 
@@ -965,7 +1004,7 @@ class KW_CascadedBranch_Integrated(KW_CascadedBranch):
             )
         )
 
-    def extract_hidden_states(self, audio_feat, audio_len):
+    def extract_hidden_states(self, audio_feat, audio_len, use_kw=False):
         bsz, total_max_len = (
             audio_feat.size(0),
             audio_feat.size(1) + self.keyword_num + 1,
@@ -980,7 +1019,11 @@ class KW_CascadedBranch_Integrated(KW_CascadedBranch):
         hidden_states = self.self_att.extract_hidden_states(
             src=src, key_padding_mask=key_padding_mask
         )
-        hidden_states = [x[:, self.keyword_num + 1 :, ...] for x in hidden_states]
+        if not use_kw:
+            hidden_states = [x[:, self.keyword_num + 1 :, ...] for x in hidden_states]
+        else:
+            hidden_states = [x[:, 1 : self.keyword_num + 1, ...] for x in hidden_states]
+
         return tuple(hidden_states)
 
     def forward(self, audio_feat, audio_len):
@@ -1080,7 +1123,7 @@ class KW_ParallelBranch(nn.Module):
             )
         )
 
-    def extract_hidden_states(self, audio_feat, audio_len):
+    def extract_hidden_states(self, audio_feat, audio_len, use_kw=False):
         bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + 1
         cls = torch.cat([self.cls] * bsz, dim=0)
         src = torch.cat([cls, audio_feat], dim=1)
@@ -1092,7 +1135,10 @@ class KW_ParallelBranch(nn.Module):
         hidden_states = self.self_att.extract_hidden_states(
             src=src, key_padding_mask=key_padding_mask
         )
-        hidden_states = [x[:, 1:, ...] for x in hidden_states]
+        if not use_kw:
+            hidden_states = [x[:, 1:, ...] for x in hidden_states]
+        else:
+            hidden_states = [x[:, :1, ...] for x in hidden_states]
         return tuple(hidden_states)
 
     def forward(self, audio_feat, audio_len):
@@ -1260,6 +1306,8 @@ class KWClip_GeneralTransformer(KWClipBase):
                     out_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
+
+                self.hyrbid_loss = HybridLoss(**config.model_settings.hybrid_objective)
             else:
                 raise NotImplementedError()
 
@@ -1305,7 +1353,7 @@ class KWClip_GeneralTransformer(KWClipBase):
         cascaded_branch_projection = self.config.model_settings.get(
             "cascaded_branch_projection", None
         )
-        if parallel_branch_projection is not None:
+        if cascaded_branch_projection is not None:
             logger.info(
                 f"cascaded_branch_projection dims:{cascaded_branch_projection.dimensions} droupout:{cascaded_branch_projection.dropout}"
             )
@@ -1313,6 +1361,13 @@ class KWClip_GeneralTransformer(KWClipBase):
                 units=cascaded_branch_projection.dimensions,
                 dropout=cascaded_branch_projection.dropout,
             )
+
+        self.ae_reg = self.config.audio_encoder.get("regularization", False)
+        if self.ae_reg:
+            from ..module.output_regularization import Audio_encoder_regularization
+
+            logger.info("Using Audio encoder regularization")
+            self.ae_reg_criterion = Audio_encoder_regularization(config.audio_encoder)
 
     def getTrainableParams(self):
         _params = super().getTrainableParams()
@@ -1342,20 +1397,32 @@ class KWClip_GeneralTransformer(KWClipBase):
         )
         assert isinstance(hidden_states, tuple)
 
+        seq_len = hidden_states[0].shape[1]
+        # q = seq_len // self.keyword_num
+        # r = seq_len % self.keyword_num
+        # repeats = (self.keyword_num - 1) * [q] + [ q+r ]
+        # repeats = torch.tensor(repeats, device=hidden_states[0].device)
+
         cascaded_hidden_states = None
         parallel_hidden_states = None
         if self.cascaded_branch is not None:
-            cascaded_hidden_states = self.cascaded_branch.extract_hidden_states(
-                audio_feat, audio_len
-            )
-            assert isinstance(cascaded_hidden_states, tuple)
-            hidden_states = hidden_states + tuple(cascaded_hidden_states[1:])
+            hidden_states = [x for x in hidden_states]
+            # cascaded_hidden_states = self.cascaded_branch.extract_hidden_states(
+            #     audio_feat, audio_len, use_kw=True
+            # )
+            # assert isinstance(cascaded_hidden_states, tuple)
+            # # dup_kw = (torch.repeat_interleave(x, repeats, dim=1) for x in cascaded_hidden_states[1:])
+            # hidden_states = hidden_states + tuple(dup_kw)
+            # hidden_states = tuple(cascaded_hidden_states[1:-1])
+            # hidden_states = hidden_states + tuple(cascaded_hidden_states[1:-1])
         if self.parallel_branch is not None:
             parallel_hidden_states = self.parallel_branch.extract_hidden_states(
-                audio_feat, audio_len
+                audio_feat, audio_len, use_kw=False
             )
             assert isinstance(parallel_hidden_states, tuple)
-            hidden_states = hidden_states + tuple(parallel_hidden_states[1:])
+            # dup_kw = (torch.repeat_interleave(x, repeats, dim=1) for x in cascaded_hidden_states[1:])
+            # hidden_states = hidden_states + tuple(dup_kw)
+            hidden_states = hidden_states + tuple(parallel_hidden_states[1:-1])
 
         # assert len(hidden_states) == 15
         # print(hidden_states[0].shape)
@@ -1377,11 +1444,20 @@ class KWClip_GeneralTransformer(KWClipBase):
         # # print(hubert_states.shape)
         # # exit(1)
         # torch.save(hubert_states.cpu(),f"/work/twsezjg982/atosystem/audio-visual-ssl/slurms/KS_hidstates/KW_bsz256_WS_p1_flickr/{uuid.uuid4()}.pt")
+
+        # mean pooling
+        hidden_states = [
+            torch.mean(x, dim=1, keepdim=True).repeat(1, seq_len, 1)
+            for x in hidden_states
+        ]
+
         assert featrure_layer_norm == True
         if featrure_layer_norm:
             hidden_states = torch.stack(hidden_states, dim=0)
             hidden_states = F.layer_norm(hidden_states, (hidden_states.shape[-1],))
-            hidden_states = [x for x in hidden_states]
+
+        hidden_states = [x for x in hidden_states]
+        # new_hidden_states = [F.layer_norm(x, (x.shape[-1],)) for x in hidden_states]
 
         return hidden_states[-1], hidden_states
 
@@ -1410,6 +1486,9 @@ class KWClip_GeneralTransformer(KWClipBase):
         )
         image_feat = input_feats["image_feat"].float()
         id = input_feats["id"]
+        ae_reg_loss = (
+            input_feats["ae_reg_loss"].float() if "ae_reg_loss" in input_feats else None
+        )
 
         losses = {"loss": 0}
         if self.config.model_settings.cascaded_objective_weight > 0:
@@ -1434,6 +1513,20 @@ class KWClip_GeneralTransformer(KWClipBase):
                 * losses["p_cl_loss"]
             )
 
+        if self.ae_reg:
+            losses["ae_reg_loss"] = torch.mean(ae_reg_loss)
+            losses["loss"] += self.ae_reg_criterion.weight * losses["ae_reg_loss"]
+        # add integrated loss
+        # if (self.global_step > self.hyrbid_loss.warmup_step) & (
+        #     self.hyrbid_loss.current_temperature > 0
+        # ):
+        #     losses["hyrbid_loss"] = self.hyrbid_loss(
+        #         input=cascaded_audio_feat,
+        #         target=parallel_audio_feat,
+        #         global_step=self.global_step,
+        #     )
+        #     losses["loss"] += losses["hyrbid_loss"]
+
         return losses
 
     def forward(
@@ -1450,7 +1543,14 @@ class KWClip_GeneralTransformer(KWClipBase):
         # update device information to clip model
         self.clip.update_device(self.device)
 
-        audio_feat, audio_len = self.forward_audio(wav, wav_len)
+        audio_feat, audio_len, hidden_states = self.forward_audio(
+            wav, wav_len, return_hidden_states=True
+        )
+
+        if self.spec_aug_config is not None:
+            audio_feat = [x for x in audio_feat]
+            audio_feat, _ = self.spec_aug(audio_feat)
+            audio_feat = torch.stack(audio_feat, 0)
 
         image_feat = self.forward_image(image)
         if self.img_enc_proj_net is not None:
@@ -1498,6 +1598,9 @@ class KWClip_GeneralTransformer(KWClipBase):
         }
         log_metrics = {}
 
+        if self.ae_reg:
+            losses["ae_reg_loss"] = self.ae_reg_criterion(wav, wav_len, hidden_states)
+
         if cascaded_audio_feat is not None:
             cascaded_audio_feat = cascaded_audio_feat / cascaded_audio_feat.norm(
                 dim=-1, keepdim=True
@@ -1517,12 +1620,19 @@ class KWClip_GeneralTransformer(KWClipBase):
         if self.config.model_settings.parallel_objective_weight > 0:
             pass
 
-        # losses.update(
         log_metrics.update(
             {
                 "cl_temp": self.criterion.current_temperature,
             }
         )
+
+        # if self.hyrbid_loss.current_temperature > 0:
+        #     log_metrics.update(
+        #         {
+        #             "hybrid_temp": self.hyrbid_loss.current_temperature,
+        #         }
+        #     )
+
         return (
             losses,
             log_metrics,
@@ -1689,6 +1799,7 @@ class KWClip_GeneralTransformer_SpeechText(KWClip_GeneralTransformer):
                 "cl_temp": self.criterion.current_temperature,
             }
         )
+
         return (
             losses,
             log_metrics,
@@ -1980,7 +2091,7 @@ class KWClip_SpeechText(KWClipBase):
             BA_answers=IA_answers,
             recall_at=self.recall_at,
         )
-
+        print("recall@10", type(recall_results_mean["recall@10"]))
         print("recall_results_AT", recall_results_AT)
         print("val_recall_TA", recall_results_TA)
         print("val_recall_mean", recall_results_mean)

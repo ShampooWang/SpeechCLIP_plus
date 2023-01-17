@@ -238,6 +238,10 @@ class BaseDataset(Dataset):
             ret_dict["text"] = text
         if "id" in self.data[index]:
             ret_dict["id"] = self.data[index]["id"]
+        if "alignments" in self.data[index]:
+            ret_dict["alignments"] = self.data[index]["alignments"]
+        if "alignment_num" in self.data[index]:
+            ret_dict["alignment_num"] = self.data[index]["alignment_num"]
 
         assert len(ret_dict) > 0, "dataset getitem must not be empty"
 

@@ -8,6 +8,7 @@ import yaml
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar
 from torch.utils.data import DataLoader, random_split
+from pytorch_lightning.callbacks import Callback
 
 from ..base import OrderedNamespace
 from ..data import (
@@ -18,6 +19,26 @@ from ..data import (
 )
 from ..util import add_general_arguments, set_logging, set_pl_logger
 
+def gradient_norm(model):
+    total_norm = 0.0
+    for name, p in model.named_parameters():
+        if p.grad is not None:
+            param_norm = p.grad.detach().data.norm(2)
+            # print(f"name: {name}, norm: {param_norm}")
+            # if torch.isnan(param_norm):
+            #     print(name)
+            #     exit()
+            total_norm += param_norm.item() ** 2
+    total_norm = total_norm ** (1. / 2)
+    return total_norm
+
+class GradNormCallback(Callback):
+    """
+    Logs the gradient norm.
+    """
+
+    def on_after_backward(self, trainer, model):
+        print(f"my_model/grad_norm: {gradient_norm(model)}")
 
 class BaseTask:
     def __init__(self):
@@ -195,11 +216,28 @@ class TrainSpeechClipBaseTask(BaseTask):
             dirpath=config.trainer.default_root_dir,
             filename="{epoch}-{step}-{val_recall_mean_10:.4f}",
             monitor="val_recall_mean_10",
-            save_top_k=3,
+            save_top_k=1,
             mode="max",
             every_n_epochs=1,
         )
 
+        model_checkpoint_kw_hit_rate = ModelCheckpoint(
+            dirpath=config.trainer.default_root_dir,
+            filename="{epoch}-{step}-{val_kw_hit_rate:.4f}",
+            monitor="val_kw_hit_rate",
+            save_top_k=1,
+            mode="max",
+            every_n_epochs=1,
+        )
+
+        model_checkpoint_cos_semantics = ModelCheckpoint(
+            dirpath=config.trainer.default_root_dir,
+            filename="{epoch}-{step}-{val_kw_hit_rate:.4f}",
+            monitor="val_cos_semantics",
+            save_top_k=1,
+            mode="max",
+            every_n_epochs=1,
+        )
         # if self.args.test:
         #     config.trainer.logger = True
 
@@ -209,18 +247,40 @@ class TrainSpeechClipBaseTask(BaseTask):
 
         # config.trainer.logger = True
         config.gpus = self.args.gpus
-        trainer = Trainer(
-            callbacks=[
-                TQDMProgressBar(),
-                model_checkpoint_val_loss,
-                model_checkpoint_recall,
-                *custom_trainer_callbacks,
-            ],
-            enable_progress_bar=True,
-            gpus=config.gpus,
-            resume_from_checkpoint=None if self.args.resume == "" else self.args.resume,
-            **config.trainer,
-        )
+
+        save_kw_hit_rate = config.log_setting.get("save_kw_hit_rate", False)
+        if save_kw_hit_rate and config.model_settings.cascaded_objective_weight > 0:
+            trainer = Trainer(
+                callbacks=[
+                    TQDMProgressBar(),
+                    model_checkpoint_val_loss,
+                    model_checkpoint_recall,
+                    model_checkpoint_kw_hit_rate,
+                    model_checkpoint_cos_semantics,
+                    *custom_trainer_callbacks,
+                ],
+                enable_progress_bar=True,
+                gpus=config.gpus,
+                resume_from_checkpoint=None
+                if self.args.resume == ""
+                else self.args.resume,
+                **config.trainer,
+            )
+        else:
+            trainer = Trainer(
+                callbacks=[
+                    TQDMProgressBar(),
+                    model_checkpoint_val_loss,
+                    model_checkpoint_recall,
+                    *custom_trainer_callbacks,
+                ],
+                enable_progress_bar=True,
+                gpus=config.gpus,
+                resume_from_checkpoint=None
+                if self.args.resume == ""
+                else self.args.resume,
+                **config.trainer,
+            )
         # print(config.trainer)
         # trainer = Trainer(
         #     callbacks=[

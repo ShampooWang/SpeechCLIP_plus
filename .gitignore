@@ -4,6 +4,12 @@ exp/
 exp_twsezjg982/
 tmp_tools/
 .conda_config/
+4-gram_LM/
+draw_spectrogram/
+check_kw_hit_rate.py
+count_character.py
+special_sents.txt
+superb_out/
 
 # stat for experiments
 avssl/stats/
@@ -140,3 +146,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Checkpoints
+exp/
+Flirck_c+_small
+avssl/model/fastvgs_coco
+avssl/model/fastvgs+_coco
+zerospeech/result
+

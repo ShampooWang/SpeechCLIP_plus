@@ -32,7 +32,7 @@ from ..module.speechclip_c_modules import (
     KmeansVectorQuantizer,
     vector_quantizers,
 )
-from ..module.speechclip_c_modules.cif import CIF, CIF_Forced
+from ..module.speechclip_c_modules.cif import CIF, CNN
 from ..module.speechclip_c_modules.kw_bn import Kw_BatchNorm
 from ..optim import get_scheduler
 from ..util import freeze_model

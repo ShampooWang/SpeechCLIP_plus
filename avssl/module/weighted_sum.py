@@ -32,7 +32,6 @@ class WeightedSumLayer(nn.Module):
         Returns:
             torch.Tensor: Weighted summed representations.
         """
-
         assert len(x) == self.n_weights, len(x)
 
         weights = torch.softmax(self.weights, dim=0)
