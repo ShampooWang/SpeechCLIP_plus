@@ -1,11 +1,12 @@
 from typing import List, Union
 
-import editdistance as ed
-import sacrebleu
 import clip
-import torch
+import editdistance as ed
 import numpy as np
+import sacrebleu
+import torch
 from clip.simple_tokenizer import SimpleTokenizer
+
 
 def ter(hyps: List[Union[str, List[str]]], refs: List[Union[str, List[str]]]) -> float:
     """Token error rate calculator.
@@ -79,10 +80,14 @@ def report_bleu(hyps: List[str], refs: List[str]) -> None:
 
     print(sacrebleu.corpus_bleu(hyps, [refs]))
 
+
 def cosine_semantics(results: list) -> list:
     cos_score = torch.load("/mnt/md0/user_jeff/Checkpoints/ViT-B32_cos_score.pt")
     cos_score = cos_score.cpu().detach().numpy()
-    gt_tokens = np.load("/mnt/md0/user_jeff/audio-visual-ssl/avssl/data/gt_tokens.npy", allow_pickle=True)
+    gt_tokens = np.load(
+        "/mnt/md0/user_jeff/audio-visual-ssl/avssl/data/gt_tokens.npy",
+        allow_pickle=True,
+    )
     encoder = SimpleTokenizer().encoder
 
     cos_semantic_list = []

@@ -155,7 +155,9 @@ class KW_CascadedBranch_plus(nn.Module):
                 self.audio_dim, config.model_settings.cascaded_branch.downsampling.cnn
             )
         elif self.downsampling_type == "cif":
-            self.using_gt_len = config.model_settings.cascaded_branch.downsampling.get("using_gt_len", False)
+            self.using_gt_len = config.model_settings.cascaded_branch.downsampling.get(
+                "using_gt_len", False
+            )
             if self.using_gt_len:
                 logger.info("Using ground truth text length target")
             self.downsampling = CifMiddleware(
@@ -169,10 +171,18 @@ class KW_CascadedBranch_plus(nn.Module):
 
         if "cross_model" in self.config.model_settings.cascaded_branch.keys():
             logger.info("Using cross model")
-            self.cross_encoder = CrossEncoder(self.config.model_settings.cascaded_branch.cross_model)
-            if hasattr(self.config.model_settings.cascaded_branch.cross_model, "image_mlp"):
-                img_mlp_config = self.config.model_settings.cascaded_branch.cross_model.image_mlp
-                logger.info(f"Using cross projection net, dimensions: {img_mlp_config.dimensions}, dropout: {img_mlp_config.dropout}")
+            self.cross_encoder = CrossEncoder(
+                self.config.model_settings.cascaded_branch.cross_model
+            )
+            if hasattr(
+                self.config.model_settings.cascaded_branch.cross_model, "image_mlp"
+            ):
+                img_mlp_config = (
+                    self.config.model_settings.cascaded_branch.cross_model.image_mlp
+                )
+                logger.info(
+                    f"Using cross projection net, dimensions: {img_mlp_config.dimensions}, dropout: {img_mlp_config.dropout}"
+                )
                 self.cross_proj_net = MLPLayers(
                     units=img_mlp_config.dimensions,
                     dropout=img_mlp_config.dropout,
@@ -215,8 +225,14 @@ class KW_CascadedBranch_plus(nn.Module):
         # return downsampling_out["cif_out"]
         return audio_feat
 
-
-    def forward(self, audio_feat, audio_len, image_feats=None, text=None, return_match_feat=False):
+    def forward(
+        self,
+        audio_feat,
+        audio_len,
+        image_feats=None,
+        text=None,
+        return_match_feat=False,
+    ):
         if self.downsampling_type == "cnn":
             keywords, new_feat_len = self.downsampling(keywords, audio_len)
         elif self.downsampling_type == "cif":
@@ -233,7 +249,9 @@ class KW_CascadedBranch_plus(nn.Module):
             text_toks_len = torch.tensor(text_toks_len).to(audio_feat.device)
             encoder_outputs = {
                 "encoder_raw_out": audio_feat,
-                "encoder_padding_mask": get_keypadding_mask(audio_feat.shape[1], audio_len),
+                "encoder_padding_mask": get_keypadding_mask(
+                    audio_feat.shape[1], audio_len
+                ),
             }
 
             downsampling_out = self.downsampling(encoder_outputs, text_toks_len)
@@ -250,12 +268,16 @@ class KW_CascadedBranch_plus(nn.Module):
             else:
                 max_len, cls_feat_len = keywords.shape[1], new_feat_len
             keyword_attn_mask = get_keypadding_mask(max_len, cls_feat_len).float()
-            keywords, _ = self.cross_encoder(audio_feats=keywords, audio_attention_mask=keyword_attn_mask, vision_feats=image_feats, vision_attention_mask=None, return_cls=return_match_feat)
+            keywords, _ = self.cross_encoder(
+                audio_feats=keywords,
+                audio_attention_mask=keyword_attn_mask,
+                vision_feats=image_feats,
+                vision_attention_mask=None,
+                return_cls=return_match_feat,
+            )
         if return_match_feat:
             keyword_cls, keywords = keywords[:, 0, :], keywords[:, 1:, :]
-            keyword_cls = keyword_cls / keyword_cls.norm(
-                dim=-1, keepdim=True
-            )
+            keyword_cls = keyword_cls / keyword_cls.norm(dim=-1, keepdim=True)
         else:
             keyword_cls = None
 
@@ -297,7 +319,7 @@ class KW_CascadedBranch_plus(nn.Module):
             "vq_results": vq_results,
             "vq_keywords": keywords,
             "downsampling_out": downsampling_out,
-            "keyword_cls": keyword_cls
+            "keyword_cls": keyword_cls,
         }
         return result
 
@@ -355,7 +377,14 @@ class KW_Hybrid_plus(KW_CascadedBranch_plus):
 
         return tuple(hidden_states)
 
-    def forward(self, audio_feat, audio_len, image_feats=None, text=None, return_match_feat=False):
+    def forward(
+        self,
+        audio_feat,
+        audio_len,
+        image_feats=None,
+        text=None,
+        return_match_feat=False,
+    ):
         bsz, total_max_len = (
             audio_feat.size(0),
             1 + audio_feat.size(1),
@@ -387,7 +416,9 @@ class KW_Hybrid_plus(KW_CascadedBranch_plus):
             text_toks_len = torch.tensor(text_toks_len).to(audio_feat.device)
             encoder_outputs = {
                 "encoder_raw_out": audio_feat,
-                "encoder_padding_mask": get_keypadding_mask(audio_feat.shape[1], audio_len),
+                "encoder_padding_mask": get_keypadding_mask(
+                    audio_feat.shape[1], audio_len
+                ),
             }
 
             downsampling_out = self.downsampling(encoder_outputs, text_toks_len)
@@ -404,12 +435,16 @@ class KW_Hybrid_plus(KW_CascadedBranch_plus):
             else:
                 max_len, cls_feat_len = keywords.shape[1], new_feat_len
             keyword_attn_mask = get_keypadding_mask(max_len, cls_feat_len).float()
-            keywords, _ = self.cross_encoder(audio_feats=keywords, audio_attention_mask=keyword_attn_mask, vision_feats=image_feats, vision_attention_mask=None, return_cls=return_match_feat)
+            keywords, _ = self.cross_encoder(
+                audio_feats=keywords,
+                audio_attention_mask=keyword_attn_mask,
+                vision_feats=image_feats,
+                vision_attention_mask=None,
+                return_cls=return_match_feat,
+            )
         if return_match_feat:
             keyword_cls, keywords = keywords[:, 0, :], keywords[:, 1:, :]
-            keyword_cls = keyword_cls / keyword_cls.norm(
-                dim=-1, keepdim=True
-            )
+            keyword_cls = keyword_cls / keyword_cls.norm(dim=-1, keepdim=True)
         else:
             keyword_cls = None
 
@@ -448,16 +483,19 @@ class KW_Hybrid_plus(KW_CascadedBranch_plus):
 
         result = {
             "cascaded_audio_feat": cascaded_cls,
-            "parallel_audio_feat": parallel_cls, 
+            "parallel_audio_feat": parallel_cls,
             "vq_results": vq_results,
             "vq_keywords": keywords,
             "downsampling_out": downsampling_out,
-            "keyword_cls": keyword_cls
+            "keyword_cls": keyword_cls,
         }
         return result
 
+
 class KWClipAlignmentBranch(nn.Module):
-    def __init__(self, config: OrderedNamespace, audio_dim: int, text_dim: int, clip: ClipModel):
+    def __init__(
+        self, config: OrderedNamespace, audio_dim: int, text_dim: int, clip: ClipModel
+    ):
         super().__init__()
         self.audio_dim = audio_dim
         self.text_dim = text_dim
@@ -553,7 +591,7 @@ class KWClipAlignmentBranch(nn.Module):
 
                 if _te == audio_len[i]:
                     src[i, j, :] = torch.mean(audio_feat[i, _ts:, :], dim=0)
-                else: 
+                else:
                     src[i, j, :] = torch.mean(audio_feat[i, _ts:_te, :], dim=0)
 
         key_padding_mask = get_keypadding_mask(
@@ -601,7 +639,7 @@ class KWClipAlignmentBranch(nn.Module):
             "vq_keywords": keywords,
             "keywords_len": alignment_num,
         }
-        return result 
+        return result
 
 
 class KWClip_GeneralTransformer_plus(KWClipBase):
@@ -633,7 +671,10 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                     out_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
-            elif self.config.model_settings.cascaded_branch.type == "KWClipAlignmentBranch":
+            elif (
+                self.config.model_settings.cascaded_branch.type
+                == "KWClipAlignmentBranch"
+            ):
                 logger.info("Using Ground truth alignment")
                 self.cascaded_branch = KWClipAlignmentBranch(
                     config=self.config,
@@ -645,7 +686,10 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                 raise NotImplementedError(
                     self.config.model_settings.cascaded_branch.type
                 )
-            if hasattr(self.cascaded_branch, "downsampling") and self.cascaded_branch.downsampling.cal_quantity_loss:
+            if (
+                hasattr(self.cascaded_branch, "downsampling")
+                and self.cascaded_branch.downsampling.cal_quantity_loss
+            ):
                 self.quantity_loss_criteria = nn.L1Loss()
 
         if (
@@ -700,28 +744,46 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
 
         if self.config.audio_encoder.get("regularization", False):
             from ..module.output_regularization import Audio_encoder_regularization
+
             logger.info("Using audio encoder regularization")
             self.ae_reg_criterion = Audio_encoder_regularization(config.audio_encoder)
 
-        self.keyword_objective_weight = config.model_settings.get("keyword_objective_weight", 0)
+        self.keyword_objective_weight = config.model_settings.get(
+            "keyword_objective_weight", 0
+        )
 
-        self.matching_objective_weight = config.model_settings.get("matching_objective_weight", 0)
+        self.matching_objective_weight = config.model_settings.get(
+            "matching_objective_weight", 0
+        )
         if self.matching_objective_weight > 0:
             logger.info("Adding matching objective")
             assert hasattr(config.model_settings, "matching_mlp")
             mlp_cfg = config.model_settings.matching_mlp
             assert mlp_cfg.dimensions[-1] == 1
             assert len(mlp_cfg.dimensions) == 3
-            self.matching_mlp = MLPLayers(units=mlp_cfg.dimensions, nonlin=nn.GELU(), dropout=mlp_cfg.dropout)
+            self.matching_mlp = MLPLayers(
+                units=mlp_cfg.dimensions, nonlin=nn.GELU(), dropout=mlp_cfg.dropout
+            )
             self.matching_loss = nn.CrossEntropyLoss()
 
-        self.keyword_diversity_weight = config.model_settings.cascaded_branch.keyword.get("diversity_weight", 0)
-        if self.keyword_diversity_weight > 0: 
+        self.keyword_diversity_weight = (
+            config.model_settings.cascaded_branch.keyword.get("diversity_weight", 0)
+        )
+        if self.keyword_diversity_weight > 0:
             logger.info("Adding keyword diversity objective")
-            self.keyword_diversity_type = config.model_settings.cascaded_branch.keyword.get("diversity_type", "ent")
+            self.keyword_diversity_type = (
+                config.model_settings.cascaded_branch.keyword.get(
+                    "diversity_type", "ent"
+                )
+            )
             logger.info(f"Keyword diversity type: {self.keyword_diversity_type}")
-            if self.keyword_diversity_type == "corr" or self.keyword_diversity_type == "cos":
-                self.keyword_diversity_criterion = DiversityLoss(self.keyword_diversity_weight)
+            if (
+                self.keyword_diversity_type == "corr"
+                or self.keyword_diversity_type == "cos"
+            ):
+                self.keyword_diversity_criterion = DiversityLoss(
+                    self.keyword_diversity_weight
+                )
             elif self.keyword_diversity_type == "ent":
                 pass
             else:
@@ -768,12 +830,14 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
 
     def cal_matching_loss(self, feat1, feat2):
         bsz = feat1.shape[0]
-        labels = torch.ones(bsz, dtype=torch.long).to(feat1.device) # 0: mismatch, 1: match
-        mismatch_idx = np.random.choice(bsz, int(bsz*0.5), replace=False)
+        labels = torch.ones(bsz, dtype=torch.long).to(
+            feat1.device
+        )  # 0: mismatch, 1: match
+        mismatch_idx = np.random.choice(bsz, int(bsz * 0.5), replace=False)
         labels[mismatch_idx] = 0
         match_idx = np.setdiff1d(np.arange(bsz), mismatch_idx)
         # feat1_clone = feat1.clone()
-        feat1[mismatch_idx] = feat1[match_idx[:int(bsz*0.5)]]
+        feat1[mismatch_idx] = feat1[match_idx[: int(bsz * 0.5)]]
         relation_feat = torch.stack([feat1, feat2], dim=1)
         match_logits = self.matching_mlp(relation_feat).squeeze(-1)
         matching_loss = self.matching_loss(match_logits, labels)
@@ -795,7 +859,7 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
         # update device information to clip model
         self.clip.update_device(self.device)
 
-        image_feat, image_features  = self.forward_image(image)
+        image_feat, image_features = self.forward_image(image)
         if self.img_enc_proj_net is not None:
             image_feat = self.img_enc_proj_net(image_feat)
         image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
@@ -815,7 +879,7 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                     audio_feat=audio_feat,
                     audio_len=audio_len,
                     alignments=batch["alignments"],
-                    alignment_num=batch["alignment_num"]
+                    alignment_num=batch["alignment_num"],
                 )
             else:
                 if self.cascaded_branch.using_gt_len:
@@ -827,7 +891,7 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                     audio_len=audio_len,
                     image_feats=image_features,
                     text=text,
-                    return_match_feat=hasattr(self, "matching_mlp")
+                    return_match_feat=hasattr(self, "matching_mlp"),
                 )
             cascaded_audio_feat = cascaded_result.get("cascaded_audio_feat", None)
             parallel_audio_feat = cascaded_result.get("parallel_audio_feat", None)
@@ -889,7 +953,9 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
 
             if self.keyword_diversity_weight > 0:
                 if self.keyword_diversity_type == "ent":
-                    assert "diversity_loss" in vq_results, "entropy loss is not in vq_results"
+                    assert (
+                        "diversity_loss" in vq_results
+                    ), "entropy loss is not in vq_results"
                     losses["keyword_diversity_loss"] = vq_results["diversity_loss"]
                 elif self.keyword_diversity_type == "corr":
                     if (
@@ -897,7 +963,9 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                         and keywords_len is not None
                         and hasattr(self, "keyword_diversity_criterion")
                     ):
-                        losses["keyword_diversity_loss"] = self.keyword_diversity_criterion(
+                        losses[
+                            "keyword_diversity_loss"
+                        ] = self.keyword_diversity_criterion(
                             vq_keywords, keywords_len, self.keyword_diversity_type
                         )
                 elif self.keyword_diversity_type == "cos":
@@ -906,25 +974,33 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                         and keywords_len is not None
                         and hasattr(self, "keyword_diversity_criterion")
                     ):
-                        losses["keyword_diversity_loss"] = self.keyword_diversity_criterion(
+                        losses[
+                            "keyword_diversity_loss"
+                        ] = self.keyword_diversity_criterion(
                             vq_keywords, keywords_len, self.keyword_diversity_type
                         )
 
             if self.keyword_objective_weight > 0 and proj_keywords is not None:
                 keywords_audio_feat = torch.mean(proj_keywords, dim=1)
-                assert keywords_audio_feat.shape == image_feat.shape, f"kw_feat: {keywords_audio_feat.shape}, img_feat: {image_feat.shape}"
+                assert (
+                    keywords_audio_feat.shape == image_feat.shape
+                ), f"kw_feat: {keywords_audio_feat.shape}, img_feat: {image_feat.shape}"
                 keywords_audio_feat = keywords_audio_feat / keywords_audio_feat.norm(
                     dim=-1, keepdim=True
                 )
                 losses["keywords_audio_feat"] = keywords_audio_feat
 
             if self.matching_objective_weight > 0:
-                matching_loss, matching_acc = self.cal_matching_loss(keyword_cls, cascaded_audio_feat)
+                matching_loss, matching_acc = self.cal_matching_loss(
+                    keyword_cls, cascaded_audio_feat
+                )
                 losses["matching_loss"] = matching_loss
                 log_metrics["matching_acc"] = matching_acc
-            
+
             if cif_output_len_diff is not None:
-                log_metrics["cif_output_len_diff"] = sum(cif_output_len_diff) / len(cif_output_len_diff)
+                log_metrics["cif_output_len_diff"] = sum(cif_output_len_diff) / len(
+                    cif_output_len_diff
+                )
 
         if self.config.model_settings.cascaded_objective_weight > 0:
             log_metrics["softmax_temp"] = vq_results["temp"]
@@ -1012,7 +1088,7 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                 self.config.model_settings.parallel_objective_weight
                 * losses["p_cl_loss"]
             )
-        
+
         if self.config.model_settings.keyword_objective_weight > 0:
             losses["k_cl_loss"] = self.criterion(
                 feat_A=keywords_audio_feat,
@@ -1024,7 +1100,11 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                 * losses["k_cl_loss"]
             )
 
-        if "cif_quantity_out" in input_feats and "cif_target_len" in input_feats and hasattr(self, "quantity_loss_criteria"):
+        if (
+            "cif_quantity_out" in input_feats
+            and "cif_target_len" in input_feats
+            and hasattr(self, "quantity_loss_criteria")
+        ):
             quantity_out = input_feats["cif_quantity_out"]
             target_len = input_feats["cif_target_len"]
             losses["quantity_loss"] = self.quantity_loss_criteria(
@@ -1039,15 +1119,11 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
         if self.keyword_diversity_weight > 0 and keyword_diversity_loss is not None:
             losses["keyword_diversity_loss"] = torch.mean(keyword_diversity_loss)
             losses["loss"] += (
-                self.keyword_diversity_weight
-                * losses["keyword_diversity_loss"]
+                self.keyword_diversity_weight * losses["keyword_diversity_loss"]
             )
         if self.matching_objective_weight > 0 and matching_loss is not None:
             losses["matching_loss"] = torch.mean(matching_loss)
-            losses["loss"] += (
-                self.matching_objective_weight
-                * losses["matching_loss"]
-            )
+            losses["loss"] += self.matching_objective_weight * losses["matching_loss"]
         return losses
 
     def validation_step(self, batch, batch_idx):
@@ -1495,7 +1571,9 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                 cascaded_hidden_states = self.cascaded_branch.extract_hidden_states(
                     audio_feat, audio_len, use_kw=False
                 )
-                hidden_states = [torch.cat([x, cascaded_hidden_states], dim=1) for x in hidden_states]
+                hidden_states = [
+                    torch.cat([x, cascaded_hidden_states], dim=1) for x in hidden_states
+                ]
             # wavlm_hidden_states = [x for x in wavlm_hidden_states]
             # if cascaded_hidden_states.dim() == 2:
             #     cascaded_hidden_states = cascaded_hidden_states.unsqueeze(1)
@@ -1567,9 +1645,8 @@ class KWClip_GeneralTransformer_plus(KWClipBase):
                 result.append(_k.cpu().float().numpy())
 
         return result
-    
+
     def extract_keyword_boundary(self, wav):
         embeddings, feat_len = self.forward_audio(wav)
         result = self.cascaded_branch(embeddings, feat_len)
         return result
-

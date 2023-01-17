@@ -318,13 +318,14 @@ class S3prlSpeechEncoderPlus(nn.Module):
         self.device = next(self.parameters()).device
         return self
 
-    def feature_extractor_zerospeech(self,wav):
+    def feature_extractor_zerospeech(self, wav):
         result = []
         embeddings, feat_len = self.forward(wav)
         # print(feat_len)
         for _embs, _len in zip(embeddings, feat_len):
             result.append(_embs[:_len].cpu().float().numpy())
         return result
+
 
 class FairseqSpeechEncoder_Hubert(nn.Module):
     MODEL2URL = {

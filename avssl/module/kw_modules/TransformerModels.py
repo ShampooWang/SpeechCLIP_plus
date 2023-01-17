@@ -2,8 +2,9 @@ import logging
 from typing import Optional
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
+
 from .lxmert import LXMERTXLayer
 
 logger = logging.getLogger(__name__)
@@ -76,7 +77,12 @@ class TransformerEncoder(nn.Module):
         encoder_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.model = nnTransformerEncoder(encoder_layer, n_layers, encoder_norm)
 
-    def forward(self, src: torch.Tensor, key_padding_mask: torch.Tensor, mask: torch.Tensor=None):
+    def forward(
+        self,
+        src: torch.Tensor,
+        key_padding_mask: torch.Tensor,
+        mask: torch.Tensor = None,
+    ):
         return self.model(
             src=src,
             mask=mask,
@@ -138,15 +144,26 @@ class MultiheadAttentionAndNorm(nn.Module):
         _out = self.attentionBlock_Norm(_out + src)
         return _out, _att_weight
 
+
 class CrossEncoder(nn.Module):
     def __init__(self, config) -> None:
         super().__init__()
         self.config = config
         self.nheads = config.num_attention_heads
-        self.xtrm_layers = nn.ModuleList([LXMERTXLayer(config) for _ in range(config.n_layer)])
+        self.xtrm_layers = nn.ModuleList(
+            [LXMERTXLayer(config) for _ in range(config.n_layer)]
+        )
         self.audio_cls = torch.nn.Parameter(torch.randn([1, 1, config.hidden_size]))
 
-    def forward(self, audio_feats, audio_attention_mask, vision_feats, vision_attention_mask, return_attention_weight=False, return_cls=False): 
+    def forward(
+        self,
+        audio_feats,
+        audio_attention_mask,
+        vision_feats,
+        vision_attention_mask,
+        return_attention_weight=False,
+        return_cls=False,
+    ):
         if return_cls:
             cls = torch.cat([self.audio_cls] * audio_feats.shape[0], dim=0)
             audio_feats = torch.cat([cls, audio_feats], dim=1)
@@ -165,6 +182,8 @@ class CrossEncoder(nn.Module):
         audio_attention_mask = (1.0 - audio_attention_mask) * -10000.0
 
         for mod in self.xtrm_layers:
-            audio_feats, vision_feats = mod(audio_feats, audio_attention_mask, vision_feats, vision_attention_mask)
+            audio_feats, vision_feats = mod(
+                audio_feats, audio_attention_mask, vision_feats, vision_attention_mask
+            )
 
         return audio_feats, vision_feats

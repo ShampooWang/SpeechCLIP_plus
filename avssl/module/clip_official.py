@@ -8,11 +8,11 @@ import string
 import clip
 import numpy as np
 import torch
+from clip.model import VisionTransformer
 from clip.simple_tokenizer import SimpleTokenizer
 from importlib_metadata import distribution
 from PIL import Image
 from torch import nn
-from clip.model import VisionTransformer
 
 _clip_models = {
     "RN50",
@@ -222,7 +222,7 @@ class ClipModel(nn.Module):
             torch.Tensor: Image features. (B, D)
         """
         return self.model.encode_image(image)
-    
+
     def extract_image_features(self, x: torch.Tensor) -> torch.Tensor:
         """Encode a batch of images.
 
@@ -236,7 +236,16 @@ class ClipModel(nn.Module):
         x = self.model.visual.conv1(x)  # shape = [*, width, grid, grid]
         x = x.reshape(x.shape[0], x.shape[1], -1)  # shape = [*, width, grid ** 2]
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
-        x = torch.cat([self.model.visual.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
+        x = torch.cat(
+            [
+                self.model.visual.class_embedding.to(x.dtype)
+                + torch.zeros(
+                    x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device
+                ),
+                x,
+            ],
+            dim=1,
+        )  # shape = [*, grid ** 2 + 1, width]
         x = x + self.model.visual.positional_embedding.to(x.dtype)
         x = self.model.visual.ln_pre(x)
 
@@ -261,20 +270,43 @@ class ClipModel(nn.Module):
         key_padding_mask = key_padding_mask.type_as(text).bool()
         return key_padding_mask
 
-    def transformer_with_masks(self, x: torch.Tensor, attn_mask: torch.Tensor=None, key_padding_mask: torch.Tensor=None) -> torch.Tensor:
+    def transformer_with_masks(
+        self,
+        x: torch.Tensor,
+        attn_mask: torch.Tensor = None,
+        key_padding_mask: torch.Tensor = None,
+    ) -> torch.Tensor:
         # 12 layers, 8 heads
-        key_padding_mask = key_padding_mask.to(device=x.device) if key_padding_mask is not None else None
-        attn_mask = attn_mask.to(dtype=x.dtype, device=x.device) if attn_mask is not None else None
-        
+        key_padding_mask = (
+            key_padding_mask.to(device=x.device)
+            if key_padding_mask is not None
+            else None
+        )
+        attn_mask = (
+            attn_mask.to(dtype=x.dtype, device=x.device)
+            if attn_mask is not None
+            else None
+        )
+
         features = []
         for module in self.model.transformer.resblocks:
             module.attn_mask = module.attn_mask.to(dtype=x.dtype, device=x.device)
-            x = x + module.attn(module.ln_1(x), module.ln_1(x), module.ln_1(x), need_weights=False, key_padding_mask=key_padding_mask, attn_mask=module.attn_mask)[0]
+            x = (
+                x
+                + module.attn(
+                    module.ln_1(x),
+                    module.ln_1(x),
+                    module.ln_1(x),
+                    need_weights=False,
+                    key_padding_mask=key_padding_mask,
+                    attn_mask=module.attn_mask,
+                )[0]
+            )
             x = x + module.mlp(module.ln_2(x))
             features.append(x)
 
         return x, features
-        
+
     def encode_subword_prob(
         self, subword_prob: torch.Tensor, audio_len: torch.Tensor
     ) -> torch.Tensor:
@@ -414,10 +446,10 @@ class ClipModel(nn.Module):
                 x[i, 1 : index[i], :] = keywords[i, : index[i] - 1, :]
         else:
             x[:, 1 : 1 + keyword_num] = keywords
-            
+
         x = x + self.model.positional_embedding
         x = x.permute(1, 0, 2)  # NLD -> LND
-        
+
         # outputs = []
         # for module in self.model.transformer.resblocks:
         #     outputs.append(module(x))

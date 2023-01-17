@@ -126,7 +126,9 @@ class KWClipBase(BaseLightningModel):
             "log_detokenize_results", True
         )
 
-        self.keyword_num = self.config.model_settings.cascaded_branch.keyword.get("number", None)
+        self.keyword_num = self.config.model_settings.cascaded_branch.keyword.get(
+            "number", None
+        )
         self.spec_aug_config = config.audio_encoder.get("spec_aug")
         if hasattr(config.audio_encoder, "spec_aug"):
             logger.info("Using SpecAug")

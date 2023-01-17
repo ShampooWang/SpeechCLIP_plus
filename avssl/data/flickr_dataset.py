@@ -194,14 +194,15 @@ class FlickrDataset(BaseDataset):
                     _ts, _td = float(_l[2]), float(_l[3])
                     if _subid not in text_ali[_img_id].keys():
                         text_ali[_img_id][_subid] = []
-                    text_ali[_img_id][_subid].append([int(_ts*50), int((_ts+ _td)*50)])
+                    text_ali[_img_id][_subid].append(
+                        [int(_ts * 50), int((_ts + _td) * 50)]
+                    )
 
             ali_num = {}
             for _img_id in text_ali.keys():
                 ali_num[_img_id] = {}
                 for _subID in text_ali[_img_id].keys():
                     ali_num[_img_id][_subID] = len(text_ali[_img_id][_subID])
-
 
         with open(image_list_txt, "r") as fp:
             for line in fp:
@@ -231,9 +232,13 @@ class FlickrDataset(BaseDataset):
                                     if "image" in self.modalities:
                                         _entry["image"] = image_path
                                     if "text" in self.modalities:
-                                        _entry["text"] = imageName2captions[image_name][_subID]
+                                        _entry["text"] = imageName2captions[image_name][
+                                            _subID
+                                        ]
                                     _entry["alignments"] = text_ali[image_name][_subID]
-                                    _entry["alignment_num"] = ali_num[image_name][_subID]
+                                    _entry["alignment_num"] = ali_num[image_name][
+                                        _subID
+                                    ]
                             else:
                                 _entry = {"id": filename2Id[image_name]}
                                 if "audio" in self.modalities:
@@ -241,7 +246,9 @@ class FlickrDataset(BaseDataset):
                                 if "image" in self.modalities:
                                     _entry["image"] = image_path
                                 if "text" in self.modalities:
-                                    _entry["text"] = imageName2captions[image_name][_subID]
+                                    _entry["text"] = imageName2captions[image_name][
+                                        _subID
+                                    ]
 
                             self.data.append(_entry)
                     else:

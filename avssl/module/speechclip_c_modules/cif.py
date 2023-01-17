@@ -239,8 +239,8 @@ class CifMiddleware(nn.Module):
         # Extract cif_outputs for each utterance
         fired_marks = (torch.abs(fired_states).sum(-1) != 0.0).int()  # B x T_c
         fired_utt_length = fired_marks.sum(-1)  # B
-        fired_max_length = (
-            max(1,min(fired_utt_length.max().int(), MAX_FEAT_LEN))
+        fired_max_length = max(
+            1, min(fired_utt_length.max().int(), MAX_FEAT_LEN)
         )  # The maximum of fired times in current batch
         cif_outputs = torch.zeros([0, fired_max_length, encoder_embed_dim]).cuda()
 
@@ -270,7 +270,7 @@ class CifMiddleware(nn.Module):
             cur_utt_length = cur_utt_output.size(0)  # The total number of firing
 
             # handle empty output
-            # if cur_utt_length == 0:        
+            # if cur_utt_length == 0:
             #     cur_utt_output = accumulated_states[j, -1, :].unsqueeze(0)
             #     cur_utt_length = cur_utt_output.size(0)
 
@@ -279,7 +279,9 @@ class CifMiddleware(nn.Module):
                 cur_utt_output = cur_utt_output[:MAX_FEAT_LEN, :]
                 cur_utt_length = cur_utt_output.size(0)
 
-            assert cur_utt_length <= fired_max_length, f"out: {cur_utt_length}, max: {fired_max_length}"
+            assert (
+                cur_utt_length <= fired_max_length
+            ), f"out: {cur_utt_length}, max: {fired_max_length}"
             pad_length = fired_max_length - cur_utt_length  # Get padded length
             cif_outputs_len.append(cur_utt_length)
             cur_utt_output = torch.cat(
@@ -307,11 +309,10 @@ class CifMiddleware(nn.Module):
             cif_outputs = self.cif_output_proj(cif_outputs)
 
         cif_output_len_diff = [
-            abs(_x - _y)
-            for _x, _y in zip(cif_outputs_len, target_lengths)
+            abs(_x - _y) for _x, _y in zip(cif_outputs_len, target_lengths)
         ]
 
-        cif_outputs_len = [ min(max(1, _l), MAX_FEAT_LEN) for _l in cif_outputs_len ]
+        cif_outputs_len = [min(max(1, _l), MAX_FEAT_LEN) for _l in cif_outputs_len]
         cif_outputs_len = torch.LongTensor(cif_outputs_len)
         cif_outputs_len = cif_outputs_len.to(cif_outputs.device)
 
@@ -320,10 +321,10 @@ class CifMiddleware(nn.Module):
             "cif_out_padding_mask": cif_out_padding_mask,  # B x T_c
             "quantity_out": quantity_out,  # B
             "cif_outputs_len": cif_outputs_len,  # B
-            "target_len": target_lengths, # B
-            "cif_weight": weight, # B x T
+            "target_len": target_lengths,  # B
+            "cif_weight": weight,  # B x T
             "cif_output_len_diff": cif_output_len_diff,  # B
-            "fired_marks": fired_marks, # B x T x C
+            "fired_marks": fired_marks,  # B x T x C
         }
 
 
@@ -809,6 +810,7 @@ if __name__ == "__main__":
     audio_dim = 768
     seq_len = 150
     max_tar_len = 8
+
     def get_keypadding_mask(max_length: int, data_lens: torch.Tensor) -> torch.Tensor:
         """Create keypadding mask for attention layers
 
@@ -856,10 +858,7 @@ if __name__ == "__main__":
         #     target_length=audio_input_lens - 2,
         # )
 
-        output = cif(
-            encoder_outputs,
-            target_length
-        )
+        output = cif(encoder_outputs, target_length)
         for _val in output.values():
             print(_val)
         exit(1)

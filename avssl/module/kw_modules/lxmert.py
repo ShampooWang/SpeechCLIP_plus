@@ -16,26 +16,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 import torch
 import torch.nn.functional as F
-import math
 from torch import nn
+
 
 def gelu(x):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+    0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    Also see https://arxiv.org/abs/1606.08415
     """
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
 class GeLU(nn.Module):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results):
+    0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+    Also see https://arxiv.org/abs/1606.08415
     """
+
     def __init__(self):
         super().__init__()
 
@@ -50,6 +53,7 @@ def swish(x):
 ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish}
 
 BertLayerNorm = torch.nn.LayerNorm
+
 
 class VisualFeatEncoder(nn.Module):
     def __init__(self, config):
@@ -80,20 +84,22 @@ class VisualFeatEncoder(nn.Module):
         output = self.dropout(output)
         return output
 
+
 class BertAttention(nn.Module):
     def __init__(self, config, ctx_dim=None):
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (config.hidden_size, config.num_attention_heads))
+                "heads (%d)" % (config.hidden_size, config.num_attention_heads)
+            )
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
         # visual_dim = 2048
         if ctx_dim is None:
-            ctx_dim =config.hidden_size
+            ctx_dim = config.hidden_size
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(ctx_dim, self.all_head_size)
         self.value = nn.Linear(ctx_dim, self.all_head_size)
@@ -101,11 +107,16 @@ class BertAttention(nn.Module):
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
     def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        new_x_shape = x.size()[:-1] + (
+            self.num_attention_heads,
+            self.attention_head_size,
+        )
         x = x.view(*new_x_shape)
         return x.permute(0, 2, 1, 3)
 
-    def forward(self, hidden_states, context, attention_mask=None, return_attention_weight=False):
+    def forward(
+        self, hidden_states, context, attention_mask=None, return_attention_weight=False
+    ):
         mixed_query_layer = self.query(hidden_states)
         mixed_key_layer = self.key(context)
         mixed_value_layer = self.value(context)
@@ -115,27 +126,31 @@ class BertAttention(nn.Module):
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2)) #[b, heads, T_q, T_k]
+        attention_scores = torch.matmul(
+            query_layer, key_layer.transpose(-1, -2)
+        )  # [b, heads, T_q, T_k]
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
         if attention_mask is not None:
             attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
-        attention_probs = nn.Softmax(dim=-1)(attention_scores) #[b, heads, T_q, T_k]
+        attention_probs = nn.Softmax(dim=-1)(attention_scores)  # [b, heads, T_q, T_k]
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         attention_probs = self.dropout(attention_probs)
-        
-        #[b,heads,T_q,T_k]@[b,heads,T_k,C] -> [b,heads,T_q,C]
-        context_layer = torch.matmul(attention_probs, value_layer) 
-        context_layer = context_layer.permute(0, 2, 1, 3).contiguous() #[b,T_q,heads,C]
-        new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,) 
-        context_layer = context_layer.view(*new_context_layer_shape) #[b,T_q, heads*C]
+
+        # [b,heads,T_q,T_k]@[b,heads,T_k,C] -> [b,heads,T_q,C]
+        context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = context_layer.permute(
+            0, 2, 1, 3
+        ).contiguous()  # [b,T_q,heads,C]
+        new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
+        context_layer = context_layer.view(*new_context_layer_shape)  # [b,T_q, heads*C]
         if return_attention_weight:
             assert not self.training
-            return context_layer, attention_probs[:,:,0]
+            return context_layer, attention_probs[:, :, 0]
         return context_layer
 
 
@@ -159,9 +174,13 @@ class BertCrossattLayer(nn.Module):
         self.att = BertAttention(config)
         self.output = BertAttOutput(config)
 
-    def forward(self, input_tensor, ctx_tensor, ctx_att_mask=None, return_attention_weight=False):
+    def forward(
+        self, input_tensor, ctx_tensor, ctx_att_mask=None, return_attention_weight=False
+    ):
         if return_attention_weight:
-            output, attention_weight = self.att(input_tensor, ctx_tensor, ctx_att_mask, return_attention_weight=True)
+            output, attention_weight = self.att(
+                input_tensor, ctx_tensor, ctx_att_mask, return_attention_weight=True
+            )
         output = self.att(input_tensor, ctx_tensor, ctx_att_mask)
         attention_output = self.output(output, input_tensor)
         if return_attention_weight:
@@ -251,9 +270,11 @@ class BertLMPredictionHead(nn.Module):
 
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
-        self.decoder = nn.Linear(bert_model_embedding_weights.size(1),
-                                 bert_model_embedding_weights.size(0),
-                                 bias=False)
+        self.decoder = nn.Linear(
+            bert_model_embedding_weights.size(1),
+            bert_model_embedding_weights.size(0),
+            bias=False,
+        )
         self.decoder.weight = bert_model_embedding_weights
         self.bias = nn.Parameter(torch.zeros(bert_model_embedding_weights.size(0)))
 
@@ -262,10 +283,10 @@ class BertLMPredictionHead(nn.Module):
         hidden_states = self.decoder(hidden_states) + self.bias
         return hidden_states
 
+
 class BertClassificationHead(nn.Module):
     def __init__(self, num_labels, hid_dim):
         super().__init__()
-
 
         in_dim = hid_dim
         out_dim = num_labels
@@ -367,7 +388,8 @@ class VisualFeatEncoder(nn.Module):
 
         output = self.dropout(output)
         return output
-        
+
+
 class BertPooler(nn.Module):
     def __init__(self, config):
         super(BertPooler, self).__init__()
@@ -382,6 +404,7 @@ class BertPooler(nn.Module):
         pooled_output = self.dense(first_token_tensor)
         pooled_output = self.activation(pooled_output)
         return pooled_output
+
 
 class LXMERTXLayer(nn.Module):
     def __init__(self, config):
@@ -400,13 +423,21 @@ class LXMERTXLayer(nn.Module):
         self.visn_output = BertOutput(config)
 
     def cross_att(
-        self, audio_input, audio_attention_mask, visn_input, visn_attention_mask, return_attention_weight=False
+        self,
+        audio_input,
+        audio_attention_mask,
+        visn_input,
+        visn_attention_mask,
+        return_attention_weight=False,
     ):
         # Cross Attention
         if return_attention_weight:
             audio_att_output, a2v_attention_weight = self.visual_attention(
-            audio_input, visn_input, ctx_att_mask=visn_attention_mask, return_attention_weight=True
-        )
+                audio_input,
+                visn_input,
+                ctx_att_mask=visn_attention_mask,
+                return_attention_weight=True,
+            )
         else:
             audio_att_output = self.visual_attention(
                 audio_input, visn_input, ctx_att_mask=visn_attention_mask
@@ -420,18 +451,26 @@ class LXMERTXLayer(nn.Module):
         return audio_att_output, visn_att_output
 
     def self_att(
-        self, audio_input, audio_attention_mask, visn_input=None, visn_attention_mask=None
+        self,
+        audio_input,
+        audio_attention_mask,
+        visn_input=None,
+        visn_attention_mask=None,
     ):
         # Self Attention
         # audio_att_output = self.audio_self_att(audio_input, audio_attention_mask)[0]
         # visn_att_output = self.visn_self_att(visn_input, visn_attention_mask)[0]
         # not [0], maybe this is only when we use transformer's bert modules
-        
-        audio_att_output = self.audio_self_att(audio_input, audio_input, audio_attention_mask)
+
+        audio_att_output = self.audio_self_att(
+            audio_input, audio_input, audio_attention_mask
+        )
         if visn_input is None:
             return audio_att_output, None
 
-        visn_att_output = self.visn_self_att(visn_input, visn_input, visn_attention_mask)
+        visn_att_output = self.visn_self_att(
+            visn_input, visn_input, visn_attention_mask
+        )
         return audio_att_output, visn_att_output
 
     def output_fc(self, audio_input, visn_input):
@@ -447,16 +486,30 @@ class LXMERTXLayer(nn.Module):
 
         return audio_output, visn_output
 
-    def forward(self, audio_feats, audio_attention_mask, visn_feats, visn_attention_mask, return_attention_weight=False):
+    def forward(
+        self,
+        audio_feats,
+        audio_attention_mask,
+        visn_feats,
+        visn_attention_mask,
+        return_attention_weight=False,
+    ):
         audio_att_output = audio_feats
         visn_att_output = visn_feats
         if return_attention_weight:
             audio_att_output, visn_att_output, a2v_attention_weight = self.cross_att(
-            audio_att_output, audio_attention_mask, visn_att_output, visn_attention_mask, True
-        )
+                audio_att_output,
+                audio_attention_mask,
+                visn_att_output,
+                visn_attention_mask,
+                True,
+            )
         else:
             audio_att_output, visn_att_output = self.cross_att(
-                audio_att_output, audio_attention_mask, visn_att_output, visn_attention_mask
+                audio_att_output,
+                audio_attention_mask,
+                visn_att_output,
+                visn_attention_mask,
             )
         audio_att_output, visn_att_output = self.self_att(
             audio_att_output, audio_attention_mask, visn_att_output, visn_attention_mask

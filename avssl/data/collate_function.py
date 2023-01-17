@@ -61,8 +61,10 @@ def collate_general(batch: Tuple):
             if key == "alignments":
                 max_len = max([len(_ali) for _ali in return_dict[key]])
                 for i in range(len(return_dict[key])):
-                    _len = len(return_dict[key][i]) 
-                    return_dict[key][i] = return_dict[key][i] +  [[-1, -1]] * (max_len - _len)
+                    _len = len(return_dict[key][i])
+                    return_dict[key][i] = return_dict[key][i] + [[-1, -1]] * (
+                        max_len - _len
+                    )
                 return_dict[key] = torch.LongTensor(return_dict[key])
             else:
                 return_dict[key] = torch.LongTensor(return_dict[key])

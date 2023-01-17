@@ -403,7 +403,9 @@ class DiversityLoss(nn.Module):
     def current_loss_weight(self):
         return self.loss_weight
 
-    def forward(self, target=torch.Tensor, target_len=torch.Tensor, score_type=str, eps=1e-8):
+    def forward(
+        self, target=torch.Tensor, target_len=torch.Tensor, score_type=str, eps=1e-8
+    ):
         assert target.dim() == 3, target.shape
         score = 0
         for _tar, _len in zip(target, target_len):
@@ -417,13 +419,13 @@ class DiversityLoss(nn.Module):
                 _score_mtx = _tar @ _tar.T
             else:
                 raise NotImplementedError(score_type)
-                
+
             if _len == 1:
                 continue
             else:
                 _identity_mtx = torch.eye(_len, device=_score_mtx.device)
                 assert _identity_mtx.shape == _score_mtx.shape
                 # _score_mtx = torch.square(_score_mtx - _identity_mtx)
-            score += torch.sum(_score_mtx - _identity_mtx) / (_len * (_len-1))
+            score += torch.sum(_score_mtx - _identity_mtx) / (_len * (_len - 1))
 
         return score / torch.sum(target_len != 1)

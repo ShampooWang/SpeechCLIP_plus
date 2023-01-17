@@ -6,9 +6,8 @@ import pytorch_lightning
 import torch
 import yaml
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint, TQDMProgressBar
 from torch.utils.data import DataLoader, random_split
-from pytorch_lightning.callbacks import Callback
 
 from ..base import OrderedNamespace
 from ..data import (
@@ -18,6 +17,7 @@ from ..data import (
     collate_general,
 )
 from ..util import add_general_arguments, set_logging, set_pl_logger
+
 
 def gradient_norm(model):
     total_norm = 0.0
@@ -29,8 +29,9 @@ def gradient_norm(model):
             #     print(name)
             #     exit()
             total_norm += param_norm.item() ** 2
-    total_norm = total_norm ** (1. / 2)
+    total_norm = total_norm ** (1.0 / 2)
     return total_norm
+
 
 class GradNormCallback(Callback):
     """
@@ -39,6 +40,7 @@ class GradNormCallback(Callback):
 
     def on_after_backward(self, trainer, model):
         print(f"my_model/grad_norm: {gradient_norm(model)}")
+
 
 class BaseTask:
     def __init__(self):
