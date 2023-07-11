@@ -1,3 +1,6 @@
+.gitignore
+scripts/
+
 # Other
 .DS_Store
 tmp_tools/
@@ -13,9 +16,17 @@ avssl/config/
 avssl/stats/
 
 # Checkpoints
-avssl/model/fastvgs_coco
-avssl/model/fastvgs+_coco
 zerospeech/result
+
+# Logs
+logs/
+
+# Checkpoints
+checkpoints/
+
+# zerospeech 2021
+zerospeech2021/
+
 
 # Environments
 .env

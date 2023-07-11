@@ -329,9 +329,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
 
 class Custom_WavLM(FairseqSpeechEncoder_Hubert):
     MODEL2PATH = {
-        "wavlm_base": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base.pt",
-        "wavlm_base_plus": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base+.pt",
-        "wavlm_large": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Large.pt",
+        "wavlm_base": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Base.pt",
+        "wavlm_base_plus": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Base+.pt",
+        "wavlm_large": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Large.pt",
     }
 
     MODEL_DOWNSAMPLE_RATE = {

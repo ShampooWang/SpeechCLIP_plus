@@ -1,14 +1,14 @@
 data:
   dataset:
     name: flickr #flickr, coco
-    dataset_root: /mnt/md0/dataset/flickr  
+    dataset_root: /work/jgtf0322/Dataset/flickr
     text_file: Flickr8k.token.txt
     # alignment_file: Flickr_8k.ctm
     clip_image_transform: ViT-B/32
     load_image: true
     load_audio: true
     tokenizeText: true
-  batch_size: 48
+  batch_size: 64
   dev_batch_size: 6
   split_ratio: 0.9
 

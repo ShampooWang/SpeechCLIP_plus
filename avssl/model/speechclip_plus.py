@@ -846,7 +846,7 @@ class SpeechCLIP_plus(GeneralBase):
             )
             losses["parallel_audio_feat"] = parallel_audio_feat
 
-        if "attention_maps" in resultDict:
+        if "attention_maps" in resultDict and hasattr(self, "attention_diversity_criterion"):
             losses["attention_diversity_loss"] = self.attention_diversity_criterion(resultDict["attention_maps"])
         
         if self.cascaded_branch is not None:
@@ -922,7 +922,7 @@ class SpeechCLIP_plus(GeneralBase):
                     self.keyword_diversity_weight * losses[k]
                 )
         
-        if "attention_diversity_loss":
+        if "attention_diversity_loss" in losses:
             losses["attention_diversity_loss"] = METRIC_REDUCEFN_MAPPING[type(inputDict["attention_diversity_loss"])](inputDict["attention_diversity_loss"])
             losses["loss"] += self.attention_diversity_weight * losses["attention_diversity_loss"]
             

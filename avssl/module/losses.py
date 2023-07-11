@@ -289,6 +289,7 @@ class AttentionDiversityLoss(nn.Module):
         super().__init__()
         self.loss_weight = loss_weight
         self.criterion = nn.L1Loss()
+        self.max_Len = round(250000/320)
         
     def current_loss_weight(self):
         return self.loss_weight
@@ -301,7 +302,9 @@ class AttentionDiversityLoss(nn.Module):
         target_eye_tensor = torch.eye(attention_maps[0].shape[1], device=attention_maps[0].device).unsqueeze(0).expand(B, -1, -1)
         
         for attention_map in attention_maps:
-            normalize_attention_map = F.normalize(attention_map, dim=-1, eps=eps)
+            if attention_map.shape[-1] > self.max_Len:
+                print(attention_map.shape)
+            normalize_attention_map = F.normalize(attention_map, dim=-1, eps=eps)[:, :, :self.max_Len, :self.max_Len]
             correlation_score = (normalize_attention_map.unsqueeze(2) * normalize_attention_map.unsqueeze(1)).sum([-1, -2]) / L
             assert correlation_score.shape == target_eye_tensor.shape, f"{correlation_score.shape}, {target_eye_tensor.shape}"
             loss_list.append(self.criterion(correlation_score, target_eye_tensor).mean())
