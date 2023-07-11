@@ -1,0 +1,4 @@
+test_librispeech_mean: 11.584772339301509
+test_synthetic_mean: 6.750259165841079
+test_librispeech_wmean: 8.090453266697939
+test_synthetic_wmean: 7.281932707780497

@@ -29,13 +29,6 @@ def collate_image_captions(batch: Tuple):
     else:
         raise NotImplementedError("Data format no implemented in collator")
 
-    # # general code
-    # return_batch = [ [] for _ in batch[0] ]
-    # for _data in batch:
-    #     for i, feat in enumerate(_data):
-    #         return_batch[i].append(feat)
-    # return return_batch
-
 
 def collate_general(batch: Tuple):
     keysInBatch = list(batch[0].keys())
@@ -44,29 +37,19 @@ def collate_general(batch: Tuple):
     return_dict = {k: [] for k in keysInBatch}
     for _row in batch:
         for _key in keysInBatch:
-            # assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
             if _key == "wav_len":
                 return_dict[_key].append(len(_row["wav"]))
             else:
                 assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
                 return_dict[_key].append(_row[_key])
-
+                
     for key in return_dict:
         if isinstance(return_dict[key][0], torch.Tensor):
-            if key == "wav":
+            if key == "wav" or key == "fp_alignment":
                 return_dict[key] = pad_sequence(return_dict[key], batch_first=True)
             else:
                 return_dict[key] = torch.stack(return_dict[key], dim=0)
         else:
-            if key == "alignments":
-                max_len = max([len(_ali) for _ali in return_dict[key]])
-                for i in range(len(return_dict[key])):
-                    _len = len(return_dict[key][i])
-                    return_dict[key][i] = return_dict[key][i] + [[-1, -1]] * (
-                        max_len - _len
-                    )
-                return_dict[key] = torch.LongTensor(return_dict[key])
-            else:
-                return_dict[key] = torch.LongTensor(return_dict[key])
+            return_dict[key] = torch.LongTensor(return_dict[key])
 
     return return_dict

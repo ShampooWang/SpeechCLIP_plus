@@ -226,26 +226,26 @@ class BaseDataset(Dataset):
                 id :  torch.LongTensor
         """
 
-        ret_dict = {}
+        result_dict = {}
         if "wav" in self.data[index]:
             audio_feat = self._LoadAudio(self.data[index]["wav"])
-            ret_dict["wav"] = audio_feat
+            result_dict["wav"] = audio_feat
         if "image" in self.data[index]:
             image = self._LoadImage(self.data[index]["image"])
-            ret_dict["image"] = image
+            result_dict["image"] = image
         if "text" in self.data[index]:
             text = self._TokenizeText(self.data[index]["text"])
-            ret_dict["text"] = text
+            result_dict["text"] = text
         if "id" in self.data[index]:
-            ret_dict["id"] = self.data[index]["id"]
-        if "alignments" in self.data[index]:
-            ret_dict["alignments"] = self.data[index]["alignments"]
-        if "alignment_num" in self.data[index]:
-            ret_dict["alignment_num"] = self.data[index]["alignment_num"]
+            result_dict["id"] = self.data[index]["id"]
+        if "alignment" in self.data[index]:
+            result_dict["fp_alignment"] = (torch.FloatTensor(self.data[index]["alignment"]) * (self.target_sr / self.audioEncoder_downsamplingRate)).round().unique().long() # Create alignment with the unit of frame period
+            result_dict["fp_alignment"] = result_dict["fp_alignment"][result_dict["fp_alignment"].nonzero()].squeeze(-1)
+            result_dict["segment_num"] = len(result_dict["fp_alignment"])
 
-        assert len(ret_dict) > 0, "dataset getitem must not be empty"
+        assert len(result_dict) > 0, "dataset getitem must not be empty"
 
-        return ret_dict
+        return result_dict
 
     def __len__(self):
         return len(self.data)

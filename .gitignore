@@ -1,21 +1,27 @@
 # Other
 .DS_Store
-exp/
-exp_twsezjg982/
 tmp_tools/
-.conda_config/
-4-gram_LM/
-draw_spectrogram/
-check_kw_hit_rate.py
-count_character.py
-special_sents.txt
-superb_out/
+other_utils/
+analysis_results/
+test/
+draw_pic/
 
 # stat for experiments
 avssl/stats/
 
-# folder for speech clip cascaded ckpts
-./exp_sc_c
+# Checkpoints
+avssl/model/fastvgs_coco
+avssl/model/fastvgs+_coco
+zerospeech/result
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -120,37 +126,4 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Checkpoints
-exp/
-Flirck_c+_small
-avssl/model/fastvgs_coco
-avssl/model/fastvgs+_coco
-zerospeech/result
 

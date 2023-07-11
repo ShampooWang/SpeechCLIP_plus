@@ -1,0 +1,182 @@
+data:
+  dataset:
+    name: coco
+    dataset_root: /mnt/md0/dataset/coco/
+    # normalize_waveform: true
+    # text_file: Flickr8k.token.txt
+    # alignment_file: Flickr_8k.ctm
+    clip_image_transform: ViT-B/32
+    load_image: true
+    load_audio: true
+    tokenizeText: true
+  batch_size: 64
+  dev_batch_size: 6
+  split_ratio: 0.9
+
+model_settings:
+  cascaded_objective_weight: 1.0
+  parallel_objective_weight: 1.0
+  keyword_objective_weight: 0.0
+  matching_objective_weight: 0.0
+  parallel_branch: 
+    # name: integrate # [ "integrate", "individual" ]
+    # integrate: add another [CLS] token for parallel objective
+    # individual: add another [CLS] token and another branch transformer encoder for parallel objective
+    transformer_type: TransformerEncoder
+    transformer_args:
+        n_layers: 2
+        d_model: 768
+        nhead: 8
+        dim_feedforward: 3072
+        dropout: 0.1
+        activation: gelu
+        layer_norm_eps: 1.0e-5
+        batch_first: True
+        norm_first: False
+
+  cascaded_branch:
+    type: KW_Hybrid_plus #KW_CascadedBranch_plus KW_Hybrid_plus
+    keyword:
+        diversity_type: "corr" # "ent" or "corr" or "cos"
+        diversity_weight: 0.0
+        detokenized_K_neighbors: 5
+        retrieve_method: cosine # cosine or pseudo_inverse
+        batchnorms:
+            type: eachKw #eachKw or same
+            std_scale: 1.0
+            learnable: true
+            parallel: true
+        attention_constraints:
+            diversity_per_kw_loss_weight : 0.0
+            diversity_per_frame_loss_weight : 0.0
+            smoothness_per_frame_loss_weight : 0.0
+    vq:
+        bn_before_vq : true
+        activation: gelu # relu or gelu
+        type: SimpleVectorQuantizer # which type of quantizer to use, gumbel or kmeans
+        args:
+            temp: fixed=0.1 #[2.0, 0.5, 0.999995]
+            time_first: true
+            use_gumbel: false
+            hard: true
+    downsampling:
+      type: cif
+      cnn:
+        cnn1: [10, 5, 0, 1] # kernel_size, stride, padding, dilation
+        mean_pool: [2, 2, 0] # kernel_size, stride, padding
+        cnn2: [4, 2, 0, 1] # kernel_size, stride, padding, dilation
+      cif:
+        using_gt_len: false
+        # cal_quantity_loss: true
+        cif_embedding_dim: 768
+        encoder_embed_dim: 768 # should be the innermost dimension of inputs
+        produce_weight_type: "conv"
+        cif_threshold: 0.99
+        conv_cif_layer_num: 1
+        conv_cif_width: 3 # 3 or 5
+        conv_cif_output_channels_num: 768
+        conv_cif_dropout: 0.1
+        dense_cif_units_num: 768
+        apply_scaling: True
+        apply_tail_handling: True
+        tail_handling_firing_threshold: 0.5
+        add_cif_ctxt_layers: False
+    # cross_model:
+    #   n_layer: 2 # number of cross-model layer
+    #   hidden_size: 768 # dimension of transformer feature in cross-modal transformer
+    #   num_attention_heads: 12 # number of attention heads for cross-modal transformer
+    #   intermediate_size: 3072 # size of feed forward net dimension in cross-modal transformer
+    #   hidden_act: "gelu" # activation function of cross-modal transformer
+    #   hidden_dropout_prob: 0.1 # dropout prob for cross-modal transformer
+    #   attention_probs_dropout_prob: 0.1 # attention dropout prob for cross-modal transformer
+    #   image_mlp:
+    #     dropout: 0.1
+    #     dimensions: [512, 1024, 768] #[768,768,768]
+  # matching_mlp:
+  #   dropout: 0.1
+  #   dimensions: [512, 2048, 1] #[768,768,768]
+
+
+
+cl_loss:
+  type: MaskedContrastiveLoss # SupConLoss
+  args:
+    temperature: 0.07
+    temperature_trainable: False
+    margin: 0.0
+    dcl: false
+    a2b:  true
+    b2a: true
+    # for SupConLoss
+    # temperature: 1.0
+    # base_temperature: 1.0
+    # contrast_mode: all
+    # learnable_temperature: true
+
+retrieval:
+  audio_feat_src: cascaded # ["parallel","cascaded"]
+  recall_at: [1,5,10]
+
+
+clip:
+  name: ViT-B/32
+  image_encoder_trainable: false
+  text_encoder_trainable: false
+  reduce_subword_embbedding: ./avssl/data/coco_stat/text_clip_vocab_usage_byfreq.npy # npy file for the selected embedding ID and its frequency
+
+audio_encoder:
+  # regularization: false
+  type: custom_wavlm
+  name: wavlm_base_plus # wavlm_base wavlm_base_plus wavlm_large
+  pretrained: true
+  trainable: true
+  feat_select_idx: last_hidden_state # last_hidden_state, all
+  layer_drop: 0.0
+  max_audio_len: 102400
+  # reinit_layers: [10, 11]
+  optim:
+    name: Adam
+    args:
+      lr: 1.e-5
+      weight_decay: 1.e-6
+  scheduler:
+    name: linear_warmup_decay
+    warmup: 15000
+    max_step: 150000
+    final_lr: 1.e-8
+  # spec_aug:
+  #   adaptive: false
+  #   adaptive_number_ratio: 0.04
+  #   adaptive_size_ratio: 0.04
+  #   max_n_time_masks: 20
+  #   apply_time_warp: true
+  #   apply_time_mask: true
+  #   apply_freq_mask: true
+  #   time_warp_window: 5
+  #   time_mask_width_range: [0, 40]
+  #   freq_mask_width_range: [0, 50]
+  #   num_freq_mask: 4
+  #   num_time_mask: 2
+
+trainer:
+  max_steps: 150000
+  gradient_clip_val: 4
+  accumulate_grad_batches: 1
+  check_val_every_n_epoch: 1
+  precision: 16
+  logger: wandb # wandb
+  log_every_n_steps: 8
+  num_sanity_val_steps: 0
+  accelerator: dp
+  # fast_dev_run: 2
+  # limit_train_batches: 2
+  # limit_val_batches: 2
+
+log_setting:
+  save_kw_hit_rate: true
+  log_detokenize_results: true # whether or not to save the results of detokenized vq output
+  log_detokenize_results_every_n_epoch: 1 # 5
+  log_draw_pca_every_n_epoch: 10 # 10
+
+logger:
+  project: kw-general

@@ -11,3 +11,4 @@ def freeze_model(m: nn.Module) -> None:
 def unfreeze_model(m: nn.Module) -> None:
     for p in m.parameters():
         p.requires_grad = True
+

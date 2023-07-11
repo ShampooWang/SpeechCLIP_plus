@@ -414,11 +414,6 @@ class ClipModel(nn.Module):
         else:
             raise TypeError(f"Unknown keywords type {type(keywords)}")
 
-        # dist = torch.cdist(keywords, self.model.token_embedding.weight).squeeze(1)
-        # nearest_dist, nearest_token = torch.min(dist, dim=-1)
-        # res["nearest_token"] = nearest_token.unsqueeze(1)
-        # res["mean_dist"] = torch.mean(nearest_dist, dim=0)
-
         text = torch.zeros([bsz, 77], device=self.device, dtype=int)
         if self.selected_text_emb_ids is None:
             sot_token, eot_token = (
@@ -449,19 +444,9 @@ class ClipModel(nn.Module):
 
         x = x + self.model.positional_embedding
         x = x.permute(1, 0, 2)  # NLD -> LND
-
-        # outputs = []
-        # for module in self.model.transformer.resblocks:
-        #     outputs.append(module(x))
-        # return outputs
-
         x = self.model.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
         x = self.model.ln_final(x)
-
-        # x.shape = [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding (eot_token is the highest number in each sequence)
-        # x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.model.text_projection
 
         # take features from the eot embedding
         if isinstance(keyword_num, torch.Tensor):

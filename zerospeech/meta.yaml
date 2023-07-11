@@ -11,7 +11,7 @@ parameters:
       # The metric to use for phonetic evaluation, must be 'euclidean',
       # 'cosine', 'kl' or 'kl_symmetric'. **WARNING** the 'cosine' metric
       # here refeers to an angular distance as in the usual ABX evaluation.
-    frame_shift: 0.5
+    frame_shift: 0.02
       # Shift (in s) between two features frames
   semantic:
     metric: cosine #euclidean #cosine

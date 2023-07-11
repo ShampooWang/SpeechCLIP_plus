@@ -81,11 +81,12 @@ def report_bleu(hyps: List[str], refs: List[str]) -> None:
     print(sacrebleu.corpus_bleu(hyps, [refs]))
 
 
-def cosine_semantics(results: list) -> list:
+def cosine_semantics(results: list, dataset: str) -> list:
     cos_score = torch.load("/mnt/md0/user_jeff/Checkpoints/ViT-B32_cos_score.pt")
     cos_score = cos_score.cpu().detach().numpy()
+    assert dataset in ["flickr", "coco"], dataset
     gt_tokens = np.load(
-        "/mnt/md0/user_jeff/audio-visual-ssl/avssl/data/gt_tokens.npy",
+        f"/mnt/md0/user_jeff/audio-visual-ssl/avssl/data/{dataset}_stat/gt_tokens.npy",
         allow_pickle=True,
     )
     encoder = SimpleTokenizer().encoder

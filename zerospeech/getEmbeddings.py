@@ -1,6 +1,9 @@
-from avssl.model import kwClip_plus as mymodels
-from avssl.module.speech_encoder_plus import *
-from avssl.model.kwClip_plus import *
+# from avssl.model import kwClip_plus as mymodels
+# from avssl.model import kwClip as myoldmodels
+
+# from avssl.model.kwClip_plus import *
+from avssl.model.speechclip_plus import SpeechCLIP_plus
+from avssl.module.speech_encoders_module import *
 
 import argparse
 import os
@@ -10,6 +13,7 @@ import logging
 import random
 import numpy as np
 from pytorch_lightning import seed_everything
+from typing import Union
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -18,7 +22,7 @@ def parseArgs(argv):
     # Run parameters
     parser = argparse.ArgumentParser(description='Export BERT features from quantized units of audio files.')
     parser.add_argument("--s3prl", type=bool, default=False)
-    parser.add_argument("--model_cls_name",type=str)
+    parser.add_argument("--model_cls_name", type=str)
     parser.add_argument("--model_ckpt",type=str)
     parser.add_argument("--task_input_dir",type=str,default="/mnt/md0/dataset/zerospeech2021/semantic/")
     parser.add_argument("--task_name",type=str,default="semantic")
@@ -34,12 +38,9 @@ def parseArgs(argv):
         )
     return parser.parse_args(argv)
 
-def loadModel(_cls, _path, feat_select_idx=None):
-    _model = getattr(mymodels,_cls).load_from_checkpoint(_path)
-    if feat_select_idx is not None:
-        if feat_select_idx != "cif":
-            feat_select_idx = int(feat_select_idx)
-            _model.audio_encoder.feat_select_idx = feat_select_idx
+def loadModel(_cls, _path):
+    _model = eval(_cls).load_from_checkpoint(_path)
+    
     return _model
 
 def load_s3prl(name: str, feat_select_idx: Union[str, list]):
@@ -59,12 +60,12 @@ def main(argv):
         logger.info(f"Loading model({args.model_cls_name}) from s3prl")
         mymodel = load_s3prl(args.model_cls_name, args.feat_select_idx)
     else:
-        assert hasattr(mymodels,args.model_cls_name)
+        # assert hasattr(mymodels,args.model_cls_name)
         logger.info(f"Loading model({args.model_cls_name}) from {args.model_ckpt}")
-        mymodel = loadModel(args.model_cls_name, args.model_ckpt, args.feat_select_idx)
+        mymodel = loadModel(args.model_cls_name, args.model_ckpt)
     mytask = getattr(zerospeech_tasks, task_cls)(**args.__dict__, my_model=mymodel)
 
-    mytask.run()
+    mytask.run(args.feat_select_idx)
 
 if __name__ == "__main__":
     args = sys.argv[1:]

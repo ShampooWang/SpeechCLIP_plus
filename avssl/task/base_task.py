@@ -19,15 +19,15 @@ from ..data import (
 from ..util import add_general_arguments, set_logging, set_pl_logger
 
 
-def gradient_norm(model):
+def gradient_norm(model, check_nan=True):
     total_norm = 0.0
     for name, p in model.named_parameters():
         if p.grad is not None:
             param_norm = p.grad.detach().data.norm(2)
-            # print(f"name: {name}, norm: {param_norm}")
-            # if torch.isnan(param_norm):
-            #     print(name)
-            #     exit()
+            if check_nan:
+                if torch.isnan(param_norm):
+                    print(name)
+                    exit()
             total_norm += param_norm.item() ** 2
     total_norm = total_norm ** (1.0 / 2)
     return total_norm
@@ -92,10 +92,6 @@ class TrainSpeechClipBaseTask(BaseTask):
             model = model_cls.load_from_checkpoint(self.args.ckpt)
             if self.args.save_path != "":
                 model.config.save_path = self.args.save_path
-
-            # model.config.retrieval.exactly = False
-            # model.config.log_setting.log_draw_pca_every_n_epoch = 0
-            # model.config.trainer.limit_val_batches = 5
             config = model.config
         else:
             self.args.ckpt = None
@@ -103,7 +99,6 @@ class TrainSpeechClipBaseTask(BaseTask):
             config = OrderedNamespace([self.args, config])
             model = model_cls(config)
 
-        # config.data.dataset.dataset_root = "/home/twsezjg982/dataset/flickr/"
         if not hasattr(config.data.dataset, "modalities"):
             config.data.dataset.modalities = ["audio", "image", "text"]
 
@@ -116,6 +111,7 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
+                    audioEncoderDownsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
                     **config.data.dataset,
                 )
             if self.args.train or self.args.eval:
@@ -124,6 +120,7 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
+                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
                     **config.data.dataset,
                 )
             if self.args.test:
@@ -132,6 +129,7 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
+                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320)
                     **config.data.dataset,
                 )
         elif config.data.dataset.name == "places":
@@ -240,14 +238,11 @@ class TrainSpeechClipBaseTask(BaseTask):
             mode="max",
             every_n_epochs=1,
         )
-        # if self.args.test:
-        #     config.trainer.logger = True
 
         config.trainer.logger = set_pl_logger(
             config,
         )
 
-        # config.trainer.logger = True
         config.gpus = self.args.gpus
 
         save_kw_hit_rate = config.log_setting.get("save_kw_hit_rate", False)
@@ -258,7 +253,7 @@ class TrainSpeechClipBaseTask(BaseTask):
                     model_checkpoint_val_loss,
                     model_checkpoint_recall,
                     model_checkpoint_kw_hit_rate,
-                    model_checkpoint_cos_semantics,
+                    # model_checkpoint_cos_semantics,
                     *custom_trainer_callbacks,
                 ],
                 enable_progress_bar=True,
@@ -283,34 +278,10 @@ class TrainSpeechClipBaseTask(BaseTask):
                 else self.args.resume,
                 **config.trainer,
             )
-        # print(config.trainer)
-        # trainer = Trainer(
-        #     callbacks=[
-        #         TQDMProgressBar(),
-        #         model_checkpoint_val_loss,
-        #         model_checkpoint_recall,
-        #         *custom_trainer_callbacks,
-        #     ],
-        #     enable_progress_bar=True,
-        #     accelerator="gpu",
-        #     devices=2,
-        #     strategy="dp",
-        #     resume_from_checkpoint=None if self.args.resume == "" else self.args.resume,
-        #     **config.trainer,
-        # )
-
-        # Trainer(accelerator=”gpu”, devices=k, strategy=’dp’)
 
         if self.args.train:
-            # trainer.validate(model, tr_loader, ckpt_path=self.args.ckpt, verbose=True)
             trainer.fit(model, tr_loader, dv_loader, ckpt_path=self.args.ckpt)
         if self.args.eval:
             trainer.validate(model, dv_loader, ckpt_path=config.ckpt, verbose=True)
         if self.args.test:
-            # test_func = getattr(model, "test_step", None)
-            # if callable(test_func):
-            #     # test utility is implemented and callable
-            #     trainer.test(model, test_loader, ckpt_path=config.ckpt)
-            # else:
-            #     # use validate function instead.
             trainer.validate(model, test_loader, ckpt_path=config.ckpt)

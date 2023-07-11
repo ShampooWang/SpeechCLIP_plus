@@ -91,6 +91,7 @@ class FlickrDataset(BaseDataset):
         wav_rm_silence: bool = False,
         clip_image_transform: str = None,
         alignment_file: str = None,
+        audioEncoder_downsamplingRate = 320,
         **kwargs,
     ):
         if clip_image_transform is not None:
@@ -111,6 +112,7 @@ class FlickrDataset(BaseDataset):
             **kwargs,
         )
 
+        self.audioEncoder_downsamplingRate = audioEncoder_downsamplingRate
         assert len(modalities) > 0, "Dataset's modalities cannot be none"
         self.modalities = modalities
 
@@ -119,7 +121,7 @@ class FlickrDataset(BaseDataset):
         )
 
         if wav_rm_silence:
-            print("Using wav w/o silence data")
+            logger.info("Using wav w/o silence data")
             wav_file = "wavs_with_no_silence"
         else:
             wav_file = "wavs"
@@ -184,20 +186,18 @@ class FlickrDataset(BaseDataset):
 
         text_ali = {} if alignment_file is not None else None
         if text_ali is not None:
-            with open("/mnt/md0/dataset/flickr/Flickr_8k.ctm", "r") as f:
+            with open(os.path.join(dataset_root, alignment_file), "r") as f:
                 for i, _l in enumerate(f):
                     _l = _l.split(" ")
                     _img_name = _l[0]
                     _img_id, _subid = _img_name.split(".")[0], int(_img_name[-1])
                     if _img_id not in text_ali.keys():
                         text_ali[_img_id] = {}
-                    _ts, _td = float(_l[2]), float(_l[3])
+                    _ts, _duration = float(_l[2]), float(_l[3])
                     if _subid not in text_ali[_img_id].keys():
                         text_ali[_img_id][_subid] = []
-                    text_ali[_img_id][_subid].append(
-                        [int(_ts * 50), int((_ts + _td) * 50)]
-                    )
-
+                    text_ali[_img_id][_subid] += [_ts, _ts + _duration]
+                    
             ali_num = {}
             for _img_id in text_ali.keys():
                 ali_num[_img_id] = {}
@@ -235,8 +235,8 @@ class FlickrDataset(BaseDataset):
                                         _entry["text"] = imageName2captions[image_name][
                                             _subID
                                         ]
-                                    _entry["alignments"] = text_ali[image_name][_subID]
-                                    _entry["alignment_num"] = ali_num[image_name][
+                                    _entry["alignment"] = text_ali[image_name][_subID]
+                                    _entry["segment_num"] = ali_num[image_name][
                                         _subID
                                     ]
                             else:
