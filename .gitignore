@@ -6,6 +6,9 @@ analysis_results/
 test/
 draw_pic/
 
+# Configuration
+avssl/config/
+
 # stat for experiments
 avssl/stats/
 
