@@ -776,11 +776,11 @@ class SpeechCLIP_plus(GeneralBase):
             batch, return_hidden_states=True
         )
 
-        if self.cascaded_branch is not None:
-            inputDict = {"audio_feat": audio_feat, 
-                         "audio_feat_len": audio_feat_len,
-                         "image_feat": image_feat,}
+        inputDict = {"audio_feat": audio_feat, 
+                    "audio_feat_len": audio_feat_len,
+                    "image_feat": image_feat,}
             
+        if self.cascaded_branch is not None:
             if "fp_alignment" in batch:
                 inputDict["fp_alignment"] = batch["fp_alignment"]
                 
@@ -809,9 +809,7 @@ class SpeechCLIP_plus(GeneralBase):
                 dsample_dict = keywords_len = None
             
         if self.parallel_branch is not None:
-            resultDict = self.parallel_branch(
-                audio_feat=audio_feat, audio_feat_len=audio_feat_len
-            )
+            resultDict = self.parallel_branch(inputDict)
             vq_results = vq_keywords = dsample_dict = keywords_len = None
             
         resultDict["id"] = batch["id"]

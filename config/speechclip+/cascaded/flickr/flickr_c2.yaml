@@ -1,7 +1,7 @@
 data:
   dataset:
     name: flickr #flickr, coco
-    dataset_root: /work/jgtf0322/Dataset/flickr
+    dataset_root: /mnt/md0/dataset/flickr/
     text_file: Flickr8k.token.txt
     # alignment_file: Flickr_8k.ctm
     clip_image_transform: ViT-B/32
@@ -81,7 +81,7 @@ model_settings:
         layer_norm_eps: 1.0e-5
         batch_first: True
         norm_first: False
-        attn_diversity_weight: 0.1
+        attn_diversity_weight: 0.0
 
 cl_loss:
   type: MaskedContrastiveLoss # SupConLoss

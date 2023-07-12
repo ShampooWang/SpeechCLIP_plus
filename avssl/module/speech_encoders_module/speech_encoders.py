@@ -163,7 +163,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
         with torch.no_grad():
             wav = [torch.randn(16000, dtype=torch.float, device="cpu")]
             padded_wav, wav_padding_mask = self.preprocess_input(wavs=wav)
-            output = self.custom_forward(padded_wav, wav_padding_mask)
+            output = self.extract_hiddens(padded_wav, wav_padding_mask)
             self.upstream_model_hiddenstates_len = len(output["layer_results"])
             self.out_dim = output["x"].shape[2]
 
@@ -223,7 +223,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
 
         return padded_wav, wav_padding_mask
 
-    def custom_forward(self, wav, pad_mask):
+    def extract_hiddens(self, wav, pad_mask):
         if hasattr(self.encoder, "customHubertForward"): 
             features = self.encoder.customHubertForward(
                 wav,
@@ -261,10 +261,10 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
         padded_wav, wav_padding_mask = self.preprocess_input(wavs=wav)
 
         if self.trainable:
-            features = self.custom_forward(padded_wav, wav_padding_mask)
+            features = self.extract_hiddens(padded_wav, wav_padding_mask)
         else:
             with torch.no_grad():
-                features = self.custom_forward(padded_wav, wav_padding_mask)
+                features = self.extract_hiddens(padded_wav, wav_padding_mask)
 
         if self.normalize_hiddenstates:
             if self.normalize_type.startswith("method"):
@@ -329,9 +329,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
 
 class Custom_WavLM(FairseqSpeechEncoder_Hubert):
     MODEL2PATH = {
-        "wavlm_base": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Base.pt",
-        "wavlm_base_plus": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Base+.pt",
-        "wavlm_large": "/work/jgtf0322/SpeechCLIP_plus/checkpoints/wavlm_pt/WavLM-Large.pt",
+        "wavlm_base": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base.pt",
+        "wavlm_base_plus": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base+.pt",
+        "wavlm_large": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Large.pt",
     }
 
     MODEL_DOWNSAMPLE_RATE = {
@@ -364,6 +364,16 @@ class Custom_WavLM(FairseqSpeechEncoder_Hubert):
         # add method
         WavLM.customFuncWavLMforward = copy_func(customFunc_wavlm_forward)
         
+    def feature_extractor_zerospeech(self, wav, feat_select_idx):
+        feat_select_idx = int(feat_select_idx)
+        result = []
+        batch = {"wav": wav, "wav_len": [ len(wav) ]}
+        audio_feat, feat_len, hidden_states = self.forward(batch, return_hidden_states=True)
+        hidden_states = [ x for x in hidden_states ]
+        embeddings = hidden_states[feat_select_idx]
+        for _embs, _len in zip(embeddings, feat_len):
+            result.append(_embs[:_len].cpu().float().numpy())
+        return result
         
 class S3prlSpeechEncoderPlus(nn.Module):
     def __init__(

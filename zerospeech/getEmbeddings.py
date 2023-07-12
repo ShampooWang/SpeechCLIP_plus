@@ -3,7 +3,7 @@
 
 # from avssl.model.kwClip_plus import *
 from avssl.model.speechclip_plus import SpeechCLIP_plus
-from avssl.module.speech_encoders_module import *
+from avssl.module.speech_encoders_module import Custom_WavLM
 
 import argparse
 import os
@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 def parseArgs(argv):
     # Run parameters
     parser = argparse.ArgumentParser(description='Export BERT features from quantized units of audio files.')
-    parser.add_argument("--s3prl", type=bool, default=False)
+    parser.add_argument("--wavlm", type=bool, default=False)
     parser.add_argument("--model_cls_name", type=str)
     parser.add_argument("--model_ckpt",type=str)
     parser.add_argument("--task_input_dir",type=str,default="/mnt/md0/dataset/zerospeech2021/semantic/")
@@ -43,9 +43,9 @@ def loadModel(_cls, _path):
     
     return _model
 
-def load_s3prl(name: str, feat_select_idx: Union[str, list]):
-    _model = S3prlSpeechEncoderPlus(
-            name=name, pretrained=True, feat_select_idx=feat_select_idx, max_audio_len=102400
+def load_wavlm(name: str):
+    _model = Custom_WavLM(
+            name=name, pretrained=True, max_audio_len=102400
     )
     return _model
 
@@ -56,9 +56,9 @@ def main(argv):
     task_cls = f"Task_{args.task_name}"
 
     assert hasattr(zerospeech_tasks,task_cls)
-    if args.s3prl:
-        logger.info(f"Loading model({args.model_cls_name}) from s3prl")
-        mymodel = load_s3prl(args.model_cls_name, args.feat_select_idx)
+    if args.wavlm:
+        logger.info(f"Using pretrained({args.model_cls_name}) wavlm")
+        mymodel = load_wavlm(args.model_cls_name)
     else:
         # assert hasattr(mymodels,args.model_cls_name)
         logger.info(f"Loading model({args.model_cls_name}) from {args.model_ckpt}")

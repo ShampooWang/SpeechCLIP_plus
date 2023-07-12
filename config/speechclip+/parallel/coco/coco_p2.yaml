@@ -2,6 +2,7 @@ data:
   dataset:
     name: coco #flickr
     dataset_root: /mnt/md0/dataset/coco/
+    split_prefix: SpokenCOCO_ksplit
     clip_image_transform: ViT-B/32
     load_image: true
     load_audio: true

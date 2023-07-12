@@ -1,5 +1,5 @@
 .gitignore
-scripts/
+/mnt/md0/user_jeff/audio-visual-ssl/scripts/
 
 # Other
 .DS_Store
@@ -10,7 +10,7 @@ test/
 draw_pic/
 
 # Configuration
-avssl/config/
+config/
 
 # stat for experiments
 avssl/stats/
