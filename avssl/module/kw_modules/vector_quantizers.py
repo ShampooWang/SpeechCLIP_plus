@@ -89,24 +89,24 @@ class SimpleVectorQuantizer(nn.Module):
             for i in prob_msk:
                 x[:, i] += float("-inf")
 
-        # with torch.no_grad():
-        _, k = x.max(-1) # k is the indices of the largest logits among num_vars
+        with torch.no_grad():
+            _, k = x.max(-1) # k is the indices of the largest logits among num_vars
 
-        # hard_x: one hot for the choosen codewords ( bsz * tsz, num_vars )
-        hard_x = (
-            x.new_zeros(*x.shape)
-            .scatter_(-1, k.view(-1, 1), 1.0)
-            .view(bsz * tsz, 1, -1)
-            .squeeze()
-        )
-        
-        # hard_probs: probs for all codewords in each codebook group : (grp, num_vars) (use one-hot as prob)
-        hard_probs = torch.mean(hard_x.float(), dim=0)
+            # hard_x: one hot for the choosen codewords ( bsz * tsz, num_vars )
+            hard_x = (
+                x.new_zeros(*x.shape)
+                .scatter_(-1, k.view(-1, 1), 1.0)
+                .view(bsz * tsz, 1, -1)
+                .squeeze()
+            )
+            
+            # hard_probs: probs for all codewords in each codebook group : (grp, num_vars) (use one-hot as prob)
+            hard_probs = torch.mean(hard_x.float(), dim=0)
 
-        # codebook perplexity sigma {e^(entropy for codebook group)} for all codebook groups
-        result["code_perplexity"] = torch.exp(
-            -torch.sum(hard_probs * torch.log(hard_probs + 1e-7), dim=-1)
-        ).sum()
+            # codebook perplexity sigma {e^(entropy for codebook group)} for all codebook groups
+            result["code_perplexity"] = torch.exp(
+                -torch.sum(hard_probs * torch.log(hard_probs + 1e-7), dim=-1)
+            ).sum()
 
         # average over minibatch and all timesteps of the codewords logits and get their prob by softmax (grp, num_vars)
         avg_probs = torch.softmax(x.view(bsz * tsz, 1, -1).float(), dim=-1).mean(dim=0)
