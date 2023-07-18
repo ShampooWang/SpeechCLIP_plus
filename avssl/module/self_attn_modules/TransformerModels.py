@@ -107,7 +107,7 @@ class TransformerEncoder(nn.Module):
         super().__init__()
 
         logger.info(f"Using {n_layers} layer transformer encoder")
-        TransformerEncoderLayer._sa_block = copy_func(_sa_block)
+        # TransformerEncoderLayer._sa_block = copy_func(_sa_block)
         encoder_layer = TransformerEncoderLayer(
             d_model=d_model,
             nhead=nhead,

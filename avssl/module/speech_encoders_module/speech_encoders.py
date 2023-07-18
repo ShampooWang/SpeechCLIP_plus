@@ -243,12 +243,12 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
     
     def forward(
         self,
-        batch: dict,
+        wav, wav_len, 
         feat_select_idx: Union[str, list] = None,
         return_hidden_states: bool = False,
     ) -> Tuple[Union[torch.Tensor, list], torch.Tensor]:
         
-        wav, wav_len = batch["wav"], batch["wav_len"]
+        
         if isinstance(wav, torch.Tensor):
             if wav.dim() == 2:
                 if len(wav_len) > 0:

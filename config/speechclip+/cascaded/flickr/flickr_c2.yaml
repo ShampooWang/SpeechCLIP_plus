@@ -61,7 +61,7 @@ model_settings:
         tail_handling_firing_threshold: 0.5
         add_cif_ctxt_layers: False
     keyword:
-      diversity_type: ["cos"] # "ent" or "corr" or "cos"
+      diversity_type: ["cos", "ent"] # "ent" or "corr" or "cos"
       diversity_weight: 0.0
       detokenized_K_neighbors: 5
       retrieve_method: cosine # cosine or pseudo_inverse

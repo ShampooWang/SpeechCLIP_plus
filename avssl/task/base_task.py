@@ -124,12 +124,13 @@ class TrainSpeechClipBaseTask(BaseTask):
                     **config.data.dataset,
                 )
             if self.args.test:
+                config.dev_batch_size = 4
                 test_set = FlickrDataset(
                     split="test",
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
-                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320)
+                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
                     **config.data.dataset,
                 )
         elif config.data.dataset.name == "places":

@@ -3,6 +3,7 @@ from torch.nn import functional as F
 from tqdm import tqdm
 from torch.nn.utils.rnn import pad_sequence
 import numpy as np
+from collections import defaultdict
 
 def clip_fp_alignment(batch, maxLen):
     new_fp_ali_list = []
@@ -51,12 +52,8 @@ def random_crop_max_length(batch, maxLen):
     if maxLen < 0:
         return batch
 
+    newBatchDict = defaultdict(list)
     device = batch["wav"].device
-    if "fp_alignment" and "segment_num" in batch.keys():
-        targetKeys = ["wav", "wav_len", "fp_alignment", "segment_num"]
-    else:
-        targetKeys = ["wav", "wav_len"]
-    newBatchDict = {key: [] for key in targetKeys}
     
     for i, (wav, wavLen) in enumerate(zip(batch["wav"], batch["wav_len"])):
         start = None
@@ -82,8 +79,10 @@ def random_crop_max_length(batch, maxLen):
             newBatchDict[key] = pad_sequence(newBatchDict[key], batch_first=True).to(
                 device
             )
-
-    batch.update(newBatchDict)
+            
+    newBatchDict["id"] = batch["id"]
+    newBatchDict["image"] = batch["image"]
+    return newBatchDict
 
 
 def get_keypadding_mask(max_length: int, data_lens: torch.Tensor) -> torch.Tensor:

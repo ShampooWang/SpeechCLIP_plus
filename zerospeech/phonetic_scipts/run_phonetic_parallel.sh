@@ -1,27 +1,26 @@
 #!bin/bash
 cd "/mnt/md0/user_jeff/audio-visual-ssl/zerospeech"
-export ZEROSPEECH2021_TEST_GOLD=true
+# export ZEROSPEECH2021_TEST_GOLD=true
 
-for idx in {4..15};
+for idx in {6..14};
 do
     echo "Evaluate layer ${idx}"
     conda activate speechclip+
-    out_dir="/mnt/md0/user_jeff/zerospeech2021/embeddings/coco_p+_reproduce/hidden_state_${idx}"
+    out_dir="/mnt/md0/user_jeff/zerospeech2021/embeddings/flickr_c+_w_cos_pen/hidden_state_${idx}"
 
     python3 getEmbeddings.py \
         --inference_bsz 1 \
         --task_input_dir "/mnt/md0/dataset/zerospeech2021/phonetic" \
         --model_cls_name "SpeechCLIP_plus" \
-        --model_ckpt "/mnt/md0/user_jeff/Checkpoints/speechclip+/parallel/coco/coco_p+_reproduce/epoch=13-step=129528-val_recall_mean_10=65.1904.ckpt" \
+        --model_ckpt "/mnt/md0/user_jeff/Checkpoints/speechclip+/cascaded/flickr/flickr_c+_w_cos_pen/epoch=103-step=48672-val_recall_mean_10=39.1800.ckpt" \
         --feat_select_idx ${idx} \
         --task_name "phonetic" \
         --run_dev \
-        --run_test \
         --output_result_dir $out_dir
 
     conda activate zerospeech2021
     DATASET="/mnt/md0/dataset/zerospeech2021/"
-    RESULT="/mnt/md0/user_jeff/zerospeech2021/result/phonetic/coco_p+_reproduce/hidden_state_${idx}"
+    RESULT="/mnt/md0/user_jeff/zerospeech2021/result/phonetic/flickr_c+_w_cos_pen/hidden_state_${idx}"
     mkdir -p $RESULT
     # zerospeech2021-validate ${DATASET} ${out_dir} --no-phonetic --no-lexical --no-syntactic -j4 --only-dev
     zerospeech2021-evaluate --no-semantic --no-lexical --no-syntactic $DATASET $out_dir -j4 -o $RESULT

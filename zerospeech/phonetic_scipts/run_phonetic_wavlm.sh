@@ -1,5 +1,7 @@
 #!bin/bash
 cd "/mnt/md0/user_jeff/audio-visual-ssl/zerospeech"
+export ZEROSPEECH2021_TEST_GOLD=true
+
 for idx in {0..12};
 do
     echo "Evaluate layer ${idx}"
@@ -15,6 +17,7 @@ do
         --feat_select_idx ${idx} \
         --task_name "phonetic" \
         --run_dev \
+        --run_test \
         --output_result_dir $out_dir
 
     conda activate zerospeech2021

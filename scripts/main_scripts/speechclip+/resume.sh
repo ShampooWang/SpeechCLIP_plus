@@ -5,8 +5,8 @@ cd /mnt/md0/user_jeff/audio-visual-ssl
 
 python3 run_task.py \
     "TrainSpeechCLIP_plus" \
-    --gpus 2 \
+    --gpus 3 \
     --njobs 8 \
     --seed 7122 \
-    --train \
-    --resume /mnt/md0/user_jeff/Checkpoints/speechclip+/cascaded/flickr/flickr_c+_w_cos_pen/last.ckpt
+    --test \
+    --resume "/mnt/md0/user_jeff/Checkpoints/speechclip+/cascaded/flickr/Flickr_SpeechCLIP_c2/epoch=80-step=37907-val_recall_mean_10=40.5200.ckpt"
