@@ -22,11 +22,11 @@ from transformers import AutoModel, AutoProcessor
 from transformers.file_utils import copy_func
 
 from ..util import freeze_model, init_weights, random_crop_max_length
-from .wavlm_modules.WavLM import WavLM, WavLMConfig
 from .wavlm_modules.WavLM import TransformerEncoder as WavLMTransformerEncoder
-from. wavlm_modules.modules import GradMultiply
-from .weighted_sum import WeightedSumLayer
+from .wavlm_modules.WavLM import WavLM, WavLMConfig
 
+from .wavlm_modules.modules import GradMultiply
+from .weighted_sum import WeightedSumLayer
 
 FEAT_SELECT_IDX_WEIGHTED_SUM_MODE = "weighted_sum"
 
@@ -36,7 +36,7 @@ def custom_FairseqTransformerEncoder_extract_features(
 ):
     if padding_mask is not None:
         x = index_put(x, padding_mask, 0)
-    
+
     x_conv = self.pos_conv(x.transpose(1, 2))
     x_conv = x_conv.transpose(1, 2)
     x = x + x_conv
@@ -67,6 +67,7 @@ def custom_FairseqTransformerEncoder_extract_features(
     x = x.transpose(0, 1)
 
     return x, layer_results
+
 
 def customFunc_hubert_forward(
     self,
@@ -105,6 +106,7 @@ def customFunc_hubert_forward(
 
     return {"x": x, "layer_results": layer_results}
 
+
 def customFunc_wavlm_forward(
     self,
     source: torch.Tensor,
@@ -112,7 +114,6 @@ def customFunc_wavlm_forward(
     output_layer: Optional[int] = None,
     mask: bool = False,
 ) -> Dict[str, torch.Tensor]:
-    
     if self.feature_grad_mult > 0:
         features = self.feature_extractor(source)
         if self.feature_grad_mult != 1.0:
@@ -145,10 +146,10 @@ def customFunc_wavlm_forward(
 
     return {"x": x, "layer_results": layer_results}
 
+
 def custom_WavLMTransformerEncoder_extract_features(
     self, x, padding_mask=None, streaming_mask=None, tgt_layer=None
 ):
-
     if padding_mask is not None:
         x[padding_mask] = 0
 
@@ -164,7 +165,7 @@ def custom_WavLMTransformerEncoder_extract_features(
     # B x T x C -> T x B x C
     x = x.transpose(0, 1)
 
-    layer_results = [ x.transpose(0, 1) ]
+    layer_results = [x.transpose(0, 1)]
     z = None
     r = None
     pos_bias = None
@@ -221,7 +222,6 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
     ):
         super().__init__()
 
-        
         self.name = name
         self.pretrained = pretrained
         self.trainable = trainable
@@ -235,10 +235,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
         if self.normalize_hiddenstates:
             logger.info("Normalize hidden states ({})".format(normalize_type))
         self.normalize_type = normalize_type
-        
+
         self.general_model_preprocessing()
-            
-            
+
     def general_model_preprocessing(self):
         if self.name.startswith("hubert"):
             assert self.name in self.MODEL2URL, "Model name({}) should be in {}".format(
@@ -246,14 +245,20 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
             )
             ckpt = _urls_to_filepaths(self.MODEL2URL[self.name], refresh=False)
             self.apply_customHubertForward()  # modify Hubert Functions for extracting hidden states
-            model, _, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([ckpt])
+            model, _, task = fairseq.checkpoint_utils.load_model_ensemble_and_task(
+                [ckpt]
+            )
             self.encoder = model[0]
             self.encoder_task = task
             self.config = self.encoder_task.cfg
-            
+
         elif self.name.startswith("wavlm"):
-            assert hasattr(self, "MODEL2PATH"), f"You have to specify your own wavlm checkpoints' locations in MODEL2PATH"
-            assert self.name in self.MODEL2PATH, "Model name({}) should be in {}".format(
+            assert hasattr(
+                self, "MODEL2PATH"
+            ), f"You have to specify your own wavlm checkpoints' locations in MODEL2PATH"
+            assert (
+                self.name in self.MODEL2PATH
+            ), "Model name({}) should be in {}".format(
                 self.name, self.MODEL2PATH.keys()
             )
             ckpt = torch.load(self.MODEL2PATH[self.name])
@@ -263,9 +268,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
             self.apply_customWavLMForward()
         else:
             raise NotImplementedError(self.name)
-            
+
         logger.info(f"Normalize waveform = ({self.config.normalize})")
-        
+
         if hasattr(self.encoder, "get_downsample_rates"):
             self.downsample_rate = self.encoder.get_downsample_rates("hidden_states")
         else:
@@ -307,7 +312,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
                 self.encoder.feature_grad_mult = 0
 
             if len(self.unfreeze_layers) > 0:
-                logger.warning(f"Freezing encoder layers excluding {self.unfreeze_layers}")
+                logger.warning(
+                    f"Freezing encoder layers excluding {self.unfreeze_layers}"
+                )
                 assert self.trainable
                 for i, layer in enumerate(self.encoder.encoder.layers):
                     if i in self.unfreeze_layers:
@@ -344,7 +351,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
                 normalize_features=self.normalize_hiddenstates
                 and self.normalize_type == "s3prl",
             )
-            
+
     def trainable_params(self) -> list:
         if self.trainable and len(self.reinit_layers) == 0:
             return list(self.parameters())
@@ -386,7 +393,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
         return padded_wav, wav_padding_mask
 
     def custom_forward(self, wav, pad_mask):
-        if hasattr(self.encoder, "customHubertForward"): 
+        if hasattr(self.encoder, "customHubertForward"):
             features = self.encoder.customHubertForward(
                 wav,
                 padding_mask=pad_mask,
@@ -400,16 +407,15 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
             )
         else:
             raise NotImplementedError()
-        
+
         return features
-    
+
     def forward(
         self,
         batch: dict,
         feat_select_idx: Union[str, list] = None,
         return_hidden_states: bool = False,
     ) -> Tuple[Union[torch.Tensor, list], torch.Tensor]:
-        
         wav, wav_len = batch["wav"], batch["wav_len"]
         if isinstance(wav, torch.Tensor):
             if wav.dim() == 2:
@@ -450,7 +456,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
                         )
                     else:
                         # s3prl
-                        stacked_feature = F.layer_norm(stacked_feature, (stacked_feature.shape[-1],))
+                        stacked_feature = F.layer_norm(
+                            stacked_feature, (stacked_feature.shape[-1],)
+                        )
 
         feat = {
             "last_hidden_state": features["layer_results"][-1],
@@ -516,8 +524,18 @@ class Custom_WavLM(FairseqSpeechEncoder_Hubert):
         normalize_type: str = "s3prl",
         **kwargs,
     ):
-        super().__init__(name, pretrained, trainable, feat_select_idx, layer_drop, max_audio_len, reinit_layers, unfreeze_layers, normalize_hiddenstates)
-        
+        super().__init__(
+            name,
+            pretrained,
+            trainable,
+            feat_select_idx,
+            layer_drop,
+            max_audio_len,
+            reinit_layers,
+            unfreeze_layers,
+            normalize_hiddenstates,
+        )
+
     def apply_customWavLMForward(self):
         # add method
         WavLMTransformerEncoder.extract_features = copy_func(
@@ -525,8 +543,8 @@ class Custom_WavLM(FairseqSpeechEncoder_Hubert):
         )
         # add method
         WavLM.customFuncWavLMforward = copy_func(customFunc_wavlm_forward)
-        
-        
+
+
 class S3prlSpeechEncoderPlus(nn.Module):
     def __init__(
         self,
@@ -552,7 +570,7 @@ class S3prlSpeechEncoderPlus(nn.Module):
         self.reinit_layers = reinit_layers
         self.unfreeze_layers = unfreeze_layers
         self.layer_drop = layer_drop
-        
+
         self.encoder = getattr(hub, name)().to(device)
         if hasattr(self.encoder, "get_downsample_rates"):
             self.downsample_rate = self.encoder.get_downsample_rates("hidden_states")
@@ -566,11 +584,14 @@ class S3prlSpeechEncoderPlus(nn.Module):
             freeze_model(self.encoder)
 
         self.general_model_preprocessing()
-        
+
     def custom_forward(self, wav):
         output = self.encoder(wav)
-        return {"x": output["last_hidden_state"], "layer_results": output["hidden_states"]}
-    
+        return {
+            "x": output["last_hidden_state"],
+            "layer_results": output["hidden_states"],
+        }
+
     def forward(
         self,
         wav: Union[torch.Tensor, list],
@@ -578,7 +599,6 @@ class S3prlSpeechEncoderPlus(nn.Module):
         feat_select_idx: Union[str, list] = None,
         return_hidden_states: bool = False,
     ) -> Tuple[Union[torch.Tensor, list], torch.Tensor]:
-        
         if isinstance(wav, torch.Tensor):
             if wav.dim() == 2:
                 if len(wav_len) > 0:
@@ -596,9 +616,11 @@ class S3prlSpeechEncoderPlus(nn.Module):
 
         wav_len = [len(w) for w in wav]
 
-        feat_len = torch.LongTensor(
-            [int(l / self.downsample_rate) for l in wav_len]
-        ).clip(max=feat["hidden_states"][0].shape[1]).to(feat["last_hidden_state"].device)
+        feat_len = (
+            torch.LongTensor([int(l / self.downsample_rate) for l in wav_len])
+            .clip(max=feat["hidden_states"][0].shape[1])
+            .to(feat["last_hidden_state"].device)
+        )
 
         if feat_select_idx is None:
             feat_select_idx = self.feat_select_idx

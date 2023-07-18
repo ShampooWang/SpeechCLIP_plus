@@ -310,7 +310,6 @@ class ClipModel(nn.Module):
     def encode_subword_prob(
         self, subword_prob: torch.Tensor, audio_len: torch.Tensor
     ) -> torch.Tensor:
-
         bsz, slen, feat_dim = subword_prob.shape
         TEXT_CLIP_MAX_LEN = 77
 
@@ -408,7 +407,6 @@ class ClipModel(nn.Module):
         return self.model.encode_text(text)
 
     def encode_keywords(self, keywords: torch.Tensor, keyword_num) -> torch.Tensor:
-
         if isinstance(keywords, torch.Tensor):
             bsz = keywords.size(0)
         else:

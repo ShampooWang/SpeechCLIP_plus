@@ -239,8 +239,18 @@ class BaseDataset(Dataset):
         if "id" in self.data[index]:
             result_dict["id"] = self.data[index]["id"]
         if "alignment" in self.data[index]:
-            result_dict["fp_alignment"] = (torch.FloatTensor(self.data[index]["alignment"]) * (self.target_sr / self.audioEncoder_downsamplingRate)).round().unique().long() # Create alignment with the unit of frame period
-            result_dict["fp_alignment"] = result_dict["fp_alignment"][result_dict["fp_alignment"].nonzero()].squeeze(-1)
+            result_dict["fp_alignment"] = (
+                (
+                    torch.FloatTensor(self.data[index]["alignment"])
+                    * (self.target_sr / self.audioEncoder_downsamplingRate)
+                )
+                .round()
+                .unique()
+                .long()
+            )  # Create alignment with the unit of frame period
+            result_dict["fp_alignment"] = result_dict["fp_alignment"][
+                result_dict["fp_alignment"].nonzero()
+            ].squeeze(-1)
             result_dict["segment_num"] = len(result_dict["fp_alignment"])
 
         assert len(result_dict) > 0, "dataset getitem must not be empty"

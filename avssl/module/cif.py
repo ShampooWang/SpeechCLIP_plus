@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 MAX_FEAT_LEN = 75
 
+
 def get_keypadding_mask(max_length: int, data_lens: torch.Tensor) -> torch.Tensor:
     bsz = data_lens.shape[0]
     key_padding_mask = torch.ones([bsz, max_length])
@@ -26,12 +27,14 @@ def get_keypadding_mask(max_length: int, data_lens: torch.Tensor) -> torch.Tenso
 
     return key_padding_mask
 
+
 def Linear(in_features, out_features, bias=True):
     m = nn.Linear(in_features, out_features, bias)
     nn.init.xavier_uniform_(m.weight)
     if bias:
         nn.init.constant_(m.bias, 0.0)
     return m
+
 
 def prob_check(tensor, eps=1e-5, neg_inf=-1e8, logp=False):
     assert not torch.isnan(tensor).any(), f"Nan in a probability tensor:\n{tensor}"
@@ -44,6 +47,7 @@ def prob_check(tensor, eps=1e-5, neg_inf=-1e8, logp=False):
         assert (
             tensor.le(1.0 + eps).all() and tensor.ge(0.0 - eps).all()
         ), f"Incorrect values in a probability tensor, 0.0 <= tensor <= 1.0:\n{tensor}"
+
 
 class CIF(nn.Module):
     def __init__(
@@ -116,11 +120,10 @@ class CIF(nn.Module):
             )
 
     def forward(self, input_dict, target_lengths=None, eps=1e-5):
-        
         input_feats = input_dict["audio_feat"]  # B x T x D
         input_feats_pad_mask = input_dict["audio_feat_pad_mask"].bool()  # B x T
         original_length = (~input_feats_pad_mask).sum(-1).long()  # B
-        
+
         ####################################################
         ## Produce weights for integration (accumulation) ##
         ####################################################
@@ -135,10 +138,7 @@ class CIF(nn.Module):
             else:
                 logits = proj_input
             alpha = (
-                self.weight_proj(logits)
-                .clip(min=0.0, max=1.0)
-                .float()
-                .squeeze(-1)
+                self.weight_proj(logits).clip(min=0.0, max=1.0).float().squeeze(-1)
             )  # B x T
 
             alpha[input_feats_pad_mask] = 0.0
@@ -167,7 +167,7 @@ class CIF(nn.Module):
             target_lengths=target_lengths,
         )
         dsmaple_dict["input_feats_pad_mask"] = input_feats_pad_mask
-            
+
         result_dict = {**result_dict, **dsmaple_dict}
 
         if self.cif_output_dim != self.encoder_embed_dim:
@@ -187,10 +187,14 @@ class CIF(nn.Module):
         target_lengths: Optional[torch.Tensor] = None,
         compute_delay: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        
         B, S, C = input.size()
         assert tuple(alpha.size()) == (B, S), f"{alpha.size()} != {(B, S)}"
-        feat_lengths = (alpha.sum(1) / self.cif_threshold).floor().clip(min=1, max=MAX_FEAT_LEN).long()
+        feat_lengths = (
+            (alpha.sum(1) / self.cif_threshold)
+            .floor()
+            .clip(min=1, max=MAX_FEAT_LEN)
+            .long()
+        )
         T = feat_lengths.max()
 
         # aggregate and integrate
@@ -272,7 +276,9 @@ class CIF(nn.Module):
                 r_mask = right_idx == feat_lengths.unsqueeze(1)
                 tail_weights = torch.where(r_mask, right_weight, zero).sum(-1)
                 l_mask = left_idx == feat_lengths.unsqueeze(1)
-                tail_weights = tail_weights + torch.where(l_mask, left_weight, zero).sum(-1)
+                tail_weights = tail_weights + torch.where(
+                    l_mask, left_weight, zero
+                ).sum(-1)
 
                 # a size (B,) mask that extends position that passed threshold.
                 extend_mask = tail_weights >= self.tail_handling_firing_threshold
@@ -298,11 +304,13 @@ class CIF(nn.Module):
                     )
                     output = output * upscale
                     feat_lengths = feat_lengths + extend_mask.long()
-                    fire_mask[:, feat_lengths - 1] = fire_mask[:, feat_lengths - 1] + extend_mask
-                    feat_lengths = feat_lengths.clip(max=MAX_FEAT_LEN) 
+                    fire_mask[:, feat_lengths - 1] = (
+                        fire_mask[:, feat_lengths - 1] + extend_mask
+                    )
+                    feat_lengths = feat_lengths.clip(max=MAX_FEAT_LEN)
                     T = feat_lengths.max()
                 output = output[:, :T, :]
-                
+
                 if compute_delay:
                     delay = delay[:, :T]
 
@@ -329,7 +337,7 @@ class CIF(nn.Module):
         }
 
         return result_dict
-    
+
 
 class CifMiddleware(nn.Module):
     def __init__(

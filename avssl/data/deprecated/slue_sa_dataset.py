@@ -19,7 +19,6 @@ class SLUE_SA_Dataset(BaseDataset):
         target_sr: int = 16_000,
         **kwargs,
     ):
-
         assert len(modalities) > 0, "Dataset's modalities cannot be none"
         self.modalities = modalities
 

@@ -42,7 +42,7 @@ def collate_general(batch: Tuple):
             else:
                 assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
                 return_dict[_key].append(_row[_key])
-                
+
     for key in return_dict:
         if isinstance(return_dict[key][0], torch.Tensor):
             if key == "wav" or key == "fp_alignment":

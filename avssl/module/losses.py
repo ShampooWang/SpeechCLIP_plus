@@ -127,6 +127,8 @@ class SupConLoss(nn.Module):
 
 
 MAX_EYE = 256
+
+
 class MaskedContrastiveLoss(nn.Module):
     def __init__(
         self,
@@ -252,7 +254,7 @@ class KeywordDiversityLoss(nn.Module):
         self.loss_weight = loss_weight
         self.temp = 0.25
         self.criterion = nn.L1Loss()
-        
+
     def current_loss_weight(self):
         return self.loss_weight
 
@@ -264,7 +266,7 @@ class KeywordDiversityLoss(nn.Module):
         for target, target_len in zip(targets, target_lens):
             if target_len == 1:
                 continue
-            
+
             target = target[:target_len]
             if score_type == "corr":
                 score_mtx = torch.corrcoef(target)
@@ -275,38 +277,57 @@ class KeywordDiversityLoss(nn.Module):
                 raise NotImplementedError(score_type)
 
             identity_mtx = torch.eye(target_len, device=score_mtx.device)
-            loss_mask = (identity_mtx != 1.0)
-            assert identity_mtx.shape == score_mtx.shape, f"{identity_mtx.shape}, {score_mtx.shape}"
-            scoreList.append(self.criterion( (score_mtx/self.temp) * loss_mask, (identity_mtx/self.temp) * loss_mask))
-            
-        if len(scoreList) > 0: 
+            loss_mask = identity_mtx != 1.0
+            assert (
+                identity_mtx.shape == score_mtx.shape
+            ), f"{identity_mtx.shape}, {score_mtx.shape}"
+            scoreList.append(
+                self.criterion(
+                    (score_mtx / self.temp) * loss_mask,
+                    (identity_mtx / self.temp) * loss_mask,
+                )
+            )
+
+        if len(scoreList) > 0:
             return sum(scoreList) / len(scoreList)
-        else: # Empty
+        else:  # Empty
             return 0.0
+
 
 class AttentionDiversityLoss(nn.Module):
     def __init__(self, loss_weight=1.0):
         super().__init__()
         self.loss_weight = loss_weight
         self.criterion = nn.L1Loss()
-        self.max_Len = round(250000/320)
-        
+        self.max_Len = round(250000 / 320)
+
     def current_loss_weight(self):
         return self.loss_weight
 
-    def forward(
-        self, attention_maps, eps=1e-5
-    ):
+    def forward(self, attention_maps, eps=1e-5):
         loss_list = []
         B, L = attention_maps[0].shape[0], attention_maps[0].shape[2]
-        target_eye_tensor = torch.eye(attention_maps[0].shape[1], device=attention_maps[0].device).unsqueeze(0).expand(B, -1, -1)
-        
+        target_eye_tensor = (
+            torch.eye(attention_maps[0].shape[1], device=attention_maps[0].device)
+            .unsqueeze(0)
+            .expand(B, -1, -1)
+        )
+
         for attention_map in attention_maps:
             if attention_map.shape[-1] > self.max_Len:
                 print(attention_map.shape)
-            normalize_attention_map = F.normalize(attention_map, dim=-1, eps=eps)[:, :, :self.max_Len, :self.max_Len]
-            correlation_score = (normalize_attention_map.unsqueeze(2) * normalize_attention_map.unsqueeze(1)).sum([-1, -2]) / L
-            assert correlation_score.shape == target_eye_tensor.shape, f"{correlation_score.shape}, {target_eye_tensor.shape}"
-            loss_list.append(self.criterion(correlation_score, target_eye_tensor).mean())
-            
+            normalize_attention_map = F.normalize(attention_map, dim=-1, eps=eps)[
+                :, :, : self.max_Len, : self.max_Len
+            ]
+            correlation_score = (
+                normalize_attention_map.unsqueeze(2)
+                * normalize_attention_map.unsqueeze(1)
+            ).sum([-1, -2]) / L
+            assert (
+                correlation_score.shape == target_eye_tensor.shape
+            ), f"{correlation_score.shape}, {target_eye_tensor.shape}"
+            loss_list.append(
+                self.criterion(correlation_score, target_eye_tensor).mean()
+            )
+
         return sum(loss_list) / len(loss_list)

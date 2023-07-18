@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from fairseq.modules import Fp32GroupNorm
 
 
-
 class SimpleVectorQuantizer(nn.Module):
     def __init__(
         self,
@@ -67,14 +66,13 @@ class SimpleVectorQuantizer(nn.Module):
             )
 
     def forward(self, x, prob_msk=[0, 2, 3], feat_len=None, produce_targets=True):
-
         if not self.time_first:
             x = x.transpose(1, 2)
 
         result = {"num_vars": x.shape[-1]}
         bsz, tsz, fsz = x.shape
-        x = x.reshape(-1, fsz) # (bsz, tsz, grps * num_vars)
-        x = x.view(bsz * tsz * 1, -1) # (bsz * tsz * grps, num_vars)
+        x = x.reshape(-1, fsz)  # (bsz, tsz, grps * num_vars)
+        x = x.view(bsz * tsz * 1, -1)  # (bsz * tsz * grps, num_vars)
 
         if feat_len is not None:
             start = 0
@@ -90,7 +88,7 @@ class SimpleVectorQuantizer(nn.Module):
                 x[:, i] += float("-inf")
 
         with torch.no_grad():
-            _, k = x.max(-1) # k is the indices of the largest logits among num_vars
+            _, k = x.max(-1)  # k is the indices of the largest logits among num_vars
 
             # hard_x: one hot for the choosen codewords ( bsz * tsz, num_vars )
             hard_x = (
@@ -99,7 +97,7 @@ class SimpleVectorQuantizer(nn.Module):
                 .view(bsz * tsz, 1, -1)
                 .squeeze()
             )
-            
+
             # hard_probs: probs for all codewords in each codebook group : (grp, num_vars) (use one-hot as prob)
             hard_probs = torch.mean(hard_x.float(), dim=0)
 
@@ -113,15 +111,17 @@ class SimpleVectorQuantizer(nn.Module):
 
         probs_per_t = (
             torch.softmax(x.view(bsz, tsz, -1), dim=-1).contiguous().permute(1, 0, 2)
-        ) # (tsz, bsz, num_vars)
+        )  # (tsz, bsz, num_vars)
 
         assert probs_per_t.shape[0] == tsz
         assert probs_per_t.shape[1] == bsz
 
-        ent_per_t = -torch.sum(probs_per_t * torch.log(probs_per_t + 1e-9), dim=-1) # (tsz,bsz)
-        ent_per_t = ent_per_t.mean(dim=-1) # (tsz,)
+        ent_per_t = -torch.sum(
+            probs_per_t * torch.log(probs_per_t + 1e-9), dim=-1
+        )  # (tsz,bsz)
+        ent_per_t = ent_per_t.mean(dim=-1)  # (tsz,)
         del probs_per_t
-        
+
         result["ent_per_t"] = ent_per_t
 
         # prob_cpx : probs for all codewords in each codebook group : (grp, num_vars) (use softmax as prob)
@@ -143,11 +143,11 @@ class SimpleVectorQuantizer(nn.Module):
         else:
             x = hard_x
 
-        x = x.view(bsz * tsz, -1) # (bsz * tsz, group * num_vars)
+        x = x.view(bsz * tsz, -1)  # (bsz * tsz, group * num_vars)
 
         # add gumbel softmax hard target
         result["subword_prob"] = x.view(bsz, tsz, -1)
-        
+
         # if groundTruthPerplexity is given, minimized the l2 norm with groundTruthPerplexity
         if self.groundTruthPerplexity is not None:
             result["diversity_loss"] = (
@@ -168,7 +168,8 @@ class SimpleVectorQuantizer(nn.Module):
             )
 
         return result
-    
+
+
 class GumbelVectorQuantizer(nn.Module):
     def __init__(
         self,
@@ -323,7 +324,6 @@ class GumbelVectorQuantizer(nn.Module):
         return res["x"], res["targets"]
 
     def forward(self, x, produce_targets=False):
-
         result = {"num_vars": self.num_vars * self.groups}
 
         if not self.time_first:
@@ -510,7 +510,6 @@ class KmeansVectorQuantizer(nn.Module):
         return res["x"], res["targets"]
 
     def forward(self, x, produce_targets=False):
-
         result = {"num_vars": self.num_vars}
 
         if self.time_first:

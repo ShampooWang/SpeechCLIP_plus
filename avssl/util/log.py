@@ -41,9 +41,7 @@ def set_pl_logger(config: OrderedNamespace):
         return None
     elif isinstance(logger_type, bool):
         return logger_type
-    elif logger_type == "wandb" or isinstance(
-        logger_type, WandbLogger
-    ):
+    elif logger_type == "wandb" or isinstance(logger_type, WandbLogger):
         name = config.trainer.default_root_dir.split("/")[-1]
         logger = WandbLogger(
             project=project, name=name, save_dir=config.trainer.default_root_dir

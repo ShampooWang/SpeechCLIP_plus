@@ -91,7 +91,7 @@ class FlickrDataset(BaseDataset):
         wav_rm_silence: bool = False,
         clip_image_transform: str = None,
         alignment_file: str = None,
-        audioEncoder_downsamplingRate = 320,
+        audioEncoder_downsamplingRate=320,
         **kwargs,
     ):
         if clip_image_transform is not None:
@@ -197,7 +197,7 @@ class FlickrDataset(BaseDataset):
                     if _subid not in text_ali[_img_id].keys():
                         text_ali[_img_id][_subid] = []
                     text_ali[_img_id][_subid] += [_ts, _ts + _duration]
-                    
+
             ali_num = {}
             for _img_id in text_ali.keys():
                 ali_num[_img_id] = {}
@@ -236,9 +236,7 @@ class FlickrDataset(BaseDataset):
                                             _subID
                                         ]
                                     _entry["alignment"] = text_ali[image_name][_subID]
-                                    _entry["segment_num"] = ali_num[image_name][
-                                        _subID
-                                    ]
+                                    _entry["segment_num"] = ali_num[image_name][_subID]
                             else:
                                 _entry = {"id": filename2Id[image_name]}
                                 if "audio" in self.modalities:

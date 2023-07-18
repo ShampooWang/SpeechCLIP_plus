@@ -32,7 +32,7 @@ class GeneralBranch(nn.Module):
         self.config = config
         self.audio_dim = audio_dim
         self.text_dim = text_dim
-        
+
         assert hasattr(
             TransformerModels,
             config.model_settings.parallel_branch.transformer_args.type,
@@ -65,11 +65,18 @@ class GeneralBranch(nn.Module):
         src = torch.cat([cls, audio_feat], dim=1)
 
         if type(self) == ParallelBranch:
-            key_padding_mask = get_keypadding_mask(max_audio_length+1, audio_feat_len+1)
+            key_padding_mask = get_keypadding_mask(
+                max_audio_length + 1, audio_feat_len + 1
+            )
         elif type(self) == CascadedBranch:
-            key_padding_mask = get_keypadding_mask(max_audio_length+self.keyword_num, audio_feat_len+self.keyword_num)
+            key_padding_mask = get_keypadding_mask(
+                max_audio_length + self.keyword_num, audio_feat_len + self.keyword_num
+            )
         elif type(self) == HybridBranch:
-            key_padding_mask = get_keypadding_mask(max_audio_length+self.keyword_num+1, audio_feat_len+self.keyword_num+1)
+            key_padding_mask = get_keypadding_mask(
+                max_audio_length + self.keyword_num + 1,
+                audio_feat_len + self.keyword_num + 1,
+            )
 
         if extract_hiddens:
             attn_out, hidden_states = self.self_att.extract_hidden_states(
@@ -387,7 +394,7 @@ class HybridBranch(CascadedBranch):
 
         return tuple(hidden_states)
 
-    
+
 class CascadedBranch_dynamic(nn.Module):
     def __init__(self, config, audio_dim: int, text_dim: int, clip: ClipModel) -> None:
         super().__init__()
@@ -663,13 +670,13 @@ class CascadedBranch_dynamic(nn.Module):
 
     def forward(self, audio_feat, audio_feat_len, otherInputs, extract_hiddens=False):
         bsz, audio_max_len = audio_feat.shape[0], audio_feat.shape[1]
-        
+
         if type(self) == HybridBranch_dynamic:
             assert hasattr(self, "self_att") and hasattr(self, "cls")
             cls = torch.cat([self.cls] * bsz, dim=0)
             audio_feat = torch.cat([cls, audio_feat], dim=1)
             audio_feat_pad_mask = get_keypadding_mask(
-                max_length=audio_max_len+1, data_lens=audio_feat_len+1
+                max_length=audio_max_len + 1, data_lens=audio_feat_len + 1
             ).to(audio_feat.device)
         else:
             audio_feat_pad_mask = get_keypadding_mask(
@@ -685,14 +692,16 @@ class CascadedBranch_dynamic(nn.Module):
                 hidden_states = []
         else:
             if hasattr(self, "self_att"):
-                audio_feat = self.self_att(src=audio_feat, key_padding_mask=audio_feat_pad_mask)
-            
+                audio_feat = self.self_att(
+                    src=audio_feat, key_padding_mask=audio_feat_pad_mask
+                )
+
         if type(self) == HybridBranch_dynamic:
             parallel_audio_feat = self.parallel_proj(
                 audio_feat[:, :1].reshape(-1, self.audio_dim)
             )
             audio_feat = audio_feat[:, 1:].reshape(-1, audio_max_len, self.audio_dim)
-            
+
         dsample_results = self.downsampling_audio_feat(
             audio_feat=audio_feat,
             audio_feat_len=audio_feat_len,
@@ -723,7 +732,13 @@ class CascadedBranch_dynamic(nn.Module):
         )
 
         if type(self) == HybridBranch_dynamic:
-            return parallel_audio_feat, clip_feats, vq_results, vq_keywords, dsample_results
+            return (
+                parallel_audio_feat,
+                clip_feats,
+                vq_results,
+                vq_keywords,
+                dsample_results,
+            )
         else:
             return clip_feats, vq_results, vq_keywords, dsample_results
 
@@ -739,13 +754,15 @@ class HybridBranch_dynamic(CascadedBranch_dynamic):
         self.cls = self._create_cls()
         logger.info("Start init [CLS] {}".format(self.cls.shape))
         assert hasattr(
-            TransformerModels, config.model_settings.cascaded_branch.transformer_args.type
+            TransformerModels,
+            config.model_settings.cascaded_branch.transformer_args.type,
         )
         logger.info(
             f"Using {config.model_settings.cascaded_branch.transformer_args.type} as ParallelBranch"
         )
         self.self_att = getattr(
-            TransformerModels, config.model_settings.cascaded_branch.transformer_args.type
+            TransformerModels,
+            config.model_settings.cascaded_branch.transformer_args.type,
         )(**config.model_settings.parallel_branch.transformer_args)
 
     def _create_cls(self):

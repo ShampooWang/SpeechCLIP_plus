@@ -2,27 +2,33 @@ import logging
 from typing import Callable, Optional, Union
 
 import torch
-from torch.nn import functional as F
 import torch.nn.functional as F
 from torch import Tensor, nn
-
-from transformers.file_utils import copy_func
 from torch.nn import TransformerEncoderLayer
+from torch.nn import functional as F
+from transformers.file_utils import copy_func
 
 logger = logging.getLogger(__name__)
 
 __all__ = ["TransformerEncoder", "MultiheadAttentionAndNorm"]
 
 
-def _sa_block(self, x: Tensor, attn_mask: Optional[Tensor], key_padding_mask: Optional[Tensor]) -> Tensor:
-    x, attn_map = self.self_attn(x, x, x,
-                        attn_mask=attn_mask,
-                        key_padding_mask=key_padding_mask,
-                        need_weights=True, 
-                        average_attn_weights=False)
-    
-    self.attn_maps = [ attn_map ]
+def _sa_block(
+    self, x: Tensor, attn_mask: Optional[Tensor], key_padding_mask: Optional[Tensor]
+) -> Tensor:
+    x, attn_map = self.self_attn(
+        x,
+        x,
+        x,
+        attn_mask=attn_mask,
+        key_padding_mask=key_padding_mask,
+        need_weights=True,
+        average_attn_weights=False,
+    )
+
+    self.attn_maps = [attn_map]
     return self.dropout1(x)
+
 
 class nnTransformerEncoder(nn.TransformerEncoder):
     def __init__(self, encoder_layer, num_layers, norm=None):
@@ -34,7 +40,6 @@ class nnTransformerEncoder(nn.TransformerEncoder):
         mask: Optional[torch.Tensor] = None,
         src_key_padding_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        
         output = src
         attention_maps = []
 
@@ -49,13 +54,15 @@ class nnTransformerEncoder(nn.TransformerEncoder):
 
         assert attention_maps, "attention maps' length is zero"
         n_head, D = attention_maps[0].shape[1], attention_maps[0].shape[-1]
-        attention_map_mask = src_key_padding_mask.unsqueeze(1).unsqueeze(-1).expand(-1, n_head, -1, D)
+        attention_map_mask = (
+            src_key_padding_mask.unsqueeze(1).unsqueeze(-1).expand(-1, n_head, -1, D)
+        )
         for attn_map in attention_maps:
             attn_map.masked_fill_(attention_map_mask, 0.0)
         del attention_map_mask
-        
+
         return output, attention_maps
-    
+
     def extract_hidden_states(
         self,
         src: torch.Tensor,
@@ -84,7 +91,7 @@ class nnTransformerEncoder(nn.TransformerEncoder):
         # hidden_states.append(output)
         if self.norm is not None:
             output = self.norm(output)
-        
+
         hidden_states[-1] = self.norm(hidden_states[-1])
 
         return output, hidden_states
@@ -102,7 +109,7 @@ class TransformerEncoder(nn.Module):
         layer_norm_eps: float = 1e-5,
         batch_first: bool = True,
         norm_first: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__()
 
@@ -120,19 +127,17 @@ class TransformerEncoder(nn.Module):
         )
         encoder_norm = nn.LayerNorm(d_model, eps=1e-5)
         self.model = nnTransformerEncoder(encoder_layer, n_layers, encoder_norm)
-        
+
     def extract_attention_map(
-        self, 
+        self,
         src: torch.Tensor,
         key_padding_mask: torch.Tensor,
         mask: torch.Tensor = None,
     ):
         return self.model.extract_attention_map(
-            src=src,
-            mask=mask,
-            src_key_padding_mask=key_padding_mask
+            src=src, mask=mask, src_key_padding_mask=key_padding_mask
         )
-        
+
     def forward(
         self,
         src: torch.Tensor,
@@ -160,6 +165,7 @@ class TransformerEncoder(nn.Module):
             src=src,
             src_key_padding_mask=key_padding_mask,
         )
+
 
 class MultiheadAttentionAndNorm(nn.Module):
     def __init__(

@@ -375,7 +375,6 @@ class ParallelSpeechClip_AttPool(ParallelSpeechClipBase):
         # image_feat is actually the same, since each image is presented with only one vector
 
         if cal_loss:
-
             audio_feat = audio_feat / audio_feat.norm(dim=-1, keepdim=True)
             image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
 
@@ -761,7 +760,6 @@ class ParallelSpeechClip_AttPool_FineGrain_Base(BaseLightningModel):
         )
 
         if cal_loss:
-
             audio_feat = audio_feat / audio_feat.norm(dim=-1, keepdim=True)
             image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
 
@@ -778,7 +776,6 @@ class ParallelSpeechClip_AttPool_FineGrain_Base(BaseLightningModel):
         return audio_feat, image_feat
 
     def log_grad_norm(self, grad_norm_dict):
-
         self.log_dict(
             grad_norm_dict, on_step=True, on_epoch=True, prog_bar=True, logger=True
         )
@@ -1369,7 +1366,6 @@ class ParallelSpeechClip_AttPoolText(ParallelSpeechClip_AttPool):
         full_utt: bool = False,
         ret_pre_pooling: bool = False,
     ) -> dict:
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         text = batch["text"]
@@ -1389,7 +1385,6 @@ class ParallelSpeechClip_AttPoolText(ParallelSpeechClip_AttPool):
         # image_feat is actually the same, since each image is presented with only one vector
 
         if cal_loss:
-
             audio_feat = audio_feat / audio_feat.norm(dim=-1, keepdim=True)
             text_feat = text_feat / text_feat.norm(dim=-1, keepdim=True)
 

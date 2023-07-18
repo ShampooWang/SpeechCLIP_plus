@@ -1,6 +1,4 @@
-from ..model import (
-    SpeechCLIP_plus
-)
+from ..model import SpeechCLIP_plus
 from .base_task import BaseTask, TrainSpeechClipBaseTask
 
 

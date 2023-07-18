@@ -41,6 +41,7 @@ class Kw_BatchNorm_plus(nn.Module):
 
         return output
 
+
 #############################################
 ## For SpeechCLIP's fix number of keywords ##
 #############################################

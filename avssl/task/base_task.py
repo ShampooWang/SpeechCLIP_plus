@@ -111,7 +111,9 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
-                    audioEncoderDownsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
+                    audioEncoderDownsamplingRate=getattr(
+                        config.audio_encoder, "downsampling_rate", 320
+                    ),
                     **config.data.dataset,
                 )
             if self.args.train or self.args.eval:
@@ -120,7 +122,9 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
-                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
+                    audioEncoder_downsamplingRate=getattr(
+                        config.audio_encoder, "downsampling_rate", 320
+                    ),
                     **config.data.dataset,
                 )
             if self.args.test:
@@ -130,7 +134,9 @@ class TrainSpeechClipBaseTask(BaseTask):
                     # load_image=False,
                     # tokenizeText=False,
                     # modalities=["audio", "image", "text"],
-                    audioEncoder_downsamplingRate=getattr(config.audio_encoder, "downsampling_rate", 320),
+                    audioEncoder_downsamplingRate=getattr(
+                        config.audio_encoder, "downsampling_rate", 320
+                    ),
                     **config.data.dataset,
                 )
         elif config.data.dataset.name == "places":

@@ -48,12 +48,7 @@ from ..util import freeze_model, get_keypadding_mask
 from ..util.embedding_visualization import draw_embedding_space_PCA
 from ..util.metric import cosine_semantics
 from .base_model import BaseLightningModel
-from .speechclip import (
-    CascadedBranch,
-    HybridBranch,
-    ParallelBranch,
-    GeneralBase,
-)
+from .speechclip import CascadedBranch, GeneralBase, HybridBranch, ParallelBranch
 
 __all__ = [
     "KWClip_GeneralTransformer_plus",
@@ -375,13 +370,14 @@ class Hybrid_plus(CascadedBranch_plus):
             )
         )
 
-    def extract_hidden_states(self,
+    def extract_hidden_states(
+        self,
         audio_feat,
         audio_len,
         image_feats=None,
         text=None,
-        return_match_feat=False,):
-
+        return_match_feat=False,
+    ):
         bsz, total_max_len = (
             audio_feat.size(0),
             1 + audio_feat.size(1),
@@ -397,7 +393,7 @@ class Hybrid_plus(CascadedBranch_plus):
         audio_feat, hidden_states = self.self_att.extract_hidden_states(
             src=src, key_padding_mask=key_padding_mask
         )
-        hidden_states = [ x[:, 1:, :] for x in hidden_states ]
+        hidden_states = [x[:, 1:, :] for x in hidden_states]
         keywords = audio_feat[:, 1:].reshape(-1, total_max_len - 1, self.audio_dim)
         if self.downsampling_type == "cnn":
             keywords, new_feat_len = self.downsampling(keywords, audio_len)
@@ -430,7 +426,7 @@ class Hybrid_plus(CascadedBranch_plus):
 
         hidden_states.append(audio_feat[:, 1:, :])
         return hidden_states
-        
+
     def forward(
         self,
         audio_feat,
@@ -471,7 +467,7 @@ class Hybrid_plus(CascadedBranch_plus):
             encoder_outputs = {
                 "encoder_raw_out": audio_feat,
                 "encoder_padding_mask": get_keypadding_mask(
-                    audio_feat.shape[1], audio_len-1
+                    audio_feat.shape[1], audio_len - 1
                 ),
             }
 
@@ -706,10 +702,7 @@ class SpeechCLIP_plus(GeneralBase):
 
         if self.config.model_settings.cascaded_objective_weight > 0:
             logger.info("Create branch of cascaded")
-            if (
-                self.config.model_settings.cascaded_branch.type
-                == "Cascaded_plus"
-            ):
+            if self.config.model_settings.cascaded_branch.type == "Cascaded_plus":
                 self.cascaded_branch = CascadedBranch_plus(
                     config=self.config,
                     audio_dim=self.audio_embd_dim,
@@ -727,8 +720,7 @@ class SpeechCLIP_plus(GeneralBase):
                     clip=self.clip,
                 )
             elif (
-                self.config.model_settings.cascaded_branch.type
-                == "Alignment_Cascaded"
+                self.config.model_settings.cascaded_branch.type == "Alignment_Cascaded"
             ):
                 logger.info("Using Ground truth alignment")
                 self.cascaded_branch = Alignment_CascadedBranch(
@@ -905,7 +897,6 @@ class SpeechCLIP_plus(GeneralBase):
         batch,
         cal_loss: bool = False,
     ) -> dict:
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -1690,16 +1681,18 @@ class SpeechCLIP_plus(GeneralBase):
         return hidden_states[-1], hidden_states
 
     def feature_extractor_zerospeech(self, wav, feat_select_idx):
-        feat_select_idx= int(feat_select_idx)
+        feat_select_idx = int(feat_select_idx)
         result = []
-        wav_len = [ len(x) for x in wav ]
+        wav_len = [len(x) for x in wav]
         audio_feat, audio_len, hidden_states = self.forward_audio(
             wav, wav_len, return_hidden_states=True
         )
         len_audio_encoder = len(hidden_states)
         # embeddings, feat_len = self.forward_audio(wav)
-        hidden_states = [ x for x in hidden_states ]
-        cascaded_hidden_states = self.cascaded_branch.extract_hidden_states(audio_feat, audio_len)
+        hidden_states = [x for x in hidden_states]
+        cascaded_hidden_states = self.cascaded_branch.extract_hidden_states(
+            audio_feat, audio_len
+        )
         hidden_states = hidden_states + cascaded_hidden_states
         embeddings = hidden_states[feat_select_idx]
 
@@ -1723,6 +1716,11 @@ class SpeechCLIP_plus(GeneralBase):
     def extract_keyword_boundary(self, wav):
         embeddings, feat_len = self.forward_audio(wav)
         result = self.cascaded_branch(embeddings, feat_len)
-        result["vq_results"]["targets"] = result["vq_results"]["targets"].view(-1,)
-        result["vq_results"]["targets"] = [self.clip.reducedl2Original[_id.item()] for _id in result["vq_results"]["targets"] ]
+        result["vq_results"]["targets"] = result["vq_results"]["targets"].view(
+            -1,
+        )
+        result["vq_results"]["targets"] = [
+            self.clip.reducedl2Original[_id.item()]
+            for _id in result["vq_results"]["targets"]
+        ]
         return result

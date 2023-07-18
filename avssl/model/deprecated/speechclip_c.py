@@ -236,7 +236,6 @@ class CascadedSpeechClip_Base(BaseLightningModel):
         wav_len: Union[torch.Tensor, list] = [],
         return_hidden_states: bool = False,
     ) -> Union[Tuple[Union[torch.Tensor, list], torch.Tensor], torch.Tensor]:
-
         if self.audio_encoder_type == "s3prl":
             audio_feat, audio_feat_len = self.audio_encoder(wav, wav_len)
         else:
@@ -1042,7 +1041,6 @@ class KeywordCascadedSpeechClip_Base(CascadedSpeechClip_Base):
 
                 batch_tmp_outputs = []
                 for x in range(_bsz):
-
                     tmp_outputs = {}
                     for _keyword_i in range(self.keyword_num):
                         tmp_outputs["keyword_{}".format(_keyword_i)] = []
@@ -1355,7 +1353,6 @@ class KeywordCascadedSpeechClip(CascadedSpeechClip_Base):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -1653,7 +1650,6 @@ class KeywordCascadedSpeechClip(CascadedSpeechClip_Base):
 
                 batch_tmp_outputs = []
                 for x in range(_bsz):
-
                     tmp_outputs = {}
                     for _keyword_i in range(self.keyword_num):
                         tmp_outputs["keyword_{}".format(_keyword_i)] = []
@@ -1930,7 +1926,6 @@ class KeywordCascadedSpeechClip_parallel_baseline(KeywordCascadedSpeechClip):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -2292,7 +2287,6 @@ class KeywordCascadedSpeechClip_CIF_BN(KeywordCascadedSpeechClip_Base):
         batch,
         cal_loss: bool = False,
     ) -> dict:
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -2458,7 +2452,6 @@ class KeywordCascadedSpeechClip_CIF_BN(KeywordCascadedSpeechClip_Base):
         top1_tok = torch.argmax(vq_results["subword_prob"], dim=-1)
         detok_text = []
         for x in range(top1_tok.size(0)):
-
             ids = top1_tok[x, : keywords_len[x]].tolist()
             detok_text.append(
                 " ".join(
@@ -2584,7 +2577,6 @@ class KeywordCascadedSpeechClip_CIF_BN(KeywordCascadedSpeechClip_Base):
                     for _d, _g in zip(detok_texts, gold_texts)
                 ]
             else:
-
                 K = self.config.keyword.get("detokenized_K_neighbors", 10)
 
                 if not hasattr(self.config.keyword, "retrieve_method"):
@@ -2638,7 +2630,6 @@ class KeywordCascadedSpeechClip_CIF_BN(KeywordCascadedSpeechClip_Base):
                     _k_values = _k_values.view(_bsz, -1, K)
 
                     for x in range(_bsz):
-
                         tmp_outputs = {}
                         for _keyword_i in range(all_keyword_lens[i]):
                             tmp_outputs["keyword_{}".format(_keyword_i)] = []
@@ -2847,7 +2838,6 @@ class KeywordCascadedSpeechClip_ProjVQ(KeywordCascadedSpeechClipBN):
         batch,
         cal_loss: bool = False,
     ) -> dict:
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -3392,7 +3382,6 @@ class KeywordCascadedSpeechClip_ProjVQ_Cosine(KeywordCascadedSpeechClip_ProjVQ):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -3954,7 +3943,6 @@ class KeywordCascadedSpeechClip_ProjVQ_Cosine_CIF(
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -4492,7 +4480,6 @@ class KeywordCascadedSpeechClip_ProjVQ_Cosine_AttMap_Constraint(
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -4949,7 +4936,6 @@ class KeywordCascadedSpeechClip_ProjVQ_Cosine_w_Parallel(
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -5293,7 +5279,6 @@ class KeywordCascadedSpeechClip_CodeBookPenalty(KeywordCascadedSpeechClipBN):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -5577,7 +5562,6 @@ class KeywordCascadedSpeechClip_CodeBookPenaltyBN(KeywordCascadedSpeechClipBN):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -5882,7 +5866,6 @@ class KeywordCascadedSpeechClipBNEachKw(KeywordCascadedSpeechClip):
         batch,
         cal_loss: bool = False,
     ):
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -6146,7 +6129,6 @@ class KeywordCascadedSpeechClipNLayer(CascadedSpeechClip_Base):
         batch,
         cal_loss: bool = False,
     ) -> dict:
-
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]

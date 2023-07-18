@@ -91,12 +91,14 @@ class GeneralBase(BaseLightningModel):
 
     def forward_audio(
         self,
-        wav, wav_len,
+        wav,
+        wav_len,
         return_hidden_states: bool = False,
     ) -> Union[Tuple[Union[torch.Tensor, list], torch.Tensor], torch.Tensor]:
-        
         if self.audio_encoder_type in ["s3prl_plus", "FairseqHubert", "custom_wavlm"]:
-            return self.audio_encoder(wav, wav_len, return_hidden_states=return_hidden_states)
+            return self.audio_encoder(
+                wav, wav_len, return_hidden_states=return_hidden_states
+            )
         else:
             raise NotImplementedError("Unknown type:{}".format(self.audio_encoder_type))
 
@@ -779,7 +781,9 @@ class SpeechCLIP_plus(GeneralBase):
         _params = super().getTrainableParams()
         if self.cascaded_branch is not None:
             logger.info("Add cascaded_branch parameters")
-            _params += list(filter(lambda x: x.requires_grad, self.cascaded_branch.parameters()))
+            _params += list(
+                filter(lambda x: x.requires_grad, self.cascaded_branch.parameters())
+            )
 
         if self.parallel_branch is not None:
             logger.info("Add parallel_branch parameters")
@@ -798,18 +802,24 @@ class SpeechCLIP_plus(GeneralBase):
             _params += list(self.c_branch_proj_net.parameters())
 
         return _params
-    
+
     def forward(
         self,
         batch,
     ) -> dict:
-        
-        self.clip.update_device(self.device) # update device information to clip model
-        
+        self.clip.update_device(self.device)  # update device information to clip model
+
         if self.training:
-            batch = random_crop_max_length(batch, self.config.audio_encoder.max_audio_len)
-            
-        image, id, wav, wav_len = batch["image"], batch["id"], batch["wav"], batch["wav_len"]
+            batch = random_crop_max_length(
+                batch, self.config.audio_encoder.max_audio_len
+            )
+
+        image, id, wav, wav_len = (
+            batch["image"],
+            batch["id"],
+            batch["wav"],
+            batch["wav_len"],
+        )
         audio_feat, audio_feat_len = self.forward_audio(
             wav, wav_len, return_hidden_states=False
         )
@@ -818,8 +828,10 @@ class SpeechCLIP_plus(GeneralBase):
         if self.img_enc_proj_net is not None:
             image_feat = self.img_enc_proj_net(image_feat)
         image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
-        
-        parallel_audio_feat = cascaded_audio_feat = vq_results = vq_keywords = dsample_results = keywords_len = None
+
+        parallel_audio_feat = (
+            cascaded_audio_feat
+        ) = vq_results = vq_keywords = dsample_results = keywords_len = None
         if self.cascaded_branch is not None:
             if isinstance(self.cascaded_branch, CascadedBranch_dynamic):
                 otherInputs = {}
@@ -833,17 +845,19 @@ class SpeechCLIP_plus(GeneralBase):
                         and "text" in batch
                     ):
                         otherInputs["text"] = batch["text"]
-                        dsample_target_len = torch.LongTensor([
-                            (t.squeeze().tolist().index(49407) - 1)
-                            for t in batch["text"]
-                        ]).to(wav.device)
+                        dsample_target_len = torch.LongTensor(
+                            [
+                                (t.squeeze().tolist().index(49407) - 1)
+                                for t in batch["text"]
+                            ]
+                        ).to(wav.device)
                     else:
                         otherInputs["text"] = None
                         dsample_target_len = (audio_feat_len / 20).round().long()
                     otherInputs["dsample_target_len"] = dsample_target_len
-                    
+
                 if type(self.cascaded_branch) == HybridBranch_dynamic:
-                     (
+                    (
                         parallel_audio_feat,
                         cascaded_audio_feat,
                         vq_results,
@@ -855,7 +869,12 @@ class SpeechCLIP_plus(GeneralBase):
                         otherInputs=otherInputs,
                     )
                 else:
-                    cascaded_audio_feat, vq_results, vq_keywords, dsample_results = self.cascaded_branch(
+                    (
+                        cascaded_audio_feat,
+                        vq_results,
+                        vq_keywords,
+                        dsample_results,
+                    ) = self.cascaded_branch(
                         audio_feat=audio_feat,
                         audio_feat_len=audio_feat_len,
                         otherInputs=otherInputs,
@@ -883,7 +902,7 @@ class SpeechCLIP_plus(GeneralBase):
                 audio_feat=audio_feat,
                 audio_feat_len=audio_feat_len,
             )
-        
+
         ####################
         ## Extract losses ##
         ####################
@@ -906,7 +925,7 @@ class SpeechCLIP_plus(GeneralBase):
                 dim=-1, keepdim=True
             )
             losses["parallel_audio_feat"] = parallel_audio_feat
-            
+
         # if "attention_maps" in branchResultDict and hasattr(
         #     self, "attention_diversity_criterion"
         # ):
@@ -941,11 +960,12 @@ class SpeechCLIP_plus(GeneralBase):
                 and self.cascaded_branch.downsampling_type == "cif"
             ):
                 assert (
-                    "target_len" in dsample_results and "quantity_out" in dsample_results
+                    "target_len" in dsample_results
+                    and "quantity_out" in dsample_results
                 ), f"{dsample_results.keys()}"
                 losses["cif_quantity_out"] = dsample_results["quantity_out"]
                 losses["cif_target_len"] = dsample_results["target_len"]
-                
+
         #####################
         ## Logging metrics ##
         #####################
@@ -980,50 +1000,54 @@ class SpeechCLIP_plus(GeneralBase):
                 "vq_results": vq_results,
                 "vq_keywords": vq_keywords,
                 "dsample_results": dsample_results,
-                "keywords_len": keywords_len
+                "keywords_len": keywords_len,
             },
         )
-    
+
     def compute_loss(self, inputDict: dict):
         assert isinstance(inputDict, dict)
         required_keys = {"id", "image_feat"}
-        assert required_keys.issubset(set(inputDict.keys())), f"required: {required_keys}, input: {inputDict.keys()}"
+        assert required_keys.issubset(
+            set(inputDict.keys())
+        ), f"required: {required_keys}, input: {inputDict.keys()}"
 
         losses = {"loss": 0}
         image_feat = inputDict["image_feat"].float()
         id = inputDict["id"]
-        
+
         branchTypeList = ["cascaded", "parallel"]
         for branchType in branchTypeList:
-            loss_weight = getattr(self.config.model_settings, f"{branchType}_objective_weight", 0.0)
+            loss_weight = getattr(
+                self.config.model_settings, f"{branchType}_objective_weight", 0.0
+            )
             if loss_weight > 0.0:
                 feats_key = f"{branchType}_audio_feat"
                 assert feats_key in inputDict, f"{inputDict.keys()}"
                 losses[f"{branchType[0]}_cl_loss"] = self.criterion(
-                                                        feat_A=inputDict[feats_key].float(),
-                                                        feat_B=image_feat,
-                                                        index=id,
-                                                    )
+                    feat_A=inputDict[feats_key].float(),
+                    feat_B=image_feat,
+                    index=id,
+                )
                 losses["loss"] += loss_weight * losses[f"{branchType[0]}_cl_loss"]
-        
+
         for k, v in inputDict.items():
             if "diversity_loss" in k:
                 losses[k] = METRIC_REDUCEFN_MAPPING[type(v)](v)
-                losses["loss"] += (
-                    self.keyword_diversity_weight * losses[k]
-                )
-        
+                losses["loss"] += self.keyword_diversity_weight * losses[k]
+
         if "attention_diversity_loss" in losses:
-            losses["attention_diversity_loss"] = METRIC_REDUCEFN_MAPPING[type(inputDict["attention_diversity_loss"])](inputDict["attention_diversity_loss"])
-            losses["loss"] += self.attention_diversity_weight * losses["attention_diversity_loss"]
-            
-            
+            losses["attention_diversity_loss"] = METRIC_REDUCEFN_MAPPING[
+                type(inputDict["attention_diversity_loss"])
+            ](inputDict["attention_diversity_loss"])
+            losses["loss"] += (
+                self.attention_diversity_weight * losses["attention_diversity_loss"]
+            )
+
         if (
             "cif_quantity_out" in inputDict
             and "cif_target_len" in inputDict
             and hasattr(self, "quantity_loss_criteria")
         ):
-
             losses["quantity_loss"] = self.quantity_loss_criteria(
                 inputDict["cif_quantity_out"], inputDict["cif_target_len"]
             )
@@ -1075,7 +1099,6 @@ class SpeechCLIP_plus(GeneralBase):
             returnDict["keywords_len"] = others["keywords_len"]
 
         return {"loss_feats": losses, "log_metrics": log_metrics, "others": returnDict}
-    
 
     def validation_step_end(self, outputs):
         assert isinstance(outputs, dict)

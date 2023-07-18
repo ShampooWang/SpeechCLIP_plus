@@ -357,7 +357,6 @@ class WavLM(nn.Module):
         output_layer: Optional[int] = None,
         ret_layer_results: bool = False,
     ):
-
         if self.feature_grad_mult > 0:
             features = self.feature_extractor(source)
             if self.feature_grad_mult != 1.0:
@@ -401,7 +400,7 @@ class WavLM(nn.Module):
             "features": features,
             "layer_results": layer_results,
         }
-        
+
         feature = res["features"] if ret_conv else res["x"]
         if ret_layer_results:
             feature = (feature, res["layer_results"])
@@ -513,7 +512,6 @@ class ConvFeatureExtractionModel(nn.Module):
             pass
 
     def forward(self, x, mask=None):
-
         # BxT -> BxCxT
         x = x.unsqueeze(1)
         if self.conv_type == "custom":
@@ -604,7 +602,6 @@ class TransformerEncoder(nn.Module):
     def extract_features(
         self, x, padding_mask=None, streaming_mask=None, tgt_layer=None
     ):
-
         if padding_mask is not None:
             x[padding_mask] = 0
 
@@ -673,7 +670,6 @@ class TransformerSentenceEncoderLayer(nn.Module):
         rescale_init: bool = False,
         gru_rel_pos: bool = False,
     ) -> None:
-
         super().__init__()
         # Initialize parameters
         self.embedding_dim = embedding_dim

@@ -8,7 +8,6 @@ from sklearn.decomposition import PCA
 def draw_embedding_space_PCA(
     kw_embs: torch.Tensor, gold_embs: torch.Tensor, output_path: str
 ):
-
     kw_count = kw_embs.shape[1] if kw_embs.dim() == 3 else None
     kw_embs = kw_embs.reshape(-1, gold_embs.shape[-1])
     kw_embs = kw_embs.numpy()

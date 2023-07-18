@@ -12,10 +12,7 @@ class SpeechCLIP(GeneralBase):
                     text_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
-            elif (
-                self.config.model_settings.cascaded_branch.type
-                == "HybridBranch"
-            ):
+            elif self.config.model_settings.cascaded_branch.type == "HybridBranch":
                 assert self.config.model_settings.parallel_objective_weight > 0
                 logger.info("Using Parallel Objective (Integrated w/ cascaded_branch)")
                 self.cascaded_branch = HybridBranch(
@@ -30,8 +27,7 @@ class SpeechCLIP(GeneralBase):
             self.keyword_num = self.cascaded_branch.keyword_num
         if (
             self.config.model_settings.parallel_objective_weight > 0
-            and not self.config.model_settings.cascaded_branch.type
-            == "HybridBranch"
+            and not self.config.model_settings.cascaded_branch.type == "HybridBranch"
         ):
             logger.info("Create Parallel Branch")
             self.parallel_branch = ParallelBranch(
@@ -131,29 +127,36 @@ class SpeechCLIP(GeneralBase):
     def compute_loss(self, inputDict):
         assert isinstance(inputDict, dict)
         required_keys = {"id", "image_feat"}
-        assert required_keys.issubset(set(inputDict.keys())), f"required: {required_keys}, input: {inputDict.keys()}"
+        assert required_keys.issubset(
+            set(inputDict.keys())
+        ), f"required: {required_keys}, input: {inputDict.keys()}"
 
         losses = {"loss": 0}
         image_feat = inputDict["image_feat"].float()
         id = inputDict["id"]
-        
+
         branchTypeList = ["cascaded", "parallel", "keywords"]
         for branchType in branchTypeList:
-            loss_weight = getattr(self.config.model_settings, f"{branchType}_objective_weight", 0.0)
+            loss_weight = getattr(
+                self.config.model_settings, f"{branchType}_objective_weight", 0.0
+            )
             if loss_weight > 0.0:
                 feats_key = f"{branchType}_audio_feat"
                 assert feats_key in inputDict, f"{inputDict.keys()}"
                 losses[f"{branchType[0]}_cl_loss"] = self.criterion(
-                                                        feat_A=inputDict[feats_key].float(),
-                                                        feat_B=image_feat,
-                                                        index=id,
-                                                    )
+                    feat_A=inputDict[feats_key].float(),
+                    feat_B=image_feat,
+                    index=id,
+                )
                 losses["loss"] += loss_weight * losses[f"{branchType[0]}_cl_loss"]
 
         return losses
 
-    def forward(self, batch,) -> dict:
-        self.clip.update_device(self.device) # update device information to clip model
+    def forward(
+        self,
+        batch,
+    ) -> dict:
+        self.clip.update_device(self.device)  # update device information to clip model
         ############################
         ## Extract image features ##
         ############################
@@ -162,7 +165,7 @@ class SpeechCLIP(GeneralBase):
         if self.img_enc_proj_net is not None:
             image_feat = self.img_enc_proj_net(image_feat)
         image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
-        
+
         ##########################################
         ## Extract cascaded & parallel features ##
         ##########################################
@@ -176,33 +179,37 @@ class SpeechCLIP(GeneralBase):
                 audio_feat_len=audio_feat_len,
             )
             if self.c_branch_proj_net is not None:
-                resuldDict["cascaded_audio_feat"] = self.c_branch_proj_net(resuldDict["cascaded_audio_feat"])
-                
+                resuldDict["cascaded_audio_feat"] = self.c_branch_proj_net(
+                    resuldDict["cascaded_audio_feat"]
+                )
+
         if self.parallel_branch is not None:
             resuldDict = self.parallel_branch(
                 audio_feat=audio_feat,
                 audio_feat_len=audio_feat_len,
             )
             if self.p_branch_proj_net is not None:
-                resuldDict["parallel_audio_feat"] = self.p_branch_proj_net(resuldDict["parallel_audio_feat"])
-                
+                resuldDict["parallel_audio_feat"] = self.p_branch_proj_net(
+                    resuldDict["parallel_audio_feat"]
+                )
+
         resuldDict["id"] = batch["id"]
         resuldDict["image_feat"] = image_feat
-        
+
         losses = {
             "id": batch["id"],
             "image_feat": image_feat,
         }
         if resuldDict["cascaded_audio_feat"] is not None:
-            resuldDict["cascaded_audio_feat"] = resuldDict["cascaded_audio_feat"] / resuldDict["cascaded_audio_feat"].norm(
-                dim=-1, keepdim=True
-            )
+            resuldDict["cascaded_audio_feat"] = resuldDict[
+                "cascaded_audio_feat"
+            ] / resuldDict["cascaded_audio_feat"].norm(dim=-1, keepdim=True)
             losses["cascaded_audio_feat"] = resuldDict["cascaded_audio_feat"]
 
         if resuldDict["parallel_audio_feat"] is not None:
-            resuldDict["parallel_audio_feat"] = resuldDict["parallel_audio_feat"] / resuldDict["parallel_audio_feat"].norm(
-                dim=-1, keepdim=True
-            )
+            resuldDict["parallel_audio_feat"] = resuldDict[
+                "parallel_audio_feat"
+            ] / resuldDict["parallel_audio_feat"].norm(dim=-1, keepdim=True)
             losses["parallel_audio_feat"] = resuldDict["parallel_audio_feat"]
 
         log_metrics = {"cl_temp": self.criterion.current_temperature}
@@ -219,19 +226,23 @@ class SpeechCLIP(GeneralBase):
         audio_feat, audio_len = self.forward_audio(wav, wav_len)
 
         return self.cascaded_branch.getAttentionMap(audio_feat, audio_len)
-    
+
     def feature_extractor_zerospeech(self, wav, feat_select_idx):
-        feat_select_idx= int(feat_select_idx)
+        feat_select_idx = int(feat_select_idx)
         result = []
-        batch = {"wav": wav, "wav_len": [ len(x) for x in wav ]}
+        batch = {"wav": wav, "wav_len": [len(x) for x in wav]}
         audio_feat, audio_len, hidden_states = self.forward_audio(
             batch, return_hidden_states=True
         )
-        hidden_states = [ x for x in hidden_states ]
+        hidden_states = [x for x in hidden_states]
         if self.cascaded_branch is not None:
-            addtional_hidden_states = self.cascaded_branch.extract_hidden_states(audio_feat, audio_len)
+            addtional_hidden_states = self.cascaded_branch.extract_hidden_states(
+                audio_feat, audio_len
+            )
         else:
-            addtional_hidden_states = self.parallel_branch.extract_hidden_states(audio_feat, audio_len)
+            addtional_hidden_states = self.parallel_branch.extract_hidden_states(
+                audio_feat, audio_len
+            )
         hidden_states = hidden_states + addtional_hidden_states
         embeddings = hidden_states[feat_select_idx]
 
