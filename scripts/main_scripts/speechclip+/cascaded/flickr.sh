@@ -1,7 +1,7 @@
 lscpu | egrep 'CPU\(s\)'
 cd /mnt/md0/user_jeff/audio-visual-ssl
 
-EXP_ROOT="/mnt/md0/user_jeff/Checkpoints/speechclip+/cascaded/flickr/flickr_c+"
+EXP_ROOT="/mnt/md0/user_jeff/Checkpoints/speechclip+/cascaded/flickr/flickr_c+_cos_ent_pen"
 CFG_FILE="/mnt/md0/user_jeff/audio-visual-ssl/config/speechclip+/cascaded/flickr/flickr_c2.yaml"
 mkdir $EXP_ROOT
 

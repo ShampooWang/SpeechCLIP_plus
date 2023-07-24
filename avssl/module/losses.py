@@ -249,10 +249,11 @@ class MaskedContrastiveLoss(nn.Module):
 
 
 class KeywordDiversityLoss(nn.Module):
-    def __init__(self, loss_weight=10):
+    def __init__(self, loss_weight=10, keyword_center=None, temp=0.25):
         super().__init__()
         self.loss_weight = loss_weight
-        self.temp = 0.25
+        self.temp = temp
+        self.keyword_center = keyword_center
         self.criterion = nn.L1Loss()
 
     def current_loss_weight(self):
@@ -262,6 +263,12 @@ class KeywordDiversityLoss(nn.Module):
         self, targets=torch.Tensor, target_lens=torch.Tensor, score_type=str, eps=1e-5
     ):
         assert targets.dim() == 3, targets.shape
+        assert score_type in ["corr", "cos"], score_type
+
+        if score_type == "corr":
+            assert self.keyword_center is not None
+            assert not self.keyword_center.requires_grad
+
         scoreList = []
         for target, target_len in zip(targets, target_lens):
             if target_len == 1:
@@ -269,13 +276,9 @@ class KeywordDiversityLoss(nn.Module):
 
             target = target[:target_len]
             if score_type == "corr":
-                score_mtx = torch.corrcoef(target)
-            elif score_type == "cos":
-                normalize_target = F.normalize(target, dim=-1, eps=eps)
-                score_mtx = normalize_target @ normalize_target.T
-            else:
-                raise NotImplementedError(score_type)
-
+                target = target - self.keyword_center.to(target.device)
+            normalize_target = F.normalize(target, dim=-1, eps=eps)
+            score_mtx = normalize_target @ normalize_target.T
             identity_mtx = torch.eye(target_len, device=score_mtx.device)
             loss_mask = identity_mtx != 1.0
             assert (

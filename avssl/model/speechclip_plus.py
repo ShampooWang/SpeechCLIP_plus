@@ -751,7 +751,8 @@ class SpeechCLIP_plus(GeneralBase):
                 or "cos" in self.keyword_diversity_type
             ):
                 self.keyword_diversity_criterion = KeywordDiversityLoss(
-                    self.keyword_diversity_weight
+                    self.keyword_diversity_weight,
+                    keyword_center=self.clip.model.token_embedding.weight.mean(0),
                 )
 
         ##############################
@@ -933,6 +934,12 @@ class SpeechCLIP_plus(GeneralBase):
         #         branchResultDict["attention_maps"]
         #     )
 
+        # if parallel_audio_feat is not None and cascaded_audio_feat is not None:
+        #     parallel_target = parallel_audio_feat.clone().detach()
+        #     assert not parallel_target.requires_grad
+        #     losses["similariy_distillation_loss"] = 1 - F.cosine_similarity(cascaded_audio_feat, parallel_target, dim=-1)
+        #     losses["rec_distillation_loss"] = F.l1_loss(cascaded_audio_feat, parallel_target)
+
         if self.cascaded_branch is not None:
             if self.keyword_diversity_weight > 0:
                 assert vq_keywords is not None
@@ -1042,6 +1049,11 @@ class SpeechCLIP_plus(GeneralBase):
             losses["loss"] += (
                 self.attention_diversity_weight * losses["attention_diversity_loss"]
             )
+
+        # for k, v in inputDict.items():
+        #     if "distillation_loss" in k:
+        #         losses[k] = METRIC_REDUCEFN_MAPPING[type(v)](v)
+        #         losses["loss"] += 0.5 * losses[k]
 
         if (
             "cif_quantity_out" in inputDict
@@ -1155,9 +1167,8 @@ class SpeechCLIP_plus(GeneralBase):
         feat_select_idx = int(feat_select_idx)
         result = []
         wav_len = [len(x) for x in wav]
-        batch = {"wav": wav, "wav_len": wav_len}
         audio_feat, audio_feat_len, hidden_states = self.forward_audio(
-            batch, return_hidden_states=True
+            wav, wav_len, return_hidden_states=True
         )
         hidden_states = [x for x in hidden_states]
         if self.parallel_branch is not None:
@@ -1165,7 +1176,7 @@ class SpeechCLIP_plus(GeneralBase):
                 audio_feat, audio_feat_len
             )
         else:
-            if hasattr(self, "self_att"):
+            if hasattr(self.cascaded_branch, "self_att"):
                 additional_hidden_states = self.cascaded_branch.extract_hidden_states(
                     audio_feat, audio_feat_len
                 )

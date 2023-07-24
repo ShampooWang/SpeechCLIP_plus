@@ -22,10 +22,9 @@ from transformers import AutoModel, AutoProcessor
 from transformers.file_utils import copy_func
 
 from ..util import freeze_model, init_weights, random_crop_max_length
+from .wavlm_modules.modules import GradMultiply
 from .wavlm_modules.WavLM import TransformerEncoder as WavLMTransformerEncoder
 from .wavlm_modules.WavLM import WavLM, WavLMConfig
-
-from .wavlm_modules.modules import GradMultiply
 from .weighted_sum import WeightedSumLayer
 
 FEAT_SELECT_IDX_WEIGHTED_SUM_MODE = "weighted_sum"
