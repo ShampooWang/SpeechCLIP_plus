@@ -20,6 +20,8 @@ from ..module import (
     S3prlSpeechEncoderPlus,
     SimpleCache,
     SupConLoss,
+    WeightedSumLayer,
+    freeze_model,
     losses,
     mutualRetrieval,
 )
@@ -62,6 +64,25 @@ class GeneralBase(BaseLightningModel):
             self.audio_encoder = FairseqSpeechEncoder_Hubert(**config.audio_encoder)
         elif self.audio_encoder_type == "custom_wavlm":
             self.audio_encoder = Custom_WavLM(**config.audio_encoder)
+        elif self.audio_encoder_type == "COCO_parallel":
+            speechclip_plus = SpeechCLIP_plus.load_from_checkpoint(
+                "/mnt/md0/user_jeff/Checkpoints/speechclip+/parallel/coco/coco_p+_kssplit/epoch=15-step=141792-val_recall_mean_10=70.0617.ckpt"
+            )
+            transformer_num = (
+                speechclip_plus.config.model_settings.parallel_branch.transformer_args.n_layers
+            )
+            self.audio_encoder = speechclip_plus.audio_encoder
+            self.audio_encoder.trainable = False
+            self.audio_encoder.feat_select_idx = "all"
+            self.parallel_transformers = speechclip_plus.parallel_branch
+            self.weightedsum_layer = WeightedSumLayer(
+                n_weights=self.audio_encoder.upstream_model_hiddenstates_len
+                + transformer_num,
+                normalize_features=self.audio_encoder.normalize_hiddenstates
+                and self.audio_encoder.normalize_type == "s3prl",
+            )
+            freeze_model(self.audio_encoder)
+            freeze_model(self.parallel_transformers)
         else:
             logger.warning("No audio encoder loaded")
 
@@ -81,7 +102,7 @@ class GeneralBase(BaseLightningModel):
         self.log_detokenize_results = config.log_setting.get(
             "log_detokenize_results", True
         )
-
+        # self.log_detokenize_results = False
         if self.log_detokenize_results:
             self.log_detokenize_results_every_n_epoch = config.log_setting.get(
                 "log_detokenize_results_every_n_epoch", 5
@@ -95,10 +116,20 @@ class GeneralBase(BaseLightningModel):
         wav_len,
         return_hidden_states: bool = False,
     ) -> Union[Tuple[Union[torch.Tensor, list], torch.Tensor], torch.Tensor]:
-        if self.audio_encoder_type in ["s3prl_plus", "FairseqHubert", "custom_wavlm"]:
+        if self.audio_encoder_type == "COCO_parallel":
+            audio_feat_dict, audio_feat_len = self.audio_encoder(
+                wav, wav_len, return_hidden_states=False
+            )
+            transformer_feats = self.parallel_transformers.extract_hidden_states(
+                audio_feat_dict["last_hidden_state"], audio_feat_len
+            )
+            all_hiddens = audio_feat_dict["hidden_states"] + transformer_feats
+            return self.weightedsum_layer(all_hiddens), audio_feat_len
+        elif self.audio_encoder_type in ["s3prl_plus", "FairseqHubert", "custom_wavlm"]:
             return self.audio_encoder(
                 wav, wav_len, return_hidden_states=return_hidden_states
             )
+
         else:
             raise NotImplementedError("Unknown type:{}".format(self.audio_encoder_type))
 
@@ -562,10 +593,13 @@ class GeneralBase(BaseLightningModel):
             list: list of trainable parameters
         """
         my_params = []
+        my_params += list(self.criterion.parameters())
 
-        if hasattr(self, "audio_encoder"):
+        if (
+            hasattr(self, "audio_encoder")
+            and not type(self.audio_encoder) == SpeechCLIP_plus
+        ):
             my_params += self.audio_encoder.trainable_params()
-            my_params += list(self.criterion.parameters())
 
         my_params += self.clip.trainable_params()
 
@@ -1163,7 +1197,7 @@ class SpeechCLIP_plus(GeneralBase):
 
         return hidden_states
 
-    def feature_extractor_zerospeech(self, wav, feat_select_idx):
+    def feature_extractor_zerospeech(self, wav, feat_select_idx, return_tensor=False):
         feat_select_idx = int(feat_select_idx)
         result = []
         wav_len = [len(x) for x in wav]
@@ -1186,8 +1220,11 @@ class SpeechCLIP_plus(GeneralBase):
         hidden_states = hidden_states + additional_hidden_states
         embeddings = hidden_states[feat_select_idx]
 
-        for _embs, _len in zip(embeddings, audio_feat_len):
-            result.append(_embs[:_len].cpu().float().numpy())
+        if return_tensor:
+            return embeddings
+        else:
+            for _embs, _len in zip(embeddings, audio_feat_len):
+                result.append(_embs[:_len].cpu().float().numpy())
 
         return result
 

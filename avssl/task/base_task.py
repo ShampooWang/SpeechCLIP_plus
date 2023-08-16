@@ -93,6 +93,7 @@ class TrainSpeechClipBaseTask(BaseTask):
             if self.args.save_path != "":
                 model.config.save_path = self.args.save_path
             config = model.config
+            # config.retrieval.audio_feat_src = "parallel"
         else:
             self.args.ckpt = None
             config = yaml.load(open(self.args.config, "r"), Loader=yaml.FullLoader)

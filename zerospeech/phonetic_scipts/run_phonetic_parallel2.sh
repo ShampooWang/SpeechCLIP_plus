@@ -2,7 +2,7 @@
 cd "/mnt/md0/user_jeff/audio-visual-ssl/zerospeech"
 # export ZEROSPEECH2021_TEST_GOLD=true
 
-for idx in {0..6};
+for idx in {7..14};
 do
     echo "Evaluate layer ${idx}"
     conda activate speechclip+

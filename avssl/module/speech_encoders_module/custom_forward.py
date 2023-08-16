@@ -9,7 +9,7 @@ from .wavlm_modules.modules import GradMultiply
 
 
 def custom_FairseqTransformerEncoder_extract_features(
-    self, x, padding_mask=None, tgt_layer=None
+    self, x, padding_mask=None, tgt_layer=None, corpus_key=None
 ):
     if padding_mask is not None:
         x = index_put(x, padding_mask, 0)

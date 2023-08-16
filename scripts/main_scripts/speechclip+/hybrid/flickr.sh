@@ -1,8 +1,8 @@
 lscpu | egrep 'CPU\(s\)'
-cd /mnt/md0/user_jeff/audio-visual-ssl
+cd /mnt/md1/user_jeffwang/audio-visual-ssl
 
-EXP_ROOT="/mnt/md0/user_jeff/Checkpoints/speechclip+/hybrid/flickr/flickr_h+_wo_shared_weight_cos_pen"
-CFG_FILE="/mnt/md0/user_jeff/audio-visual-ssl/config/speechclip+/hybrid/flickr_h2.yaml"
+EXP_ROOT="/mnt/md1/user_jeffwang/Checkpoints/speechclip+/hybrid/flickr/flickr_h"
+CFG_FILE="/mnt/md1/user_jeffwang/audio-visual-ssl/config/speechclip+/hybrid/flickr_h2.yaml"
 mkdir $EXP_ROOT
 
 python3 run_task.py \

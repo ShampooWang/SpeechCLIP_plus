@@ -296,7 +296,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
 
         feat = {
             "last_hidden_state": features["layer_results"][-1],
-            "hidden_states": tuple(features["layer_results"]),
+            "hidden_states": list(features["layer_results"]),
         }
         wav_len = [len(w) for w in wav]
 
@@ -333,9 +333,9 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
 
 class Custom_WavLM(FairseqSpeechEncoder_Hubert):
     MODEL2PATH = {
-        "wavlm_base": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base.pt",
-        "wavlm_base_plus": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Base+.pt",
-        "wavlm_large": "/mnt/md0/user_jeff/Checkpoints/wavlm_pt/WavLM-Large.pt",
+        "wavlm_base": "/mnt/md1/user_jeffwang/Checkpoints/wavlm_pt/WavLM-Base.pt",
+        "wavlm_base_plus": "/mnt/md1/user_jeffwang/Checkpoints/wavlm_pt/WavLM-Base+.pt",
+        "wavlm_large": "/mnt/md1/user_jeffwang/Checkpoints/wavlm_pt/WavLM-Large.pt",
     }
 
     MODEL_DOWNSAMPLE_RATE = {
