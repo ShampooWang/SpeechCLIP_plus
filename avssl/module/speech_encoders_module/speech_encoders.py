@@ -169,6 +169,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
             output = self.extract_hiddens(padded_wav, wav_padding_mask)
             self.upstream_model_hiddenstates_len = len(output["layer_results"])
             self.out_dim = output["x"].shape[2]
+            del output, wav, padded_wav, wav_padding_mask
 
         logger.info(
             f"Loaded speech encoder ({self.name}): out_dim = {self.out_dim} layer_drop = {self.encoder.encoder.layerdrop}"
@@ -251,6 +252,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
         feat_select_idx: Union[str, list] = None,
         return_hidden_states: bool = False,
     ) -> Tuple[Union[torch.Tensor, list], torch.Tensor]:
+        
         if isinstance(wav, torch.Tensor):
             if wav.dim() == 2:
                 if len(wav_len) > 0:
@@ -261,7 +263,7 @@ class FairseqSpeechEncoder_Hubert(nn.Module):
                 wav = [wav]
 
         padded_wav, wav_padding_mask = self.preprocess_input(wavs=wav)
-
+        
         if self.trainable:
             features = self.extract_hiddens(padded_wav, wav_padding_mask)
         else:

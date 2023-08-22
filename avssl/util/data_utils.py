@@ -1,10 +1,14 @@
 from collections import defaultdict
 
+import json
+import os
 import numpy as np
 import torch
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
+from clip.simple_tokenizer import SimpleTokenizer
+from scipy.optimize import linear_sum_assignment
 
 
 def clip_fp_alignment(batch, maxLen):
@@ -43,50 +47,25 @@ def fix_random_crop_alginment(crop_idx, fp_alignment, segment_num, maxLen):
     return modified_ali, len(modified_ali)
 
 
-def random_crop_max_length(batch, maxLen):
+def random_crop_max_length(
+    wav: torch.Tensor, max_len: int, orig_len: int = 1000000000
+) -> torch.Tensor:
     """Randomly crop an audio feature sequence into max_len.
+
     Args:
-        batch: Dict
-            wav: torch.FloatTensor
-            wav_len: torch.LongTensor
+        audio (torch.Tensor): Audio features (T, *)
+        max_len (int): Maximum length.
+        orig_len (int, optional): Original length of audio. Defaults to 1000000000.
+
     Returns:
         torch.Tensor: Cropped audio features.
     """
-    assert "wav" in batch and "wav_len" in batch, f"{batch.keys}"
-    if maxLen < 0:
-        return batch
+    audio_len = min(len(wav), orig_len)
+    if audio_len <= max_len or max_len < 0:
+        return wav[:audio_len]
 
-    newBatchDict = defaultdict(list)
-    device = batch["wav"].device
-
-    for i, (wav, wavLen) in enumerate(zip(batch["wav"], batch["wav_len"])):
-        start = None
-        wav = wav[:wavLen]
-        if wavLen > maxLen:
-            start = np.random.randint(wavLen.item() - maxLen)
-            wav = wav[start : start + maxLen]
-
-        newBatchDict["wav"].append(wav)
-        newBatchDict["wav_len"].append(len(wav))
-
-        if "fp_alignment" in batch and "segment_num" in batch:
-            fp_alignment, segment_num = fix_random_crop_alginment(
-                start, batch["fp_alignment"][i], batch["segment_num"][i], maxLen
-            )
-            newBatchDict["fp_alignment"].append(fp_alignment)
-            newBatchDict["segment_num"].append(segment_num)
-
-    for key in newBatchDict:
-        if key == "wav_len" or key == "segment_num":
-            newBatchDict[key] = torch.LongTensor(newBatchDict[key]).to(device)
-        else:
-            newBatchDict[key] = pad_sequence(newBatchDict[key], batch_first=True).to(
-                device
-            )
-
-    newBatchDict["id"] = batch["id"]
-    newBatchDict["image"] = batch["image"]
-    return newBatchDict
+    offset = np.random.randint(audio_len - max_len)
+    return wav[offset : offset + max_len]
 
 
 def get_keypadding_mask(max_length: int, data_lens: torch.Tensor) -> torch.Tensor:
@@ -302,9 +281,59 @@ def compute_fixed_keyword_neighbors(
 
             all_retok_outputs.append(
                 {
-                    "gold": gold_texts[i],
+                    "gold": gold_texts[x],
                     "neighbors": tmp_outputs,
                 }
             )
 
-    return hit_rate_list, all_retok_outputs, all_retok_outputs
+    return hit_rate_list, kw_top_ret, all_retok_outputs
+
+def compute_cos_alignments(model, all_retok_outputs, file_path):
+    ENCODER, DECODER = SimpleTokenizer().encoder, SimpleTokenizer().decoder
+    scores = []
+    output = []
+
+    for tokenize_ouput in tqdm(all_retok_outputs):
+        gold_toks = SimpleTokenizer().encode(text=tokenize_ouput["gold"])
+        gold_toks = [ model.clip.original2Reduced[tok] for tok in gold_toks[1:gold_toks.index(49407)] ]
+        gold_toks = torch.LongTensor(gold_toks).to(model.device)
+        
+        all_pred_toks = []
+        for neighbor in tokenize_ouput["neighbors"].values():
+            all_pred_toks += [ ENCODER[kw[0]] for kw in neighbor ]
+        all_pred_toks = [ model.clip.original2Reduced[tok] for tok in all_pred_toks ]
+        all_pred_toks = torch.LongTensor(list(set(all_pred_toks))).to(model.device)
+
+        gold_embd, pred_embd = model.clip.model.token_embedding(gold_toks), model.clip.model.token_embedding(all_pred_toks)
+        pairwise_cos_similarity = F.normalize(gold_embd, dim=-1) @ F.normalize(pred_embd, dim=-1).T
+        pairwise_cos_similarity = pairwise_cos_similarity.cpu().detach().numpy()
+
+        row_ind, col_ind = linear_sum_assignment(pairwise_cos_similarity, maximize=True)
+        assign_best_score_idx = np.argsort(pairwise_cos_similarity[row_ind, col_ind], axis=0)[::-1][:model.keyword_num]
+        topk_gold_toks = [ model.clip.reducedl2Original[tok.item()] for tok in gold_toks[row_ind[assign_best_score_idx]] ]
+        topk_pred_toks = [ model.clip.reducedl2Original[tok.item()] for tok in all_pred_toks[col_ind[assign_best_score_idx]] ]
+        topk_gold_text = [ DECODER[tok] for tok in topk_gold_toks ]
+        topk_pred_text = [ DECODER[tok] for tok in topk_pred_toks ]
+        topk_scores = pairwise_cos_similarity[row_ind, col_ind][assign_best_score_idx]
+        scores.append(topk_scores.mean(0))
+
+        output.append(
+            {
+                "gold": tokenize_ouput["gold"],
+                f"top{model.keyword_num}_gold_subwords": topk_gold_text,
+                f"top{model.keyword_num}_pred_subwords": topk_pred_text,
+                f"top{model.keyword_num}_scores": topk_scores.tolist(),
+            }
+        )
+
+    with open(file_path, "w") as f:
+        json.dump(output, f, indent=4)
+
+    return scores
+
+
+
+
+
+        
+

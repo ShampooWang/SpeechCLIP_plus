@@ -1,20 +1,20 @@
 data:
   dataset:
     name: flickr #flickr, coco
-    dataset_root: /mnt/md0/dataset/flickr/
+    dataset_root: /work/jgtf0322/Dataset/flickr
     text_file: Flickr8k.token.txt
     # alignment_file: Flickr_8k.ctm
-    clip_image_transform: ViT-B/32
+    clip_image_transform: ViT-L/14
     load_image: true
     load_audio: true
     tokenizeText: true
   batch_size: 128
-  dev_batch_size: 6
+  dev_batch_size: 8
   split_ratio: 0.9
 
 model_settings:
-  cascaded_objective_weight: 0.0
-  parallel_objective_weight: 1.0
+  cascaded_objective_weight: 1.0
+  parallel_objective_weight: 0.0
   keyword_objective_weight: 0.0
   matching_objective_weight: 0.0
   parallel_branch: 
@@ -24,16 +24,16 @@ model_settings:
     transformer_args:
       type: TransformerEncoder
       n_layers: 1
-      d_model: 768
+      d_model: 1024
       nhead: 8
-      dim_feedforward: 3072
+      dim_feedforward: 4096
       dropout: 0.1
       activation: gelu
       layer_norm_eps: 1.0e-5
       batch_first: true
       norm_first: false
   cascaded_branch:
-    type: CascadedBranch
+    type: KW_CascadedBranch
     vq:
       activation: gelu # relu or gelu
       type: SimpleVectorQuantizer # which type of quantizer to use, gumbel or kmeans
@@ -62,20 +62,23 @@ model_settings:
         add_cif_ctxt_layers: false
     keyword:
       diversity_type: ["cos"] # "ent" or "corr" or "cos"
-      diversity_weight: 0.5
+      diversity_weight: 0.0
       detokenized_K_neighbors: 5
       retrieve_method: cosine # cosine or pseudo_inverse
+      kw_projection:
+        dropout: 0.1
+        dimensions: [1024, 1024, 768]
       batchnorms:
           type: eachKw #eachKw or same
           std_scale: 1.0
           learnable: true
           parallel: true
     transformer_args:
-        type: TransformerEncoder
+        type: MultiheadAttentionAndNorm
         n_layers: 1
-        d_model: 768
+        d_model: 1024
         nhead: 1
-        dim_feedforward: 3072
+        dim_feedforward: 4096
         dropout: 0.1
         activation: gelu
         layer_norm_eps: 1.0e-5
@@ -83,6 +86,7 @@ model_settings:
         norm_first: false
         attn_diversity_weight: 0.0
 
+        
 cl_loss:
   type: MaskedContrastiveLoss # SupConLoss
   args:
@@ -104,20 +108,21 @@ retrieval:
 
 
 clip:
-  name: ViT-B/32
+  name: ViT-L/14
   image_encoder_trainable: false
   text_encoder_trainable: false
   reduce_subword_embbedding: ./avssl/data/flickr_stat/text_clip_vocab_usage_byfreq.npy # coco_stat, flickr_stat
 
 audio_encoder:
   type: FairseqHubert
-  name: hubert_base # wavlm_base wavlm_base_plus wavlm_large
+  name: hubert_large_ll60k # wavlm_base wavlm_base_plus wavlm_large
   downsampling_rate: 320
   pretrained: true
   trainable: false
   feat_select_idx: weighted_sum # last_hidden_state, weighted_sum
   layer_drop: 0.0
   max_audio_len: 102400
+  normalize_hiddenstates: true
   # reinit_layers: [10, 11]
   optim:
     name: Adam
@@ -148,7 +153,7 @@ trainer:
 
 log_setting:
   # save_kw_hit_rate: true
-  log_detokenize_results: true # whether or not to save the results of detokenized vq output
+  log_detokenize_results: false # whether or not to save the results of detokenized vq output
   log_detokenize_results_every_n_epoch: 10
   log_draw_pca_every_n_epoch: 10 # 10
 

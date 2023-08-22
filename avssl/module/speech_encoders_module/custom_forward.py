@@ -9,7 +9,7 @@ from .wavlm_modules.modules import GradMultiply
 
 
 def custom_FairseqTransformerEncoder_extract_features(
-    self, x, padding_mask=None, tgt_layer=None, corpus_key=None
+    self, x, padding_mask=None, tgt_layer=None
 ):
     if padding_mask is not None:
         x = index_put(x, padding_mask, 0)
@@ -78,7 +78,7 @@ def customFunc_hubert_forward(
     x, layer_results = self.encoder(
         x,
         padding_mask=padding_mask,
-        layer=None if output_layer is None else output_layer - 1,
+        layer=None if output_layer is None else output_layer - 1
     )
 
     return {"x": x, "layer_results": layer_results}

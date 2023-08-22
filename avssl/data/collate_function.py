@@ -4,33 +4,15 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 
 
-def collate_image_captions(batch: Tuple):
-    if len(batch[0]) == 2:
-        # no id given
-        audio_list, audio_len_list, image_list = [], [], []
-        for audio, image in batch:
-            audio_list.append(audio)
-            audio_len_list.append(len(audio))
-            image_list.append(image)
+def collate_general(batch: Tuple) -> dict:
+    """collate function for general purpose
 
-        return audio_list, audio_len_list, image_list
+    Args:
+        batch (Tuple): batch data
 
-    elif len(batch[0]) == 3:
-        # id given
-        audio_list, audio_len_list, image_list, id_list = [], [], [], []
-        for audio, image, id in batch:
-            audio_list.append(audio)
-            audio_len_list.append(len(audio))
-            image_list.append(image)
-            id_list.append(id)
-
-        return audio_list, audio_len_list, image_list, id_list
-
-    else:
-        raise NotImplementedError("Data format no implemented in collator")
-
-
-def collate_general(batch: Tuple):
+    Returns:
+        dict: output collated data
+    """
     keysInBatch = list(batch[0].keys())
     if "wav" in keysInBatch and isinstance(batch[0]["wav"], torch.Tensor):
         keysInBatch.append("wav_len")
@@ -40,12 +22,11 @@ def collate_general(batch: Tuple):
             if _key == "wav_len":
                 return_dict[_key].append(len(_row["wav"]))
             else:
-                assert _key in _row.keys(), f"_key: {_key}, keys: {_row.keys()}"
                 return_dict[_key].append(_row[_key])
 
     for key in return_dict:
         if isinstance(return_dict[key][0], torch.Tensor):
-            if key == "wav" or key == "fp_alignment":
+            if key == "wav":
                 return_dict[key] = pad_sequence(return_dict[key], batch_first=True)
             else:
                 return_dict[key] = torch.stack(return_dict[key], dim=0)

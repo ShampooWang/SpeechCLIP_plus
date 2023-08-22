@@ -36,6 +36,7 @@ class WeightedSumLayer(nn.Module):
 
         weights = torch.softmax(self.weights, dim=0)
         weights = weights.view(-1, *([1] * x[0].dim()))
+        
         x = torch.stack(x, dim=0)
         if self.normalize_features:
             x = F.layer_norm(x, (x.shape[-1],))

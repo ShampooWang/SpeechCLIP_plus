@@ -52,7 +52,7 @@ class nnTransformerEncoder(nn.TransformerEncoder):
         if self.norm is not None:
             output = self.norm(output)
 
-        assert attention_maps, "attention maps' length is zero"
+        assert attention_maps, "attention map's length is zero"
         n_head, D = attention_maps[0].shape[1], attention_maps[0].shape[-1]
         attention_map_mask = (
             src_key_padding_mask.unsqueeze(1).unsqueeze(-1).expand(-1, n_head, -1, D)
@@ -115,7 +115,7 @@ class TransformerEncoder(nn.Module):
 
         logger.info(f"Using {n_layers} layer transformer encoder")
         # TransformerEncoderLayer._sa_block = copy_func(_sa_block)
-        assert not norm_first
+
         encoder_layer = TransformerEncoderLayer(
             d_model=d_model,
             nhead=nhead,

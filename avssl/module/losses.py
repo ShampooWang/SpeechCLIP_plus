@@ -5,12 +5,15 @@ Date: May 07, 2020
 from __future__ import print_function
 
 import math
+import logging
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+logger = logging.getLogger(__name__)
 
 class SupConLoss(nn.Module):
     """Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
@@ -166,6 +169,7 @@ class MaskedContrastiveLoss(nn.Module):
             self.temperature = 1 / temperature
 
         eye_mat = torch.eye(MAX_EYE, dtype=torch.bool)
+        logger.info(f"Masked contrastive loss max eye size: {eye_mat.shape}")
         self.register_buffer("eye_mat", eye_mat)
         self.register_buffer("neg_eye_mat", ~eye_mat)
         self.register_buffer("eye_mat_fl", eye_mat.type(torch.float))

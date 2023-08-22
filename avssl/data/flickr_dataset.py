@@ -186,6 +186,7 @@ class FlickrDataset(BaseDataset):
 
         text_ali = {} if alignment_file is not None else None
         if text_ali is not None:
+            logger.info(f"loading ground truth alignment from: {os.path.join(dataset_root, alignment_file)}")
             with open(os.path.join(dataset_root, alignment_file), "r") as f:
                 for i, _l in enumerate(f):
                     _l = _l.split(" ")

@@ -93,6 +93,7 @@ class TrainSpeechClipBaseTask(BaseTask):
             if self.args.save_path != "":
                 model.config.save_path = self.args.save_path
             config = model.config
+            config.data.dataset.dataset_root = "/work/jgtf0322/Dataset/flickr"
             # config.retrieval.audio_feat_src = "parallel"
         else:
             self.args.ckpt = None
@@ -104,7 +105,6 @@ class TrainSpeechClipBaseTask(BaseTask):
             config.data.dataset.modalities = ["audio", "image", "text"]
 
         self.config = config
-
         if config.data.dataset.name == "flickr":
             if self.args.train:
                 tr_set = FlickrDataset(

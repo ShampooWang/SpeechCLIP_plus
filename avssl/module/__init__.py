@@ -11,3 +11,4 @@ from .projections import *
 from .retrieval import mutualRetrieval
 from .speech_encoders_module import *
 from .weighted_sum import WeightedSumLayer
+from .sap import SelfAttentionPooling

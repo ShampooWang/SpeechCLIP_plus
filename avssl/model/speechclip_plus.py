@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from pytorch_lightning.loggers.wandb import WandbLogger
 from torch import nn
 from torch.nn import functional as F
@@ -24,12 +25,14 @@ from ..module import (
     freeze_model,
     losses,
     mutualRetrieval,
+    SelfAttentionPooling
 )
 from ..optim import get_scheduler
 from ..util import (
     compute_dynamic_keyword_neighbors,
     compute_fixed_keyword_neighbors,
     random_crop_max_length,
+    compute_cos_alignments
 )
 from ..util.embedding_visualization import draw_embedding_space_PCA
 from ..util.metric import cosine_semantics
@@ -40,6 +43,7 @@ from .model_branches import (
     HybridBranch,
     HybridBranch_dynamic,
     ParallelBranch,
+    KW_CascadedBranch
 )
 
 METRIC_REDUCEFN_MAPPING = {
@@ -102,12 +106,16 @@ class GeneralBase(BaseLightningModel):
         self.log_detokenize_results = config.log_setting.get(
             "log_detokenize_results", True
         )
-        # self.log_detokenize_results = False
+        self.log_detokenize_results = False
         if self.log_detokenize_results:
             self.log_detokenize_results_every_n_epoch = config.log_setting.get(
                 "log_detokenize_results_every_n_epoch", 5
             )
 
+        self.log_cos_alignment = config.log_setting.get(
+            "log_cos_alignment", True
+        )
+        
         self.keyword_num = None
 
     def forward_audio(
@@ -445,13 +453,13 @@ class GeneralBase(BaseLightningModel):
                 ) as f_kw:
                     json.dump(all_retok_outputs, f_kw, indent=4)
 
-                if log_cos_semantics:
-                    cos_semantic_list = cosine_semantics(all_retok_outputs)
-                    val_cos_semantics = sum(cos_semantic_list) / len(cos_semantic_list)
-                    print("val_cos_semantics", val_cos_semantics)
+                if self.log_cos_alignment and self.keyword_num is not None:
+                    cosine_alignment_scores = compute_cos_alignments(self, all_retok_outputs, os.path.join(TextDir, f"cos_ali_ep{self.current_epoch}.json"))
+                    cosine_alignment_score = sum(cosine_alignment_scores) / len(cosine_alignment_scores)
+                    print("val_cosine_alignment_score", cosine_alignment_score)
                     self.log(
-                        "val_cos_semantics",
-                        val_cos_semantics,
+                        "val_cosine_alignment_score",
+                        cosine_alignment_score,
                         sync_dist=True,
                     )
 
@@ -647,6 +655,13 @@ class SpeechCLIP_plus(GeneralBase):
                     text_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
+            elif self.config.model_settings.cascaded_branch.type == "KW_CascadedBranch":
+                self.cascaded_branch = KW_CascadedBranch(
+                    config=config,
+                    audio_dim=self.audio_embd_dim,
+                    text_dim=self.subword_embd_dim,
+                    clip=self.clip,
+                )
             elif (
                 self.config.model_settings.cascaded_branch.type
                 == "CascadedBranch_dynamic"
@@ -671,6 +686,15 @@ class SpeechCLIP_plus(GeneralBase):
                     out_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
+                self.distill_weight = 0.0
+                if hasattr(self.config.model_settings.cascaded_branch, "distill_loss"):
+                    self.distill_weight = getattr(self.config.model_settings.cascaded_branch.distill_loss, "weight", 0.0)
+                    if self.distill_weight > 0.0:
+                        distill_type = getattr(self.config.model_settings.cascaded_branch.distill_loss, "type", "l1")
+                        assert distill_type in ["l1", "l2"], distill_type
+                        self.distill_criterion = nn.L1Loss() if distill_type == "l1" else nn.MSELoss()
+                        logger.info(f"Add distilling loss for cascaded features, weight: {self.distill_weight}, type: {distill_type}")
+                        
             elif (
                 self.config.model_settings.cascaded_branch.type
                 == "HybridBranch_dynamic"
@@ -696,7 +720,7 @@ class SpeechCLIP_plus(GeneralBase):
             if hasattr(self.cascaded_branch, "keyword_num"):
                 self.keyword_num = self.cascaded_branch.keyword_num
 
-            if self.config.model_settings.cascaded_branch.downsampling.type == "cif":
+            if hasattr(self.config.model_settings.cascaded_branch, "downsampling") and self.config.model_settings.cascaded_branch.downsampling.type == "cif":
                 self.quantity_loss_weight = getattr(
                     self.config.model_settings.cascaded_branch.downsampling.cif,
                     "quantity_loss_weight",
@@ -814,11 +838,13 @@ class SpeechCLIP_plus(GeneralBase):
 
     def getTrainableParams(self):
         _params = super().getTrainableParams()
+        
         if self.cascaded_branch is not None:
             logger.info("Add cascaded_branch parameters")
-            _params += list(
-                filter(lambda x: x.requires_grad, self.cascaded_branch.parameters())
-            )
+            _params += list(self.cascaded_branch.parameters())
+            # _params += list(
+            #     filter(lambda x: x.requires_grad, self.cascaded_branch.parameters())
+            # )
 
         if self.parallel_branch is not None:
             logger.info("Add parallel_branch parameters")
@@ -842,12 +868,8 @@ class SpeechCLIP_plus(GeneralBase):
         self,
         batch,
     ) -> dict:
+        
         self.clip.update_device(self.device)  # update device information to clip model
-
-        if self.training:
-            batch = random_crop_max_length(
-                batch, self.config.audio_encoder.max_audio_len
-            )
 
         image, id, wav, wav_len = (
             batch["image"],
@@ -855,6 +877,12 @@ class SpeechCLIP_plus(GeneralBase):
             batch["wav"],
             batch["wav_len"],
         )
+
+        if self.training:
+            wav =  [ random_crop_max_length(w, self.config.audio_encoder.max_audio_len, l.item()) for w, l in zip(wav, wav_len) ]
+            wav_len = [ len(w) for w in wav ]
+            wav, wav_len = pad_sequence(wav, batch_first=True).to(self.device), torch.LongTensor(wav_len).to(self.device)
+        
         audio_feat, audio_feat_len = self.forward_audio(
             wav, wav_len, return_hidden_states=False
         )
@@ -864,9 +892,13 @@ class SpeechCLIP_plus(GeneralBase):
             image_feat = self.img_enc_proj_net(image_feat)
         image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
 
-        parallel_audio_feat = (
-            cascaded_audio_feat
-        ) = vq_results = vq_keywords = dsample_results = keywords_len = None
+        parallel_audio_feat = None
+        cascaded_audio_feat = None
+        vq_results = None
+        vq_keywords = None
+        dsample_results = None
+        keywords_len = None
+
         if self.cascaded_branch is not None:
             if isinstance(self.cascaded_branch, CascadedBranch_dynamic):
                 otherInputs = {}
@@ -917,15 +949,27 @@ class SpeechCLIP_plus(GeneralBase):
                 keywords_len = dsample_results["dsample_feats_length"]
             else:
                 if type(self.cascaded_branch) == HybridBranch:
-                    (
-                        parallel_audio_feat,
-                        cascaded_audio_feat,
-                        vq_results,
-                        vq_keywords,
-                    ) = self.cascaded_branch(
-                        audio_feat=audio_feat,
-                        audio_feat_len=audio_feat_len,
-                    )
+                    if self.distill_weight > 0.0:
+                        (
+                            parallel_audio_feat,
+                            cascaded_audio_feat,
+                            vq_results,
+                            vq_keywords,
+                            pool_attn_out
+                        ) = self.cascaded_branch(
+                            audio_feat=audio_feat,
+                            audio_feat_len=audio_feat_len,
+                        )
+                    else:
+                        (
+                            parallel_audio_feat,
+                            cascaded_audio_feat,
+                            vq_results,
+                            vq_keywords,
+                        ) = self.cascaded_branch(
+                            audio_feat=audio_feat,
+                            audio_feat_len=audio_feat_len,
+                        )
                 else:
                     cascaded_audio_feat, vq_results, vq_keywords = self.cascaded_branch(
                         audio_feat=audio_feat,
@@ -947,7 +991,7 @@ class SpeechCLIP_plus(GeneralBase):
         }
         if cascaded_audio_feat is not None:
             if self.c_branch_proj_net is not None:
-                cascaded_audio_feat = self.cascaded_branch(cascaded_audio_feat)
+                cascaded_audio_feat = self.c_branch_proj_net(cascaded_audio_feat)
             cascaded_audio_feat = cascaded_audio_feat / cascaded_audio_feat.norm(
                 dim=-1, keepdim=True
             )
@@ -973,6 +1017,12 @@ class SpeechCLIP_plus(GeneralBase):
         #     assert not parallel_target.requires_grad
         #     losses["similariy_distillation_loss"] = 1 - F.cosine_similarity(cascaded_audio_feat, parallel_target, dim=-1)
         #     losses["rec_distillation_loss"] = F.l1_loss(cascaded_audio_feat, parallel_target)
+
+        if getattr(self, "distill_weight", 0.0) > 0.0:
+            parallel_target = parallel_audio_feat.clone().detach()
+            assert not parallel_target.requires_grad
+            losses["similariy_distillation_loss"] = 1 - F.cosine_similarity(pool_attn_out, parallel_target, dim=-1)
+            losses["rec_distillation_loss"] = self.distill_criterion(pool_attn_out, parallel_target)
 
         if self.cascaded_branch is not None:
             if self.keyword_diversity_weight > 0:
@@ -1071,11 +1121,6 @@ class SpeechCLIP_plus(GeneralBase):
                 )
                 losses["loss"] += loss_weight * losses[f"{branchType[0]}_cl_loss"]
 
-        for k, v in inputDict.items():
-            if "diversity_loss" in k:
-                losses[k] = METRIC_REDUCEFN_MAPPING[type(v)](v)
-                losses["loss"] += self.keyword_diversity_weight * losses[k]
-
         if "attention_diversity_loss" in losses:
             losses["attention_diversity_loss"] = METRIC_REDUCEFN_MAPPING[
                 type(inputDict["attention_diversity_loss"])
@@ -1084,10 +1129,10 @@ class SpeechCLIP_plus(GeneralBase):
                 self.attention_diversity_weight * losses["attention_diversity_loss"]
             )
 
-        # for k, v in inputDict.items():
-        #     if "distillation_loss" in k:
-        #         losses[k] = METRIC_REDUCEFN_MAPPING[type(v)](v)
-        #         losses["loss"] += 0.5 * losses[k]
+        for k, v in inputDict.items():
+            if "distillation_loss" in k:
+                losses[k] = METRIC_REDUCEFN_MAPPING[type(v)](v)
+                losses["loss"] += self.distill_weight * losses[k]
 
         if (
             "cif_quantity_out" in inputDict
