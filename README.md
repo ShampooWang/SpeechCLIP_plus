@@ -1,73 +1,112 @@
-# SpeechCLIP
+# README
 
-<p align="center">
-    <img alt="" style="width: 50%" src="model_summary.jpg"/>
+# SpeechCLIP+
+
+### Reminder: this repository also supports the original SpeechCLIP usage (e.g. loading checkpoint, training and testing)
+
+<!-- <style>
+    .inline-image{
+        display: inline-block;
+    }
+</style> -->
+
+<div style="text-align: center;">
+    <div style="display: inline-block; width: 75%; text-align: center;">
+        <img alt="Hybrid Model" src="hybrid.png" style="max-width: 45%;"/>
+        &nbsp;
+        &nbsp;
+        <img alt="Hybrid+ Model" src="hybrid+.png" style="max-width: 46.5%;"/>
+        <br/>
+        <span>Left: Hybrid SpeechCLIP. Right: Cascaded and Hybrid SpeechCLIP+</span>
+    </div>
     <br/>
-    <a href=""><img alt="LICENSE" src="https://img.shields.io/github/license/atosystem/SpeechCLIP"/> </a>
-    <a href=""><img alt="STAR" src="https://img.shields.io/github/stars/atosystem/SpeechCLIP"/> </a>
-    <a href="https://github.com/atosystem/SpeechCLIP/issues"><img alt="ISSUE" src="https://img.shields.io/github/issues/atosystem/SpeechCLIP" /></a>
-    <a href="https://github.com/atosystem/SpeechCLIP/pulls"><img alt="PR" src="https://img.shields.io/github/issues-pr/atosystem/SpeechCLIP" /></a>
-</p>
+    <br/>
+    <div style="text-align: center;">
+        <a href=""><img alt="LICENSE" src="https://img.shields.io/github/license/ShampooWang/SpeechCLIP_plus"/></a>
+        <a href=""><img alt="STAR" src="https://img.shields.io/github/stars/ShampooWang/SpeechCLIP_plus"/></a>
+        <a href="https://github.com/ShampooWang/SpeechCLIP_plus/issues"><img alt="ISSUE" src="https://img.shields.io/github/issues/ShampooWang/SpeechCLIP_plus"/></a>
+        <a href="https://github.com/ShampooWang/SpeechCLIP_plus/pulls"><img alt="PR" src="https://img.shields.io/github/issues-pr/ShampooWang/SpeechCLIP_plus"/></a>
+    </div>
+</div>
 
-Links: [arXiv](https://arxiv.org/abs/2210.00705 ) | [Blog](https://atosystem.github.io/blogs/speechclip)
+
+
+Links: [arXiv](https://arxiv.org/abs/2402.06959)
 
 ## Code Contributors
 
-Yi-Jen Shih, Hsuan-Fu Wang, Heng-Jui Chang
+Hsuan-Fu Wang, Yi-Jen Shih, Heng-Jui Chang
 
 ## Prequisite
 
 ### Install packages
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Data Preparation
+
 See [Details](data/README.md)
 
-### Download Pretrained Checkpoints
+### Download Pretrained
+Checkpoints
+
 ```bash
 bash download_ckpts.sh
-``` 
-You chould see `Done downloading all checkpoints` after the script is executed
+```
 
-> Notice that it reuqires 2 GPUs for training base models and 4 GPUs for large models
+You could see `Done downloading all checkpoints` after
+the script is executed
+
+> Notice that it reuqires 2 GPUs for training base models and 4 GPUs
+for large models
+> 
 
 ## Usage
-Remember to check the `dataset_root`
-### Train
 
-Example: train Parallel SpeechCLIP base:
+Remember to check the `dataset_root` ### Train
+
+Example: train Cascaded SpeechCLIP+ base:
 
 ```bash
-bash egs/model_base/parallel/train.sh
+bash egs/speechCLIP+/model_base/cascaded+/train.sh
 ```
 
 ### Inference
 
-Example: test Parallel SpeechCLIP base:
-(Using pretrained checkpoint)
+Example: test Parallel SpeechCLIP base: (Using pretrained
+checkpoint)
+
 ```bash
-bash egs/model_base/parallel/test.sh
+bash egs/speechCLIP+/model_base/cascaded+/test.sh
 ```
 
-> For more settings, please see the folders in `./egs/`.
+> For more settings, please see the folders in ./egs/.
+> 
 
-### Getting embeddings from SpeechCLIP
+### Getting embeddings from
+SpeechCLIP or SpeechCLIP+
 
 See [example.py](example.py)
 
 ## Citation
+
 ```
-@article{speechclip2022,
-  title={SpeechCLIP: Integrating Speech with Pre-Trained Vision and Language Model},
-  author={Yi-Jen Shih and Hsuan-Fu Wang and Heng-Jui Chang and Layne Berry and Hung-yi Lee and David Harwath},
-  journal={IEEE SLT},
-  year={2022},
-  publisher={IEEE}
+@article{wang2024speechclip+,
+  title={SpeechCLIP+: Self-supervised multi-task representation learning for speech via CLIP and speech-image data},
+  author={Wang, Hsuan-Fu and Shih, Yi-Jen and Chang, Heng-Jui and Berry, Layne and Peng, Puyuan and Lee, Hung-yi and Wang, Hsin-Min and Harwath, David},
+  journal={arXiv preprint arXiv:2402.06959},
+  year={2024}
 }
 ```
 
+## TBD
+
+- Release the code of keyword evaluation (urgent!).
+- Clean the comments on config. files.
+
 ## Contribute
-Please run autoformatter before opening PR!
-Autoformat `./dev-support/`
+
+Please run autoformatter before opening PR! Autoformat
+`./dev-support/`

@@ -17,5 +17,6 @@ if __name__ == "__main__":
 
     parser = runner.add_args(parser)
     args = runner.parse_args(parser)
+    print(args)
 
     runner.run()

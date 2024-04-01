@@ -57,6 +57,7 @@ class TransformerEncoder(nn.Module):
         layer_norm_eps: float = 1e-5,
         batch_first: bool = True,
         norm_first: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__()
 

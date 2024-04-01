@@ -4,6 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import os
+from collections import defaultdict
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -15,6 +16,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ..base import OrderedNamespace
+from .kw_branches import *
 from ..module import (
     ClipModel,
     FairseqSpeechEncoder_Hubert,
@@ -23,11 +25,13 @@ from ..module import (
     losses,
     mutualRetrieval,
 )
-from ..module.kw_modules import TransformerModels
-from ..module.speechclip_c_modules import vector_quantizers
-from ..module.speechclip_c_modules.kw_bn import Kw_BatchNorm
+
 from ..optim import get_scheduler
-from ..util import get_keypadding_mask
+from ..util import (
+    draw_embedding_space_PCA,
+    extract_fixed_keyword_neighbors,
+    extract_dynamic_keyword_neighbors
+)
 from .base_model import BaseLightningModel
 
 __all__ = [
@@ -85,8 +89,7 @@ class KWClipBase(BaseLightningModel):
             "log_detokenize_results", True
         )
 
-        # the number of keywords in cascaded branch
-        self.keyword_num = self.config.model_settings.cascaded_branch.keyword.number
+        self.keyword_num = None
 
     def forward_audio(
         self,
@@ -201,33 +204,47 @@ class KWClipBase(BaseLightningModel):
         """
         losses, log_metrics, others = self.forward(batch)
 
-        # select cascaded or parallel branch's output for contrastive loss calculation
         audio_feat = (
             others["cascaded_audio_feat"]
             if self.config.retrieval.audio_feat_src == "cascaded"
             else others["parallel_audio_feat"]
         )
 
-        image_feat = others["image_feat"] if "image_feat" in others else None
-        text_feat = others["text_feat"] if "text_feat" in others else None
+        image_feat = others.get("image_feat", None)
+        text_feat = others.get("text_feat", None)
         id = others["id"]
 
-        # collect features
-        return_dict = {
+        returnDict = {
             "id": id,
             "audio_feat": audio_feat,
         }
+
         if image_feat is not None:
-            return_dict["image_feat"] = image_feat
+            returnDict["image_feat"] = image_feat
         if text_feat is not None:
-            return_dict["text_feat"] = text_feat
+            returnDict["text_feat"] = text_feat
 
         if "keywords" in others and others["keywords"] is not None:
+            kwDict = {"gold_text": batch["text"]}
             keywords = others["keywords"]
-            return_dict["keywords"] = keywords
-            return_dict["gold_text"] = batch["text"]
+            if self.keyword_num is not None:
+                kwDict["keywords"] = keywords
+            else:
+                # Dynamic number of keywords
+                kwDict.update(
+                    {
+                        "keywords": keywords.view(-1, keywords.shape[-1]),
+                        "keywords_bsz": keywords.shape[0],
+                        "max_kw_num": keywords.shape[1],
+                    }
+                )
 
-        return {"loss_feats": losses, "log_metrics": log_metrics, "others": return_dict}
+            returnDict.update(kwDict)
+
+        if others["keywords_len"] is not None:
+            returnDict["keywords_len"] = others["keywords_len"]
+
+        return {"loss_feats": losses, "log_metrics": log_metrics, "others": returnDict}
 
     def validation_step_end(self, outputs: dict) -> dict:
         """validation_step_end
@@ -267,204 +284,160 @@ class KWClipBase(BaseLightningModel):
             if isinstance(outputs["others"][k], torch.Tensor):
                 outputs["others"][k] = outputs["others"][k].detach().cpu()
         return outputs["others"]
-
-    def validation_epoch_end(self, outputs: list):
+    
+    def validation_epoch_end(self, outputs: dict) -> dict:
         """validation_epoch_end
 
         Args:
             outputs (list): list of aggregated results
         """
-        # if keywords is in the input, calculate keyword related metrics
+
+        RootDir = self.config.trainer.default_root_dir
         if "keywords" in outputs[0].keys():
-            # create detokenize text dir
-            if not os.path.exists(
-                os.path.join(self.config.trainer.default_root_dir, "detokenizeText")
-            ):
+            if not os.path.exists(os.path.join(RootDir, "retokenizeText")):
+                os.makedirs(os.path.join(RootDir, "retokenizeText"), exist_ok=True)
+            if not os.path.exists(os.path.join(RootDir, "visualization")):
                 os.makedirs(
-                    os.path.join(
-                        self.config.trainer.default_root_dir, "detokenizeText"
-                    ),
+                    os.path.join(RootDir, "visualization"),
                     exist_ok=True,
                 )
 
             if (
                 hasattr(self, "log_detokenize_results_every_n_epoch")
                 and self.current_epoch % self.log_detokenize_results_every_n_epoch == 0
-            ) or not (hasattr(self, "log_detokenize_results_every_n_epoch")):
+            ):
+
+                all_keyword_embeddings = torch.cat(
+                    [x["keywords"] for x in outputs], dim=0
+                )
+                embeddings_stat_dict = defaultdict(dict)
+                if self.keyword_num is not None:
+                    all_keyword_embeddings = all_keyword_embeddings.view(
+                        all_keyword_embeddings.shape[0],
+                        self.keyword_num,
+                        all_keyword_embeddings.shape[-1],
+                    )
+                    kwNumRange = self.keyword_num
+                else:
+                    all_keyword_embeddings = all_keyword_embeddings.unsqueeze(1)
+                    kwNumRange = 1
+
+                for i in range(kwNumRange):
+                    kw_index = "kw" if self.keyword_num is None else f"kw_{i}"
+                    embeddings_stat_dict["mean"][kw_index] = all_keyword_embeddings[:, i, :].mean(0).mean()
+                    embeddings_stat_dict["std"][kw_index] = all_keyword_embeddings[:, i, :].std(0).mean()
+                    embeddings_stat_dict["norm"][kw_index] = all_keyword_embeddings[:, i, :].norm(p=2, dim=-1).mean()
+
+                if self.keyword_num is None:
+                    all_keyword_embeddings.squeeze(1)
+
+                tokenEmbeddings = self.clip.model.token_embedding.weight.detach().cpu()
+                self.log(
+                    "kw_mean_mse",
+                    torch.norm(
+                        all_keyword_embeddings.view(-1, self.subword_embd_dim).mean(0),
+                        tokenEmbeddings.mean(0),
+                        p=2,
+                    ),
+                    sync_dist=True,
+                )
+                self.log(
+                    "kw_std_mse",
+                    torch.std(
+                        torch.norm(
+                            all_keyword_embeddings.view(-1, self.subword_embd_dim).std(0),
+                            tokenEmbeddings.std(0),
+                            p=2,
+                        )
+                    ),
+                )
+
+                # Drawing PCA 
+                self.log_draw_pca_every_n_epoch = getattr(
+                    self.config.log_setting, "log_draw_pca_every_n_epoch", 0
+                )
+                if self.log_draw_pca_every_n_epoch > 0 and (
+                    self.current_epoch % self.log_draw_pca_every_n_epoch == 0
+                ):
+                    draw_embedding_space_PCA(
+                        kw_embs=all_keyword_embeddings,
+                        gold_embs=tokenEmbeddings,
+                        output_path=os.path.join(
+                            RootDir,
+                            "visualization/",
+                            "pca_ep{}.pdf".format(self.current_epoch),
+                        ),
+                    )
+
                 # collect glden texts
                 gold_texts = []
+                keywordEmbeddings_list = []
+                kwEmbedLengths = []
                 for x in outputs:
                     for sent in x["gold_text"]:
                         gold_texts.append(
                             self.clip.tokenizer.decode(sent.squeeze().tolist())
                         )
-                all_keyword_embeddings = torch.cat(
-                    [x["keywords"] for x in outputs], dim=0
-                )
-                all_keyword_embeddings = all_keyword_embeddings.view(
-                    all_keyword_embeddings.shape[0],
-                    self.keyword_num,
-                    all_keyword_embeddings.shape[-1],
-                )
+                    if self.keyword_num is None:
+                        kwEmbedLengths += x["keywords_len"].tolist()
+                        embdList = torch.split(
+                            x["keywords"],
+                            (x["keywords_bsz"] * x["max_kw_num"]).tolist(),
+                            dim=0,
+                        )
+                        keywordEmbeddings_list.append(
+                            [
+                                embd.view(bsz, knum, -1)
+                                for bsz, knum, embd in zip(
+                                    x["keywords_bsz"], x["max_kw_num"], embdList
+                                )
+                            ]
+                        )
 
-                tokenEmbeddings = self.clip.model.token_embedding.weight.detach().cpu()
-
-                assert all_keyword_embeddings.dim() == 3, all_keyword_embeddings.shape
-                assert (
-                    all_keyword_embeddings.shape[2] == self.subword_embd_dim
-                ), all_keyword_embeddings.shape
-                all_retok_outputs = []
+                # get retrieval method : either via cosine or pseudo inverse (default cosine similarity)
+                retrieve_method = getattr(
+                    self.config.model_settings.cascaded_branch.keyword,
+                    "retrieve_method",
+                    "cosine",
+                )
+                if retrieve_method not in ["cosine", "pseudo_inverse"]:
+                    raise NotImplementedError(retrieve_method)
 
                 # list the semantically related subwords to the selected keyword
                 K = self.config.model_settings.cascaded_branch.keyword.get(
                     "detokenized_K_neighbors", 10
                 )
-
-                # get retrieval method : either via cosine or pseudo inverse (default cosine similarity)
-                if not hasattr(
-                    self.config.model_settings.cascaded_branch.keyword,
-                    "retrieve_method",
-                ):
-                    self.config.model_settings.cascaded_branch.keyword.retrieve_method = (
-                        "cosine"
-                    )
-
-                if (
-                    self.config.model_settings.cascaded_branch.keyword.retrieve_method
-                    == "pseudo_inverse"
-                ):
-                    emb_pinv = torch.linalg.pinv(tokenEmbeddings.T).float()
-
-                assert (
-                    self.config.model_settings.cascaded_branch.keyword.retrieve_method
-                    in ["cosine", "pseudo_inverse"]
-                )
-                hit_rate = [0] * self.keyword_num
-                # emb_pinv.shape (num of codes, dim)
-                kw_top_ret = [[] for _ in range(self.keyword_num)]
                 print("Detokenizing K={}".format((K)))
-                for i in tqdm.tqdm(
-                    range(
-                        0,
-                        len(gold_texts) + self.config.data.dev_batch_size,
-                        self.config.data.dev_batch_size,
+                TextDir = os.path.join(RootDir, "retokenizeText/")
+                if self.keyword_num is not None:
+                    all_retok_outputs = extract_fixed_keyword_neighbors(
+                        model=self,
+                        K=K,
+                        retrieve_method=retrieve_method,
+                        tokenEmbeddings=tokenEmbeddings,
+                        all_keyword_embeddings=all_keyword_embeddings,
+                        gold_texts=gold_texts,
                     )
-                ):
-                    _gold_texts = gold_texts[i : i + self.config.data.dev_batch_size]
-                    _bsz = len(_gold_texts)
-                    if len(_gold_texts) == 0:
-                        break
-
-                    gold_subword_toks_set = [
-                        set(self.clip.tokenizer.encode(_text)) for _text in _gold_texts
-                    ]
-
-                    _k_values, _k_indices = torch.topk(
-                        (
-                            emb_pinv.float()
-                            @ all_keyword_embeddings[i : i + _bsz]
-                            .view(-1, self.subword_embd_dim)
-                            .float()
-                            .reshape(-1, self.subword_embd_dim)
-                            .permute(1, 0)
-                        ).permute(1, 0)
-                        if self.config.model_settings.cascaded_branch.keyword.retrieve_method
-                        == "pseudo_inverse"
-                        else F.cosine_similarity(
-                            all_keyword_embeddings[i : i + _bsz].view(
-                                -1, self.subword_embd_dim, 1
-                            ),
-                            tokenEmbeddings.transpose(0, 1).unsqueeze(0),
-                            dim=1,
-                        ),
-                        K,
+                else:
+                    all_retok_outputs = extract_dynamic_keyword_neighbors(
+                        model=self,
+                        K=K,
+                        retrieve_method=retrieve_method,
+                        outputs=outputs,
+                        tokenEmbeddings=tokenEmbeddings,
+                        keywordEmbeddings_list=keywordEmbeddings_list,
+                        gold_texts=gold_texts,
+                        kwEmbedLengths=kwEmbedLengths,
                     )
-                    assert _k_values.shape == (
-                        _bsz * self.keyword_num,
-                        K,
-                    ), _k_values.shape
-                    _k_indices = _k_indices.view(_bsz, self.keyword_num, K)
-                    _k_values = _k_values.view(_bsz, self.keyword_num, K)
-
-                    for x in range(_bsz):
-
-                        tmp_outputs = {}
-                        for _keyword_i in range(self.keyword_num):
-                            tmp_outputs["keyword_{}".format(_keyword_i)] = []
-
-                            # check if nearest K subword appears in gold text
-                            top_k_toks = set(
-                                [
-                                    self.clip.reducedl2Original[_ind.item()]
-                                    if self.clip.selected_text_emb_ids is not None
-                                    else _ind.item()
-                                    for _ind in _k_indices[x, _keyword_i]
-                                ]
-                            )
-                            if bool(top_k_toks & gold_subword_toks_set[x]):
-                                hit_rate[_keyword_i] += 1
-                                hit_token_id = int(
-                                    list(top_k_toks & gold_subword_toks_set[x])[0]
-                                )
-                                kw_top_ret[_keyword_i].append(hit_token_id)
-
-                            for _ind, _dist in zip(
-                                _k_indices[x, _keyword_i], _k_values[x, _keyword_i]
-                            ):
-                                tmp_outputs["keyword_{}".format(_keyword_i)].append(
-                                    [
-                                        self.clip.tokenizer.decoder[
-                                            self.clip.reducedl2Original[_ind.item()]
-                                            if self.clip.selected_text_emb_ids
-                                            is not None
-                                            else _ind.item()
-                                        ],
-                                        _dist.item(),
-                                    ]
-                                )
-
-                        all_retok_outputs.append(
-                            {
-                                "gold": gold_texts[i],
-                                "neighbors": tmp_outputs,
-                            }
-                        )
-
-                hit_rate = torch.FloatTensor(hit_rate)
-                hit_rate = hit_rate / len(gold_texts) * 100
-
-                print("kw_hit_rate", hit_rate)
-
-                self.log(
-                    "kw_hit_rate",
-                    {
-                        "kw_{}".format(i): hit_rate[i].item()
-                        for i in range(self.keyword_num)
-                    },
-                    sync_dist=True,
-                )
 
                 with open(
-                    os.path.join(
-                        self.config.trainer.default_root_dir,
-                        "detokenizeText/",
-                        "kw_hit_ep{}.json".format(self.current_epoch),
-                    ),
-                    "w",
-                ) as f:
-                    json.dump(kw_top_ret, f)
+                    os.path.join(TextDir, f"keywords_ep{self.current_epoch}.json"), "w"
+                ) as f_kw:
+                    json.dump(all_retok_outputs, f_kw, indent=4)
 
-                with open(
-                    os.path.join(
-                        self.config.trainer.default_root_dir,
-                        "detokenizeText/",
-                        "keywords_ep{}.json".format(self.current_epoch),
-                    ),
-                    "w",
-                ) as f:
-                    json.dump(all_retok_outputs, f)
                 del all_retok_outputs
 
+        # Retreiving images and audios
         all_ids = torch.cat([x["id"] for x in outputs], dim=0)
         all_imgs = torch.cat([x["image_feat"] for x in outputs], dim=0)
         id_img_pairs = {_id.item(): _img for _id, _img in zip(all_ids, all_imgs)}
@@ -694,454 +667,88 @@ class KWClipBase(BaseLightningModel):
         return optimizers, schedulers
 
 
-class KW_CascadedBranch(nn.Module):
-    """KW_CascadedBranch
-
-    Cascaded Branch for SpeechCLIP
-
-    """
-
-    def __init__(
-        self, config: OrderedNamespace, audio_dim: int, text_dim: int, clip: ClipModel
-    ) -> None:
-        """init
-
-        Args:
-            config (OrderedNamespace): config of the model
-            audio_dim (int): dimension for audio features
-            text_dim (int): dimension for subword embeddings
-            clip (ClipModel): the CLIP model
-
-        """
-        super().__init__()
-
-        self.audio_dim = audio_dim
-        self.text_dim = text_dim
-        self.clip = clip
-        self.config = config
-
-        # projection network for (before BatchNorm Layer)
-        self.kw_projection_config = (
-            self.config.model_settings.cascaded_branch.keyword.get(
-                "kw_projection", None
-            )
-        )
-
-        logger.info("Using KW_CascadedBranch")
-        self.keyword_num = config.model_settings.cascaded_branch.keyword.number
-
-        self.cls = self._create_cls()
-        logger.info("Start init [CLS] {}".format(self.cls.shape))
-
-        # select the main structure for transformer encoder layer
-        assert hasattr(
-            TransformerModels, config.model_settings.cascaded_branch.transformer_type
-        ), "transformer structure '{}' not supported".format(
-            config.model_settings.cascaded_branch.transformer_type
-        )
-        logger.info(
-            f"Using {config.model_settings.cascaded_branch.transformer_type} as KW_CascadedBranch"
-        )
-        self.self_att = getattr(
-            TransformerModels, config.model_settings.cascaded_branch.transformer_type
-        )(**config.model_settings.cascaded_branch.transformer_args)
-
-        if self.kw_projection_config is None:
-            logger.info(
-                "kw_projection not specified, using single linear layer as default"
-            )
-            self.linear_proj = nn.Linear(
-                self.config.model_settings.cascaded_branch.transformer_args.d_model,
-                self.text_dim,
-            )
-        else:
-            logger.info(
-                f"kw_projection dims:{self.kw_projection_config.dimensions} droupout:{self.kw_projection_config.dropout}"
-            )
-            assert (
-                self.kw_projection_config.dimensions[0]
-                == self.config.model_settings.cascaded_branch.transformer_args.d_model
-            ), f"first dim({self.kw_projection_config.dimensions[0]}) should match the audio encoder dim({self.config.model_settings.cascaded_branch.transformer_args.d_model})"
-            assert (
-                self.kw_projection_config.dimensions[-1] == self.text_dim
-            ), f"last dim({self.kw_projection_config.dimensions[-1]}) should match the text encoder dim({self.text_dim})"
-            self.linear_proj = MLPLayers(
-                units=self.kw_projection_config.dimensions,
-                dropout=self.kw_projection_config.dropout,
-            )
-
-        # codebook selection
-        self.vector_quantizer = None
-        self.vq_type = config.model_settings.cascaded_branch.vq.type
-
-        if not hasattr(
-            vector_quantizers, config.model_settings.cascaded_branch.vq.type
-        ):
-            raise NotImplementedError(
-                "Vq ({}) not implemented".format(
-                    config.model_settings.cascaded_branch.vq.type
-                )
-            )
-
-        self.vector_quantizer = getattr(vector_quantizers, self.vq_type)(
-            **config.model_settings.cascaded_branch.vq.args
-        )
-
-        # batchnorms
-        if hasattr(config.model_settings.cascaded_branch.keyword, "batchnorms"):
-            self.bn_layer = Kw_BatchNorm(
-                kw_num=self.keyword_num,
-                kw_dim=self.text_dim,
-                batchnorm_type=config.model_settings.cascaded_branch.keyword.batchnorms.type,
-                init_bias=torch.mean(self.clip.model.token_embedding.weight, dim=0),
-                init_scale=torch.std(self.clip.model.token_embedding.weight, dim=0),
-                std_scale=config.model_settings.cascaded_branch.keyword.batchnorms.std_scale,
-                learnable=config.model_settings.cascaded_branch.keyword.batchnorms.learnable
-                if hasattr(
-                    config.model_settings.cascaded_branch.keyword.batchnorms,
-                    "learnable",
-                )
-                else True,
-                parallel=config.model_settings.cascaded_branch.keyword.batchnorms.parallel
-                if hasattr(
-                    config.model_settings.cascaded_branch.keyword.batchnorms, "parallel"
-                )
-                else False,
-            )
-
-    def _create_cls(self) -> torch.nn.Parameter:
-        """Create CLS
-
-        Returns:
-            torch.nn.Parameter: the params for CLS(s)
-        """
-        return torch.nn.Parameter(
-            torch.randn(
-                [
-                    1,
-                    self.keyword_num,
-                    self.config.model_settings.cascaded_branch.transformer_args.d_model,
-                ]
-            )
-        )
-
-    def extract_hidden_states(
-        self, audio_feat: torch.Tensor, audio_len: torch.Tensor
-    ) -> Tuple:
-        """extract_hidden_states
-        Extracting hidden representation of each layers
-
-        Args:
-            audio_feat (torch.Tensor):
-            audio_len (torch.Tensor):
-
-        Returns:
-            Tuple: tuples of hiddenstates
-        """
-        bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + self.keyword_num
-        cls = torch.cat([self.cls] * bsz, dim=0)
-        src = torch.cat([cls, audio_feat], dim=1)
-
-        key_padding_mask = get_keypadding_mask(
-            max_length=total_max_len, data_lens=audio_len + self.keyword_num
-        )
-
-        hidden_states = self.self_att.extract_hidden_states(
-            src=src, key_padding_mask=key_padding_mask
-        )
-        # exclude the cls positions
-        hidden_states = [x[:, self.keyword_num :, ...] for x in hidden_states]
-
-        return tuple(hidden_states)
-
-    def forward(
-        self, audio_feat: torch.Tensor, audio_len: torch.Tensor
-    ) -> Tuple[torch.Tensor, dict, torch.Tensor]:
-        """forward
-
-        Args:
-            audio_feat (torch.Tensor)
-            audio_len (torch.Tensor)
-
-        Returns:
-            Tuple: (audio_feat, vq_results, keywords)
-        """
-        # Use multi-head attention layer to find keywords(cls)
-        bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + self.keyword_num
-        cls = torch.cat([self.cls] * bsz, dim=0)
-        src = torch.cat([cls, audio_feat], dim=1)
-
-        key_padding_mask = get_keypadding_mask(
-            max_length=total_max_len, data_lens=audio_len + self.keyword_num
-        )
-
-        keywords = self.self_att(src=src, key_padding_mask=key_padding_mask)
-
-        keywords = keywords[:, : self.keyword_num].reshape(
-            -1, self.keyword_num, self.audio_dim
-        )
-
-        keywords = self.linear_proj(keywords)
-
-        if hasattr(self, "bn_layer"):
-            keywords = self.bn_layer(keywords)
-
-        # cosine
-        cos_score = []
-        for i in range(self.keyword_num):
-            cos_score.append(
-                F.cosine_similarity(
-                    keywords[:, i, :].view(bsz, self.text_dim, 1),
-                    self.clip.model.token_embedding.weight.transpose(0, 1).unsqueeze(0),
-                    dim=1,
-                )
-            )
-
-        cos_score = torch.stack(cos_score, dim=1)
-
-        assert cos_score.shape == (
-            bsz,
-            self.keyword_num,
-            self.clip.model.token_embedding.num_embeddings,
-        ), f"{cos_score.shape}, {( bsz, self.keyword_num, self.clip.model.token_embedding.num_embeddings)}"
-
-        # VQ
-        vq_results = self.vector_quantizer(x=cos_score)
-        assert self.clip.model.token_embedding.weight.requires_grad == False
-        keywords = vq_results["subword_prob"] @ self.clip.model.token_embedding.weight
-
-        # Feed keyword into clip text encoder
-        audio_feat = self.clip.encode_keywords(keywords, self.keyword_num)
-
-        return audio_feat, vq_results, keywords
-
-    def getAttentionMap(self, audio_feat: torch.Tensor, audio_len: torch.Tensor):
-        """getAttentionMap
-
-        return attention maps for visualization
-
-        Args:
-            audio_feat (torch.Tensor):
-            audio_len (torch.Tensor):
-
-        Returns:
-            Tuple: cls_weights, topk_kw, None
-        """
-        # Use multi-head attention layer to find keywords(cls)
-        bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + self.keyword_num
-        cls = torch.cat([self.cls] * bsz, dim=0)
-        src = torch.cat([cls, audio_feat], dim=1)
-
-        key_padding_mask = get_keypadding_mask(
-            max_length=total_max_len, data_lens=audio_len + self.keyword_num
-        )
-
-        _, attn_output_weights = self.self_att.extract_attention_map(
-            src=src, key_padding_mask=key_padding_mask
-        )
-
-        cls_weights = []
-        for i in range(attn_output_weights.shape[0]):
-            cls_weights.append(
-                attn_output_weights[
-                    i, :, : self.keyword_num, : audio_len[i] + self.keyword_num
-                ]
-            )
-
-        keywords = self.self_att(src=src, key_padding_mask=key_padding_mask)
-
-        keywords = keywords[:, : self.keyword_num].reshape(
-            -1, self.keyword_num, self.audio_dim
-        )
-
-        keywords = self.linear_proj(keywords)
-
-        if hasattr(self, "bn_layer"):
-            keywords = self.bn_layer(keywords)
-
-        # cosine
-        cos_score = []
-        for i in range(self.keyword_num):
-            cos_score.append(
-                F.cosine_similarity(
-                    keywords[:, i, :].view(bsz, self.text_dim, 1),
-                    self.clip.model.token_embedding.weight.transpose(0, 1).unsqueeze(0),
-                    dim=1,
-                )
-            )
-
-        cos_score = torch.stack(cos_score, dim=1)
-        # disallow special tokens
-        cos_score[..., 0] -= 100
-        cos_score[..., 2] -= 100
-        cos_score[..., 3] -= 100
-
-        assert cos_score.shape == (
-            bsz,
-            self.keyword_num,
-            self.clip.model.token_embedding.num_embeddings,
-        ), f"{cos_score.shape}, {( bsz, self.keyword_num, self.clip.model.token_embedding.num_embeddings)}"
-
-        # VQ
-        # vq_results = self.vector_quantizer(x=cos_score)
-        # assert self.clip.model.token_embedding.weight.requires_grad == False
-
-        topk_kw = [[[] for _ in range(self.keyword_num)] for _ in range(bsz)]
-        # print(vq_results["subword_prob"].shape)
-        _, topk_kw_ids = torch.topk(cos_score, dim=-1, k=10)
-        for bsz_i in range(bsz):
-            for kw_i in range(self.keyword_num):
-                topk_kw[bsz_i][kw_i] = [
-                    self.clip.tokenizer.decoder[
-                        self.clip.reducedl2Original[x.item()]
-                        # top1_kw_id[bsz_i, kw_i].item()
-                    ].replace("</w>", "")
-                    for x in topk_kw_ids[bsz_i, kw_i]
-                ]
-        return cls_weights, topk_kw, None
-
-
-class KW_ParallelBranch(nn.Module):
-    """KW_ParallelBranch
-
-    The parallel branch of SpeechCLIP
-
-    """
-
-    def __init__(self, config: OrderedNamespace, audio_dim: int, out_dim: int) -> None:
-        super().__init__()
-        self.config = config
-        self.audio_dim = audio_dim
-        self.out_dim = out_dim
-        self.need_projection = self.config.model_settings.parallel_branch.get(
-            "need_projection", True
-        )
-
-        # select the transformer structure for main architecture for parallel branch
-        assert hasattr(
-            TransformerModels, config.model_settings.parallel_branch.transformer_type
-        )
-        logger.info(
-            f"Using {config.model_settings.parallel_branch.transformer_type} as KW_ParallelBranch (projection={self.need_projection})"
-        )
-        self.self_att = getattr(
-            TransformerModels, config.model_settings.parallel_branch.transformer_type
-        )(**config.model_settings.parallel_branch.transformer_args)
-
-        self.cls = self._create_cls()
-        logger.info("Start init [CLS] {}".format(self.cls.shape))
-
-        if self.need_projection:
-            self.linear_proj = nn.Linear(self.audio_dim, self.out_dim)
-
-    def _create_cls(self):
-        # first cls for parallel objective
-        return torch.nn.Parameter(
-            torch.randn(
-                [
-                    1,
-                    1,
-                    self.config.model_settings.parallel_branch.transformer_args.d_model,
-                ]
-            )
-        )
-
-    def extract_hidden_states(
-        self, audio_feat: torch.Tensor, audio_len: torch.Tensor
-    ) -> Tuple:
-        """extract_hidden_states
-        Extract hiddenstates of parallel branch
-        Args:
-            audio_feat (torch.Tensor):
-            audio_len (torch.Tensor):
-
-        Returns:
-            Tuple: hidden representation of each layers
-        """
-        bsz, total_max_len = audio_feat.size(0), audio_feat.size(1) + 1
-        cls = torch.cat([self.cls] * bsz, dim=0)
-        src = torch.cat([cls, audio_feat], dim=1)
-
-        key_padding_mask = get_keypadding_mask(
-            max_length=total_max_len, data_lens=audio_len + 1
-        )
-
-        hidden_states = self.self_att.extract_hidden_states(
-            src=src, key_padding_mask=key_padding_mask
-        )
-        # exclude CLS position
-        hidden_states = [x[:, 1:, ...] for x in hidden_states]
-        return tuple(hidden_states)
-
-    def forward(
-        self, audio_feat: torch.Tensor, audio_len: torch.Tensor
-    ) -> torch.Tensor:
-        """forward
-
-        Args:
-            audio_feat (torch.Tensor):
-            audio_len (torch.Tensor):
-
-        Returns:
-            torch.Tensor: output
-        """
-        # Use multi-head attention layer to find keywords(cls)
-        bsz, total_max_len = (
-            audio_feat.size(0),
-            audio_feat.size(1) + 1,
-        )
-        cls = torch.cat([self.cls] * bsz, dim=0)
-        src = torch.cat([cls, audio_feat], dim=1)
-
-        key_padding_mask = get_keypadding_mask(
-            max_length=total_max_len,
-            data_lens=audio_len + 1,
-        )
-
-        out = self.self_att(src=src, key_padding_mask=key_padding_mask)
-
-        out = out[:, :1].reshape(-1, self.audio_dim)
-
-        if hasattr(self, "linear_proj"):
-            out = self.linear_proj(out)
-
-        return out
-
-
 class KWClip_GeneralTransformer(KWClipBase):
-    """KWClip_GeneralTransformer
-    Main class for SpeechCLIP
-    """
-
-    def __init__(self, config: OrderedNamespace) -> None:
-        """init
-
-        Args:
-            config (OrderedNamespace): _description_
-        """
+    def __init__(self, config: OrderedNamespace):
         super().__init__(config)
 
         self.cascaded_branch = None
         self.parallel_branch = None
+
         if self.config.model_settings.cascaded_objective_weight > 0:
-            logger.info("Create Cascaded Branch")
-            # cascaded_branch
-            if self.config.model_settings.cascaded_branch.type == "KW_CascadedBranch":
+            cBranchType = self.config.model_settings.cascaded_branch.type
+            # Unify model name aliases
+            cBranchType = self.config.model_settings.cascaded_branch.type.replace("KW_", "")
+            cBranchType = cBranchType.replace("dynamic", "plus")
+            if cBranchType == "CascadedBranch":
+                logger.info("Create Cascaded Branch")
+                # cascaded_branch
                 self.cascaded_branch = KW_CascadedBranch(
                     config=self.config,
                     audio_dim=self.audio_embd_dim,
                     text_dim=self.subword_embd_dim,
                     clip=self.clip,
                 )
+            elif cBranchType == "CascadedBranch_plus":
+                logger.info("Create Cascaded Branch Plus")
+                # cascaded_branch_plus
+                self.cascaded_branch = KW_CascadedBranchPlus(
+                    config=self.config,
+                    audio_dim=self.audio_embd_dim,
+                    text_dim=self.subword_embd_dim,
+                    clip=self.clip,
+                )
+            elif cBranchType == "HybridBranch":
+                assert (
+                    self.config.model_settings.parallel_objective_weight > 0
+                ), self.config.model_settings.parallel_objective_weight
+                logger.info("Create Hybrid Branch")
+                # hybrid_branch
+                self.cascaded_branch = KW_HybridBranch(
+                    config=self.config,
+                    audio_dim=self.audio_embd_dim,
+                    text_dim=self.subword_embd_dim,
+                    out_dim=self.subword_embd_dim,
+                    clip=self.clip,
+                )       
+            elif cBranchType == "HybridBranch_plus":
+                assert (
+                    self.config.model_settings.parallel_objective_weight > 0
+                ), self.config.model_settings.parallel_objective_weight
+                logger.info("Create Hybrid Branch Plus")
+                # hybrid_branch_plus
+                self.cascaded_branch = KW_HybridBranchPlus(
+                    config=self.config,
+                    audio_dim=self.audio_embd_dim,
+                    text_dim=self.subword_embd_dim,
+                    out_dim=self.subword_embd_dim,
+                    clip=self.clip,
+                )
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(cBranchType)
 
-        if self.config.model_settings.parallel_objective_weight > 0:
+            # Keyword number
+            if hasattr(self.cascaded_branch, "keyword_num"):
+                self.keyword_num = self.cascaded_branch.keyword_num
+
+            # CIF's quantity loss
+            if hasattr(self.config.model_settings.cascaded_branch, "downsampling") and self.config.model_settings.cascaded_branch.downsampling.type == "cif":
+                self.quantity_loss_weight = getattr(
+                    self.config.model_settings.cascaded_branch.downsampling.cif,
+                    "quantity_loss_weight",
+                    1.0,
+                )
+                self.quantity_loss_criteria = nn.L1Loss()
+
+        if (
+            self.config.model_settings.parallel_objective_weight > 0
+            and self.cascaded_branch is None
+        ):
             logger.info("Create Parallel Branch")
+            # Parallel branch
             self.parallel_branch = KW_ParallelBranch(
                 config=self.config,
                 audio_dim=self.audio_embd_dim,
-                out_dim=self.subword_embd_dim,
+                text_dim=self.subword_embd_dim,
             )
 
         # projection network after CLIP image encoder
@@ -1177,7 +784,7 @@ class KWClip_GeneralTransformer(KWClipBase):
         cascaded_branch_projection = self.config.model_settings.get(
             "cascaded_branch_projection", None
         )
-        if parallel_branch_projection is not None:
+        if cascaded_branch_projection is not None:
             logger.info(
                 f"cascaded_branch_projection dims:{cascaded_branch_projection.dimensions} droupout:{cascaded_branch_projection.dropout}"
             )
@@ -1193,6 +800,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             list: list of trainable params in this class
         """
         _params = super().getTrainableParams()
+        
         if self.cascaded_branch is not None:
             logger.info("Add cascaded_branch parameters")
             _params += list(self.cascaded_branch.parameters())
@@ -1209,7 +817,139 @@ class KWClip_GeneralTransformer(KWClipBase):
             logger.info("Add parallel_branch_projection parameters")
             _params += list(self.p_branch_proj_net.parameters())
 
+        if self.c_branch_proj_net is not None:
+            logger.info("Add cascaded_branch_projection parameters")
+            _params += list(self.c_branch_proj_net.parameters())
+
         return _params
+
+    def forward(
+        self,
+        batch: dict,
+    ) -> dict:
+        
+        wav = batch["wav"]
+        wav_len = batch["wav_len"]
+        image = batch["image"]
+        id = batch["id"]
+
+        # update device information to clip model
+        self.clip.update_device(self.device)
+        audio_feat, audio_feat_len = self.forward_audio(
+            wav, wav_len, return_hidden_states=False
+        )
+        image_feat = self.forward_image(image)
+        if self.img_enc_proj_net is not None:
+            image_feat = self.img_enc_proj_net(image_feat)
+        image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
+
+        if self.cascaded_branch is not None:
+            # Collecting inputs for the cascaded and hybrid plus branches
+            if isinstance(self.cascaded_branch, KW_CascadedBranchPlus):
+                otherInputs = {"global_step": self.global_step}
+                if getattr(self.cascaded_branch, "using_gt_len", False):
+                    assert "text" in batch, f"Text captions are required, {batch.keys()}"
+                    target_len = torch.LongTensor(
+                        [
+                            (t.squeeze().tolist().index(49407) - 1)
+                            for t in batch["text"]
+                        ]
+                    ).to(wav.device)
+                else:
+                    target_len = (audio_feat_len / 20).round().long()
+                otherInputs["target_len"] = target_len
+            else:
+                otherInputs = None
+            output = self.cascaded_branch(
+                audio_feat=audio_feat,
+                audio_feat_len=audio_feat_len,
+                otherInputs=otherInputs
+            )
+        if self.parallel_branch is not None:
+            output = self.parallel_branch(
+                audio_feat=audio_feat,
+                audio_feat_len=audio_feat_len,
+            )
+
+        # Extract outputs
+        parallel_audio_feat = output["parallel_audio_feat"]
+        cascaded_audio_feat = output["cascaded_audio_feat"]
+        vq_results = output["vq_results"]
+        keywords = output["keywords"]
+        dsample_results = output["dsample_results"]
+        if dsample_results is not None:
+            keywords_len = dsample_results["dsample_feats_length"] 
+        else:
+            keywords_len = None 
+
+        # Extract losses 
+        losses = {
+            "id": id,
+            "image_feat": image_feat,
+        }
+        if cascaded_audio_feat is not None:
+            if self.c_branch_proj_net is not None:
+                cascaded_audio_feat = self.c_branch_proj_net(cascaded_audio_feat)
+            cascaded_audio_feat = cascaded_audio_feat / cascaded_audio_feat.norm(
+                dim=-1, keepdim=True
+            )
+            losses["cascaded_audio_feat"] = cascaded_audio_feat
+
+        if parallel_audio_feat is not None:
+            if self.p_branch_proj_net is not None:
+                parallel_audio_feat = self.p_branch_proj_net(parallel_audio_feat)
+            parallel_audio_feat = parallel_audio_feat / parallel_audio_feat.norm(
+                dim=-1, keepdim=True
+            )
+            losses["parallel_audio_feat"] = parallel_audio_feat
+
+        if (
+            self.cascaded_branch is not None
+            and hasattr(self.cascaded_branch, "downsampling_type")
+            and self.cascaded_branch.downsampling_type == "cif"
+        ):
+            assert (
+                "target_len" in dsample_results
+                and "quantity_out" in dsample_results
+            ), f"{dsample_results.keys()}"
+            losses["cif_quantity_out"] = dsample_results["quantity_out"]
+            losses["cif_target_len"] = dsample_results["target_len"]
+
+        # Logging metrics
+        log_metrics = {"cl_temp": self.criterion.current_temperature}
+
+        if vq_results is not None:
+            log_metrics["softmax_temp"] = vq_results["temp"]
+
+        if self.cascaded_branch is not None:
+            if dsample_results is not None and "dsample_len_diff" in dsample_results:
+                log_metrics["dsample_len_diff"] = dsample_results["dsample_len_diff"]
+            vq_results_log_keys = [
+                "temp",
+                "code_perplexity",
+                "prob_perplexity",
+                "ent_per_t",
+            ]
+            assert set(vq_results_log_keys).issubset(
+                set(vq_results.keys())
+            ), f"log keys: {vq_results_log_keys}, result: {vq_results.keys()}"
+            vq_log_dict = {k: vq_results[k] for k in vq_results_log_keys}
+            log_metrics.update(vq_log_dict)
+            
+        return (
+            losses,
+            log_metrics,
+            {
+                "id": id,
+                "image_feat": image_feat,
+                "parallel_audio_feat": parallel_audio_feat,
+                "cascaded_audio_feat": cascaded_audio_feat,
+                "vq_results": vq_results,
+                "keywords": keywords,
+                "dsample_results": dsample_results,
+                "keywords_len": keywords_len,
+            },
+        )
 
     def feature_extractor_s3prl(self, wav) -> Tuple[torch.Tensor, Tuple]:
         """feature_extractor_s3prl
@@ -1244,58 +984,50 @@ class KWClip_GeneralTransformer(KWClipBase):
             hidden_states = hidden_states + tuple(parallel_hidden_states[1:])
 
         return hidden_states[-1], hidden_states
-
-    def compute_loss(self, input_feats: dict):
+    
+    def compute_loss(self, inputDict: dict):
         """compute the loss here
 
         Args:
-            input_feats (dict): the feats required for computing loss
+            inputDict (dict): the features required for computing loss
         """
-        assert isinstance(input_feats, dict)
-        assert "id" in input_feats
-        assert (
-            "cascaded_audio_feat" in input_feats or "parallel_audio_feat" in input_feats
-        )
-        assert "image_feat" in input_feats
-
-        cascaded_audio_feat = (
-            input_feats["cascaded_audio_feat"].float()
-            if "cascaded_audio_feat" in input_feats
-            else None
-        )
-        parallel_audio_feat = (
-            input_feats["parallel_audio_feat"].float()
-            if "parallel_audio_feat" in input_feats
-            else None
-        )
-        image_feat = input_feats["image_feat"].float()
-        id = input_feats["id"]
+        assert isinstance(inputDict, dict)
+        required_keys = {"id", "image_feat"}
+        assert required_keys.issubset(
+            set(inputDict.keys())
+        ), f"required: {required_keys}, input: {inputDict.keys()}"
 
         losses = {"loss": 0}
-        if self.config.model_settings.cascaded_objective_weight > 0:
-            losses["c_cl_loss"] = self.criterion(
-                feat_A=cascaded_audio_feat,
-                feat_B=image_feat,
-                index=id,
-            )
-            losses["loss"] += (
-                self.config.model_settings.cascaded_objective_weight
-                * losses["c_cl_loss"]
-            )
+        image_feat = inputDict["image_feat"].float()
+        id = inputDict["id"]
 
-        if self.config.model_settings.parallel_objective_weight > 0:
-            losses["p_cl_loss"] = self.criterion(
-                feat_A=parallel_audio_feat,
-                feat_B=image_feat,
-                index=id,
+        branchTypeList = ["cascaded", "parallel"]
+        for branchType in branchTypeList:
+            loss_weight = getattr(
+                self.config.model_settings, f"{branchType}_objective_weight", 0.0
             )
-            losses["loss"] += (
-                self.config.model_settings.parallel_objective_weight
-                * losses["p_cl_loss"]
+            if loss_weight > 0.0:
+                feats_key = f"{branchType}_audio_feat"
+                assert feats_key in inputDict, f"{inputDict.keys()}"
+                losses[f"{branchType[0]}_cl_loss"] = self.criterion(
+                    feat_A=inputDict[feats_key].float(),
+                    feat_B=image_feat,
+                    index=id,
+                )
+                losses["loss"] += loss_weight * losses[f"{branchType[0]}_cl_loss"]
+
+        if (
+            "cif_quantity_out" in inputDict
+            and "cif_target_len" in inputDict
+            and hasattr(self, "quantity_loss_criteria")
+        ):
+            losses["quantity_loss"] = self.quantity_loss_criteria(
+                inputDict["cif_quantity_out"], inputDict["cif_target_len"]
             )
+            losses["loss"] += self.quantity_loss_weight * losses["quantity_loss"]
 
         return losses
-
+    
     def encode_speech(
         self,
         wav,
@@ -1307,74 +1039,37 @@ class KWClip_GeneralTransformer(KWClipBase):
 
         Returns:
             dict: {
-                "cascaded_audio_feat" : if cascaded branch exists
-                "parallel_audio_feat" : if parallel branch exists
-                "vq_results"          : if cascaded branch exists
-                "keywords"            : if cascaded branch exists
-                }
+                "cascaded_audio_feat" : not None if cascaded branch exists
+                "parallel_audio_feat" : not None if parallel branch exists
+                "vq_results"          : not None if cascaded branch exists
+                "keywords"            : not None if cascaded branch exists
+            }
         """
 
         wav, wav_len = self.processWavs(wav)
+        audio_feat, audio_feat_len = self.forward_audio(wav, wav_len)
 
-        audio_feat, audio_len = self.forward_audio(wav, wav_len)
-
-        cascaded_audio_feat = None
-        parallel_audio_feat = None
-        vq_results = None
-        keywords = None
         if self.cascaded_branch is not None:
-            if (
-                self.config.model_settings.cascaded_branch.type
-                == "KW_CascadedBranch_Integrated"
-            ):
-                (
-                    cascaded_audio_feat,
-                    vq_results,
-                    keywords,
-                    parallel_audio_feat,
-                ) = self.cascaded_branch(
-                    audio_feat=audio_feat,
-                    audio_len=audio_len,
-                )
-            else:
-                cascaded_audio_feat, vq_results, keywords = self.cascaded_branch(
-                    audio_feat=audio_feat,
-                    audio_len=audio_len,
-                )
-
-        if self.parallel_branch is not None:
-            parallel_audio_feat = self.parallel_branch(
+            if self.cascaded_branch.clip.device != audio_feat.device:
+                self.cascaded_branch.clip = self.cascaded_branch.clip.to(audio_feat.device)
+            output = self.cascaded_branch(
                 audio_feat=audio_feat,
-                audio_len=audio_len,
+                audio_feat_len=audio_feat_len,
+            )
+        if self.parallel_branch is not None:
+            output = self.parallel_branch(
+                audio_feat=audio_feat,
+                audio_feat_len=audio_feat_len,
             )
             if self.p_branch_proj_net is not None:
                 parallel_audio_feat = self.p_branch_proj_net(parallel_audio_feat)
 
-        return_data = {}
+        # Extract outputs
+        parallel_audio_feat = output["parallel_audio_feat"]
+        cascaded_audio_feat = output["cascaded_audio_feat"]
+        vq_results = output["vq_results"]
+        keywords = output["keywords"]
 
-        if cascaded_audio_feat is not None:
-            cascaded_audio_feat = cascaded_audio_feat / cascaded_audio_feat.norm(
-                dim=-1, keepdim=True
-            )
-            return_data["cascaded_audio_feat"] = cascaded_audio_feat
-
-        if parallel_audio_feat is not None:
-            parallel_audio_feat = parallel_audio_feat / parallel_audio_feat.norm(
-                dim=-1, keepdim=True
-            )
-            return_data["parallel_audio_feat"] = parallel_audio_feat
-
-        if self.config.model_settings.cascaded_objective_weight > 0:
-            return_data["softmax_temp"] = vq_results["temp"]
-
-        if self.config.model_settings.parallel_objective_weight > 0:
-            pass
-
-        return_data.update(
-            {
-                "cl_temp": self.criterion.current_temperature,
-            }
-        )
         return {
             "cascaded_audio_feat": cascaded_audio_feat,
             "parallel_audio_feat": parallel_audio_feat,
@@ -1382,115 +1077,13 @@ class KWClip_GeneralTransformer(KWClipBase):
             "keywords": keywords,
         }
 
-    def forward(
-        self,
-        batch,
-    ) -> dict:
+    def extract_keywords(self, wav):
+        audio_feat, audio_feat_len = self.forward_audio(wav, [len(wav)])
 
-        wav = batch["wav"]
-        wav_len = batch["wav_len"]
-        image = batch["image"]
-        id = batch["id"]
-
-        # update device information to clip model
-        self.clip.update_device(self.device)
-
-        audio_feat, audio_len = self.forward_audio(wav, wav_len)
-
-        image_feat = self.forward_image(image)
-        if self.img_enc_proj_net is not None:
-            image_feat = self.img_enc_proj_net(image_feat)
-
-        cascaded_audio_feat = None
-        parallel_audio_feat = None
-        vq_results = None
-        keywords = None
-        if self.cascaded_branch is not None:
-            if (
-                self.config.model_settings.cascaded_branch.type
-                == "KW_CascadedBranch_Integrated"
-            ):
-                (
-                    cascaded_audio_feat,
-                    vq_results,
-                    keywords,
-                    parallel_audio_feat,
-                ) = self.cascaded_branch(
-                    audio_feat=audio_feat,
-                    audio_len=audio_len,
-                )
-            else:
-                cascaded_audio_feat, vq_results, keywords = self.cascaded_branch(
-                    audio_feat=audio_feat,
-                    audio_len=audio_len,
-                )
-
-        if self.parallel_branch is not None:
-            parallel_audio_feat = self.parallel_branch(
-                audio_feat=audio_feat,
-                audio_len=audio_len,
-            )
-            if self.p_branch_proj_net is not None:
-                parallel_audio_feat = self.p_branch_proj_net(parallel_audio_feat)
-
-        image_feat = image_feat / image_feat.norm(dim=-1, keepdim=True)
-
-        losses = {
-            "id": id,
-            "image_feat": image_feat,
-        }
-        log_metrics = {}
-
-        if cascaded_audio_feat is not None:
-            cascaded_audio_feat = cascaded_audio_feat / cascaded_audio_feat.norm(
-                dim=-1, keepdim=True
-            )
-            losses["cascaded_audio_feat"] = cascaded_audio_feat
-
-        if parallel_audio_feat is not None:
-            parallel_audio_feat = parallel_audio_feat / parallel_audio_feat.norm(
-                dim=-1, keepdim=True
-            )
-            losses["parallel_audio_feat"] = parallel_audio_feat
-
-        if self.config.model_settings.cascaded_objective_weight > 0:
-            log_metrics["softmax_temp"] = vq_results["temp"]
-
-        if self.config.model_settings.parallel_objective_weight > 0:
-            pass
-
-        log_metrics.update(
-            {
-                "cl_temp": self.criterion.current_temperature,
-            }
-        )
-        return (
-            losses,
-            log_metrics,
-            {
-                "cascaded_audio_feat": cascaded_audio_feat,
-                "parallel_audio_feat": parallel_audio_feat,
-                "image_feat": image_feat,
-                "id": id,
-                "vq_results": vq_results,
-                "keywords": keywords,
-            },
-        )
-
-    def get_attention_weights(
-        self, wav: Union[Tuple[torch.Tensor], List[torch.Tensor]]
-    ):
-        """get_attention_weights
-
-        For attention map visualization
-        Args:
-            wav (Union[Tuple[torch.Tensor], List[torch.Tensor]]):
-
-        Returns:
-            attention weights
-        """
-        wav_len = [len(x) for x in wav]
-        self.clip.update_device(self.device)
-        audio_feat, audio_len = self.forward_audio(wav, wav_len)
-
-        return self.cascaded_branch.getAttentionMap(audio_feat, audio_len)
+        _, _, vq_results, _, dsample_results = self.cascaded_branch(audio_feat, audio_feat_len, {})
+        vq_results["targets"] = vq_results["targets"].flatten()
+        vq_results["targets"] = [
+            self.clip.reducedl2Original[tok.item()]
+            for tok in vq_results["targets"]
+        ]
+        return {"vq_results": vq_results, "dsample_results": dsample_results}

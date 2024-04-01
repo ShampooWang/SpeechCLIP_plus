@@ -68,21 +68,19 @@ class TrainSpeechClipBaseTask(BaseTask):
             # overide dataset_root
             if self.args.dataset_root != "":
                 model.config.data.dataset.dataset_root = self.args.dataset_root
-            del self.args.dataset_root
+                del self.args.dataset_root
 
             config = model.config
             config = config.to_dict()
             config.update(vars(self.args))
             config = OrderedNamespace(config)
             model.config = config
-
         else:
             self.args.ckpt = None
             config = yaml.load(open(self.args.config, "r"), Loader=yaml.FullLoader)
             config = OrderedNamespace([self.args, config])
             model = model_cls(config)
 
-        # config.data.dataset.dataset_root = "/home/twsezjg982/dataset/flickr/"
         if not hasattr(config.data.dataset, "modalities"):
             config.data.dataset.modalities = ["audio", "image", "text"]
 
@@ -192,13 +190,9 @@ class TrainSpeechClipBaseTask(BaseTask):
             every_n_epochs=1,
         )
 
-        # if self.args.test:
-        #     config.trainer.logger = True
         config.trainer.logger = set_pl_logger(
             config,
         )
-
-        # config.trainer.logger = True
         config.gpus = self.args.gpus
         trainer = Trainer(
             callbacks=[
@@ -212,34 +206,10 @@ class TrainSpeechClipBaseTask(BaseTask):
             resume_from_checkpoint=None if self.args.resume == "" else self.args.resume,
             **config.trainer,
         )
-        # print(config.trainer)
-        # trainer = Trainer(
-        #     callbacks=[
-        #         TQDMProgressBar(),
-        #         model_checkpoint_val_loss,
-        #         model_checkpoint_recall,
-        #         *custom_trainer_callbacks,
-        #     ],
-        #     enable_progress_bar=True,
-        #     accelerator="gpu",
-        #     devices=2,
-        #     strategy="dp",
-        #     resume_from_checkpoint=None if self.args.resume == "" else self.args.resume,
-        #     **config.trainer,
-        # )
-
-        # Trainer(accelerator=”gpu”, devices=k, strategy=’dp’)
 
         if self.args.train:
-            # trainer.validate(model, tr_loader, ckpt_path=self.args.ckpt, verbose=True)
             trainer.fit(model, tr_loader, dv_loader, ckpt_path=self.args.ckpt)
         if self.args.eval:
             trainer.validate(model, dv_loader, ckpt_path=config.ckpt, verbose=True)
         if self.args.test:
-            # test_func = getattr(model, "test_step", None)
-            # if callable(test_func):
-            #     # test utility is implemented and callable
-            #     trainer.test(model, test_loader, ckpt_path=config.ckpt)
-            # else:
-            #     # use validate function instead.
             trainer.validate(model, test_loader, ckpt_path=config.ckpt)

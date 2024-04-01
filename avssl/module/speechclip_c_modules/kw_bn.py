@@ -8,7 +8,7 @@ from torch import nn
 class Kw_BatchNorm(nn.Module):
     """Kw_BatchNorm
 
-    BatchNorm Layer for keywords
+    BatchNorm Layer for fix number of keywords
 
     """
 
@@ -162,3 +162,65 @@ class Kw_BatchNorm(nn.Module):
             raise NotImplementedError()
 
         return keywords
+
+class Kw_BatchNorm_dynamic(nn.Module):
+    """Kw_BatchNorm_dynamic
+    BatchNorm Layer for dynamic number of keywords
+    """
+    def __init__(
+        self,
+        kw_dim: int,
+        init_bias: torch.Tensor,
+        init_scale: torch.Tensor,
+        std_scale: int = 1,
+        learnable: bool = True,
+    ) -> None:
+        """init
+
+        Args:
+            kw_dim (int): dimension of keywords
+            init_bias (torch.Tensor): initialized bias for BatchNorm
+            init_scale (torch.Tensor): initialized scale for BatchNorm
+            std_scale (int, optional): scale for init scale. Defaults to 1.
+            learnable (bool, optional): if gamma and beta is learnable in BatchNoem. Defaults to True.
+        """
+        super().__init__()
+        self.kw_dim = kw_dim
+        self.learnable = learnable
+        assert std_scale > 0, f"std scale must > 0, but input std scale is {std_scale}"
+        self.std_scale = std_scale
+
+        self.bn_layer = nn.BatchNorm1d(kw_dim)
+
+        self.init_bn(init_bias, init_scale)
+        logger.info(
+            "Initialize BatchNorm weight and bias learnable=({}) with token embeddings w/ scale={}".format(
+                self.learnable, self.std_scale
+            )
+        )
+
+    def init_bn(self, init_bias: torch.Tensor, init_scale: torch.Tensor) -> None:
+        """init_bn
+        Initialize batchnorm's params
+        Args:
+            init_bias (torch.Tensor): bias
+            init_scale (torch.Tensor): scale
+        """
+        self.bn_layer.weight.data.copy_(init_scale * self.std_scale)
+        self.bn_layer.bias.data.copy_(init_bias)
+        self.bn_layer.weight.requires_grad = self.learnable
+        self.bn_layer.bias.requires_grad = self.learnable
+
+    def forward(self, keywords: torch.Tensor) -> torch.Tensor:
+        """forward
+
+        Args:
+            keywords (torch.Tensor): the input keywords embeddings
+
+        Returns:
+            torch.Tensor: batchnormed output
+        """
+        assert keywords.dim() == 3
+        output = self.bn_layer(keywords.permute(0, 2, 1)).permute(0, 2, 1)
+
+        return output
