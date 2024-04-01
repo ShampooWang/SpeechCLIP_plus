@@ -2,9 +2,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from typing import Union
 import os
 import string
+from typing import Union
 
 import clip
 import numpy as np
@@ -219,7 +219,9 @@ class ClipModel(nn.Module):
         """
         return self.model.encode_text(text)
 
-    def encode_keywords(self, keywords: torch.Tensor, keyword_num: Union[int, torch.Tensor]) -> torch.Tensor:
+    def encode_keywords(
+        self, keywords: torch.Tensor, keyword_num: Union[int, torch.Tensor]
+    ) -> torch.Tensor:
         """encode_keywords
 
         Args:

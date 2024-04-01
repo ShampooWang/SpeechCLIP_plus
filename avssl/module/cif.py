@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -80,7 +81,6 @@ class CIF(nn.Module):
         else:
             raise NotImplementedError(self.produce_weight_type)
 
-
         self.weight_proj = nn.Sequential(
             nn.Dropout(), nn.Linear(self.encoder_embed_dim, 1), nn.Sigmoid()
         )
@@ -128,7 +128,6 @@ class CIF(nn.Module):
                 desired_sum = self.cif_threshold * target_lengths.type_as(alpha) + eps
                 alpha = alpha * (desired_sum / alpha_sum).unsqueeze(1)
 
-        
         # Integrate and fire
         result_dict = {
             "quantity_out": alpha_sum,
@@ -162,7 +161,7 @@ class CIF(nn.Module):
         target_lengths: Optional[torch.Tensor] = None,
     ) -> dict:
         """Integrate and fire the input feature sequence
-        Author: 
+        Author:
             https://github.com/George0828Zhang/torch_cif/blob/main/cif.py
 
         Args:
