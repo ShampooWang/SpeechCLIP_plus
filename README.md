@@ -10,9 +10,10 @@
         <img alt="Hybrid Model" src="hybrid.png" style="width: 44%"/>
         &nbsp;
         &nbsp;
-        <img alt="Hybrid+ Model" src="hybrid+.png" style="width: 45%"/>
+        <img alt="Hybrid+ Model" src="hybrid+.png" style="width: 47%"/>
         <br/>
-        <span>Left: Hybrid SpeechCLIP.        Right: Cascaded and Hybrid SpeechCLIP+</span>
+        <span>Left: Hybrid SpeechCLIP<span>
+        <span>Right: Cascaded and Hybrid SpeechCLIP+</span>
     </div>
     <br/>
     <br/>
