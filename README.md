@@ -6,11 +6,11 @@
 
 
 <div style="text-align: center;">
-    <div style="display: inline-block; width: 25%; text-align: center;">
-        <img alt="Hybrid Model" src="hybrid.png" style="width: 25%"/>
+    <div style="display: inline-block; width: 50%; text-align: center;">
+        <img alt="Hybrid Model" src="hybrid.png" style="width: 45%"/>
         &nbsp;
         &nbsp;
-        <img alt="Hybrid+ Model" src="hybrid+.png" style="width: 25%"/>
+        <img alt="Hybrid+ Model" src="hybrid+.png" style="width: 46.5%"/>
         <br/>
         <span>Left: Hybrid SpeechCLIP. Right: Cascaded and Hybrid SpeechCLIP+</span>
     </div>
