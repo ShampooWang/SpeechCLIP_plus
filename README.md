@@ -11,12 +11,7 @@
         &nbsp;
         &nbsp;
         <img alt="Hybrid+ Model" src="hybrid+.png" style="width: 46%"/>
-        <br/>
-        <span>Left: Hybrid SpeechCLIP<span>
-        <br/>
-        <span>Right: Cascaded and Hybrid SpeechCLIP+</span>
     </div>
-    <br/>
     <br/>
     <div style="text-align: center;">
         <a href=""><img alt="LICENSE" src="https://img.shields.io/github/license/ShampooWang/SpeechCLIP_plus"/></a>
@@ -24,6 +19,10 @@
         <a href="https://github.com/ShampooWang/SpeechCLIP_plus/issues"><img alt="ISSUE" src="https://img.shields.io/github/issues/ShampooWang/SpeechCLIP_plus"/></a>
         <a href="https://github.com/ShampooWang/SpeechCLIP_plus/pulls"><img alt="PR" src="https://img.shields.io/github/issues-pr/ShampooWang/SpeechCLIP_plus"/></a>
     </div>
+    <br/>
+    <span>Left: Hybrid SpeechCLIP<span>
+    <br/>
+    <span>Right: Cascaded and Hybrid SpeechCLIP+</span>
 </div>
 
 
