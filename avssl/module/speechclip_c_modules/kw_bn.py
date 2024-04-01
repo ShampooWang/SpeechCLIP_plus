@@ -163,10 +163,12 @@ class Kw_BatchNorm(nn.Module):
 
         return keywords
 
+
 class Kw_BatchNorm_dynamic(nn.Module):
     """Kw_BatchNorm_dynamic
     BatchNorm Layer for dynamic number of keywords
     """
+
     def __init__(
         self,
         kw_dim: int,

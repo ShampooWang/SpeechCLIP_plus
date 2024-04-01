@@ -2,8 +2,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from typing import List, Tuple, Union
 from collections import defaultdict
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -14,9 +14,9 @@ from torch.nn.utils.rnn import pad_sequence
 from ..base import OrderedNamespace
 from ..module import ClipModel, MLPLayers
 from ..module.cif import CIF
+from ..module.kw_modules import TransformerModels
 from ..module.speechclip_c_modules import vector_quantizers
 from ..module.speechclip_c_modules.kw_bn import Kw_BatchNorm, Kw_BatchNorm_dynamic
-from ..module.kw_modules import TransformerModels
 from ..util import get_keypadding_mask
 
 
@@ -29,20 +29,20 @@ class GeneralBranch(nn.Module):
         self.text_dim = text_dim
 
     def _create_self_attn_layer(self, branch_config: OrderedNamespace):
-        """create self-attention layer
-        """
+        """create self-attention layer"""
         transformer_args = branch_config.transformer_args
-        transformer_type = transformer_args.type if hasattr(transformer_args, "type") else branch_config.transformer_type
-        logger.info(
-            f"Using {transformer_type} as {type(self).__name__}"
+        transformer_type = (
+            transformer_args.type
+            if hasattr(transformer_args, "type")
+            else branch_config.transformer_type
         )
-        self.self_att = getattr(
-            TransformerModels, transformer_type
-        )(**branch_config.transformer_args)
+        logger.info(f"Using {transformer_type} as {type(self).__name__}")
+        self.self_att = getattr(TransformerModels, transformer_type)(
+            **branch_config.transformer_args
+        )
 
     def _create_kw_proj_layer(self):
-        """create projection layer of keyword embeddings (before BatchNorm Layer)
-        """
+        """create projection layer of keyword embeddings (before BatchNorm Layer)"""
         self.kw_projection_config = (
             self.config.model_settings.cascaded_branch.keyword.get(
                 "kw_projection", None
@@ -73,8 +73,7 @@ class GeneralBranch(nn.Module):
             )
 
     def _create_vector_quantizer(self):
-        """create vector quantizer for the codebook selection
-        """
+        """create vector quantizer for the codebook selection"""
         self.vector_quantizer = None
         self.vq_type = self.config.model_settings.cascaded_branch.vq.type
 
@@ -92,8 +91,7 @@ class GeneralBranch(nn.Module):
         )
 
     def _create_kw_batchnorm(self):
-        """create batchnorm layer for the keyword
-        """
+        """create batchnorm layer for the keyword"""
         self.bn_layer = Kw_BatchNorm(
             kw_num=self.keyword_num,
             kw_dim=self.text_dim,
@@ -101,17 +99,22 @@ class GeneralBranch(nn.Module):
             init_bias=torch.mean(self.clip.model.token_embedding.weight, dim=0),
             init_scale=torch.std(self.clip.model.token_embedding.weight, dim=0),
             std_scale=self.config.model_settings.cascaded_branch.keyword.batchnorms.std_scale,
-            learnable=self.config.model_settings.cascaded_branch.keyword.batchnorms.learnable
-            if hasattr(
-                self.config.model_settings.cascaded_branch.keyword.batchnorms,
-                "learnable",
-            )
-            else True,
-            parallel=self.config.model_settings.cascaded_branch.keyword.batchnorms.parallel
-            if hasattr(
-                self.config.model_settings.cascaded_branch.keyword.batchnorms, "parallel"
-            )
-            else False,
+            learnable=(
+                self.config.model_settings.cascaded_branch.keyword.batchnorms.learnable
+                if hasattr(
+                    self.config.model_settings.cascaded_branch.keyword.batchnorms,
+                    "learnable",
+                )
+                else True
+            ),
+            parallel=(
+                self.config.model_settings.cascaded_branch.keyword.batchnorms.parallel
+                if hasattr(
+                    self.config.model_settings.cascaded_branch.keyword.batchnorms,
+                    "parallel",
+                )
+                else False
+            ),
         )
 
     def _create_cls(self, length: int, cls_dim: int) -> nn.Parameter:
@@ -124,7 +127,15 @@ class GeneralBranch(nn.Module):
         Returns:
             nn.Parameter: CLS token with the shape [1, lenght, cls_dim]
         """
-        cls = torch.nn.Parameter(torch.randn([1,length,cls_dim,]))
+        cls = torch.nn.Parameter(
+            torch.randn(
+                [
+                    1,
+                    length,
+                    cls_dim,
+                ]
+            )
+        )
         logger.info("Start init [CLS] {}".format(cls.shape))
 
         return cls
@@ -143,7 +154,7 @@ class GeneralBranch(nn.Module):
             features = self.bn_layer(features)
 
         return features
-    
+
     def get_keyword_cosine_score(self, keywords: torch.Tensor) -> torch.Tensor:
         """Compute cosine scores between the keyword embeddings and the CLIP tokens' embeddings
 
@@ -166,9 +177,9 @@ class GeneralBranch(nn.Module):
         cos_score = torch.stack(cos_score, dim=1).to(keywords.device)
 
         return cos_score
-    
+
     def vq_audio_features(self, audio_feat: torch.Tensor) -> Tuple[dict, torch.Tensor]:
-        """extract CLIP's text tokens (keywords) by performing vector-quantization to the input audio features 
+        """extract CLIP's text tokens (keywords) by performing vector-quantization to the input audio features
 
         Args:
             audio_feat (torch.Tensor): input audio features
@@ -184,7 +195,7 @@ class GeneralBranch(nn.Module):
         keywords = vq_results["subword_prob"] @ self.clip.model.token_embedding.weight
 
         return vq_results, keywords
-    
+
 
 class KW_ParallelBranch(GeneralBranch):
     """KW_ParallelBranch
@@ -201,7 +212,7 @@ class KW_ParallelBranch(GeneralBranch):
         )
         self.cls = self._create_cls(
             length=1,
-            cls_dim=self.config.model_settings.parallel_branch.transformer_args.d_model
+            cls_dim=self.config.model_settings.parallel_branch.transformer_args.d_model,
         )
         self.need_projection = self.config.model_settings.parallel_branch.get(
             "need_projection", True
@@ -238,7 +249,10 @@ class KW_ParallelBranch(GeneralBranch):
         return tuple(hidden_states)
 
     def forward(
-        self, audio_feat: torch.Tensor, audio_len: torch.Tensor, otherInputs: dict = None
+        self,
+        audio_feat: torch.Tensor,
+        audio_len: torch.Tensor,
+        otherInputs: dict = None,
     ) -> dict:
         """forward
 
@@ -262,7 +276,7 @@ class KW_ParallelBranch(GeneralBranch):
 
         if hasattr(self, "linear_proj"):
             out = self.linear_proj(out)
-        
+
         output["parallel_audio_feat"] = out
 
         return output
@@ -275,9 +289,7 @@ class KW_CascadedBranch(GeneralBranch):
 
     """
 
-    def __init__(
-        self, config, audio_dim: int, text_dim: int, clip: ClipModel
-    ) -> None:
+    def __init__(self, config, audio_dim: int, text_dim: int, clip: ClipModel) -> None:
         """init
 
         Args:
@@ -289,17 +301,21 @@ class KW_CascadedBranch(GeneralBranch):
         """
         super().__init__(config=config, audio_dim=audio_dim, text_dim=text_dim)
         self.clip = clip
-        self.keyword_num = getattr(config.model_settings.cascaded_branch.keyword, "number", 8)
+        self.keyword_num = getattr(
+            config.model_settings.cascaded_branch.keyword, "number", 8
+        )
         self.cls = self._create_cls(
             length=self.keyword_num,
             cls_dim=self.config.model_settings.cascaded_branch.transformer_args.d_model,
         )
-        self._create_self_attn_layer(self.config.model_settings.cascaded_branch) # select the main structure for transformer encoder layer
-        self._create_kw_proj_layer() # projection network (before BatchNorm Layer)
-        self._create_vector_quantizer() # codebook selection
+        self._create_self_attn_layer(
+            self.config.model_settings.cascaded_branch
+        )  # select the main structure for transformer encoder layer
+        self._create_kw_proj_layer()  # projection network (before BatchNorm Layer)
+        self._create_vector_quantizer()  # codebook selection
 
         if hasattr(config.model_settings.cascaded_branch.keyword, "batchnorms"):
-            self._create_kw_batchnorm() # batchnorms
+            self._create_kw_batchnorm()  # batchnorms
 
     def extract_hidden_states(
         self, audio_feat: torch.Tensor, audio_len: torch.Tensor
@@ -331,7 +347,10 @@ class KW_CascadedBranch(GeneralBranch):
         return hidden_states
 
     def forward(
-        self, audio_feat: torch.Tensor, audio_feat_len: torch.Tensor, otherInputs: dict = None
+        self,
+        audio_feat: torch.Tensor,
+        audio_feat_len: torch.Tensor,
+        otherInputs: dict = None,
     ) -> dict:
         """forward
 
@@ -356,7 +375,9 @@ class KW_CascadedBranch(GeneralBranch):
         vq_results, keywords = self.vq_audio_features(audio_feat)
         output["vq_results"] = vq_results
         output["keywords"] = keywords
-        output["cascaded_audio_feat"] = self.clip.encode_keywords(keywords, self.keyword_num) # Feed keywords into clip text encoder
+        output["cascaded_audio_feat"] = self.clip.encode_keywords(
+            keywords, self.keyword_num
+        )  # Feed keywords into clip text encoder
 
         return output
 
@@ -425,15 +446,16 @@ class KW_CascadedBranch(GeneralBranch):
 
         return cls_weights, topk_kw, None
 
-        
+
 class KW_HybridBranch(GeneralBranch):
     """KW_CascadedBranch
 
     Hybrid Branch (parallel + cascaded) for SpeechCLIP
 
     """
+
     def __init__(
-        self, config, audio_dim: int, text_dim: int, out_dim:int, clip: ClipModel
+        self, config, audio_dim: int, text_dim: int, out_dim: int, clip: ClipModel
     ) -> None:
         """init
 
@@ -449,20 +471,23 @@ class KW_HybridBranch(GeneralBranch):
         self.out_dim = out_dim
         self.pbranch_config = config.model_settings.parallel_branch
         self.cbranch_config = config.model_settings.cascaded_branch
-        self.keyword_num = getattr(config.model_settings.cascaded_branch.keyword, "number", 8)
+        self.keyword_num = getattr(
+            config.model_settings.cascaded_branch.keyword, "number", 8
+        )
         self.parallel_cls = self._create_cls(
-            length=1, 
-            cls_dim=self.pbranch_config.transformer_args.d_model
+            length=1, cls_dim=self.pbranch_config.transformer_args.d_model
         )
         self.cascaded_cls = self._create_cls(
-            length=self.keyword_num, 
-            cls_dim=self.cbranch_config.transformer_args.d_model
+            length=self.keyword_num,
+            cls_dim=self.cbranch_config.transformer_args.d_model,
         )
-        self._create_self_attn_layer(self.config.model_settings.cascaded_branch) # select the main structure for transformer encoder layer
-        self._create_kw_proj_layer() # projection network (before BatchNorm Layer)
-        self._create_vector_quantizer() # codebook selection
+        self._create_self_attn_layer(
+            self.config.model_settings.cascaded_branch
+        )  # select the main structure for transformer encoder layer
+        self._create_kw_proj_layer()  # projection network (before BatchNorm Layer)
+        self._create_vector_quantizer()  # codebook selection
         if hasattr(config.model_settings.cascaded_branch.keyword, "batchnorms"):
-            self._create_kw_batchnorm() # batchnorms
+            self._create_kw_batchnorm()  # batchnorms
 
         if getattr(self.pbranch_config, "need_projection", True):
             if hasattr(self.pbranch_config, "projection_config"):
@@ -471,7 +496,7 @@ class KW_HybridBranch(GeneralBranch):
                 )
                 self.parallel_proj = MLPLayers(
                     units=self.pbranch_config.projection_config.dimensions,
-                    dropout=self.pbranch_config.projection_config.dropout
+                    dropout=self.pbranch_config.projection_config.dropout,
                 )
             else:
                 logger.info(
@@ -480,7 +505,10 @@ class KW_HybridBranch(GeneralBranch):
                 self.parallel_proj = nn.Linear(self.audio_dim, self.out_dim)
 
     def forward(
-        self, audio_feat: torch.Tensor, audio_feat_len: torch.Tensor, otherInputs: dict = None
+        self,
+        audio_feat: torch.Tensor,
+        audio_feat_len: torch.Tensor,
+        otherInputs: dict = None,
     ) -> dict:
         """forward
 
@@ -498,19 +526,26 @@ class KW_HybridBranch(GeneralBranch):
         cls = torch.cat([parallel_cls, cascaded_cls], dim=1)
         src = torch.cat([cls, audio_feat], dim=1)
         attn_out = self.self_att(
-            src=src, key_padding_mask=get_keypadding_mask(max_audio_length+cls.shape[1], audio_feat_len+cls.shape[1])
+            src=src,
+            key_padding_mask=get_keypadding_mask(
+                max_audio_length + cls.shape[1], audio_feat_len + cls.shape[1]
+            ),
         )
-        output["parallel_audio_feat"] = self.parallel_proj(attn_out[:, :1].reshape(-1, self.audio_dim))
-        post_audio_feat = attn_out[:, 1:1+self.keyword_num].reshape(
+        output["parallel_audio_feat"] = self.parallel_proj(
+            attn_out[:, :1].reshape(-1, self.audio_dim)
+        )
+        post_audio_feat = attn_out[:, 1 : 1 + self.keyword_num].reshape(
             -1, self.keyword_num, self.audio_dim
-        ) # audio features after self-attention layer
+        )  # audio features after self-attention layer
         vq_results, keywords = self.vq_audio_features(post_audio_feat)
         output["vq_results"] = vq_results
-        output["keywords"] = keywords        
-        output["cascaded_audio_feat"] = self.clip.encode_keywords(keywords, self.keyword_num) # Feed keyword into clip text encoder
-        
+        output["keywords"] = keywords
+        output["cascaded_audio_feat"] = self.clip.encode_keywords(
+            keywords, self.keyword_num
+        )  # Feed keyword into clip text encoder
+
         return output
-            
+
     def extract_hidden_states(
         self, audio_feat: torch.Tensor, audio_len: torch.Tensor
     ) -> Tuple:
@@ -529,24 +564,28 @@ class KW_HybridBranch(GeneralBranch):
         cls = torch.cat([parallel_cls, cascaded_cls], dim=1)
         src = torch.cat([cls, audio_feat], dim=1)
         key_padding_mask = get_keypadding_mask(
-            max_length=max_audio_length+cls.shape[1], 
-            data_lens=audio_len+cls.shape[1]
+            max_length=max_audio_length + cls.shape[1],
+            data_lens=audio_len + cls.shape[1],
         )
 
         hidden_states = self.self_att.extract_hidden_states(
             src=src, key_padding_mask=key_padding_mask
         )
         # exclude CLS position
-        hidden_states = [x[:, cls.shape[1]:, ...] for x in hidden_states]
+        hidden_states = [x[:, cls.shape[1] :, ...] for x in hidden_states]
 
         return tuple(hidden_states)
-        
+
+
 class KW_CascadedBranchPlus(GeneralBranch):
     """KW_CascadedBranchPlus
 
     Cascaded Branch plus for SpeechCLIP+
     """
-    def __init__(self, config: OrderedNamespace, audio_dim: int, text_dim: int, clip: ClipModel) -> None:
+
+    def __init__(
+        self, config: OrderedNamespace, audio_dim: int, text_dim: int, clip: ClipModel
+    ) -> None:
         """init
 
         Args:
@@ -558,13 +597,13 @@ class KW_CascadedBranchPlus(GeneralBranch):
         """
         super().__init__(config, audio_dim, text_dim)
         self.clip = clip
-        logger.info("Using self-attention before downsampling")        
+        logger.info("Using self-attention before downsampling")
         self._create_self_attn_layer(
             self.config.model_settings.cascaded_branch
-        ) # select the main structure for transformer encoder layer
-        self._create_kw_proj_layer() # projection network (before BatchNorm Layer)
-        self._create_vector_quantizer() # codebook selection
-        
+        )  # select the main structure for transformer encoder layer
+        self._create_kw_proj_layer()  # projection network (before BatchNorm Layer)
+        self._create_vector_quantizer()  # codebook selection
+
         if hasattr(config.model_settings.cascaded_branch.keyword, "batchnorms"):
             self._create_kw_batchnorm()
 
@@ -592,12 +631,14 @@ class KW_CascadedBranchPlus(GeneralBranch):
             init_bias=torch.mean(self.clip.model.token_embedding.weight, dim=0),
             init_scale=torch.std(self.clip.model.token_embedding.weight, dim=0),
             std_scale=self.config.model_settings.cascaded_branch.keyword.batchnorms.std_scale,
-            learnable=self.config.model_settings.cascaded_branch.keyword.batchnorms.learnable
-            if hasattr(
-                self.config.model_settings.cascaded_branch.keyword.batchnorms,
-                "learnable",
-            )
-            else True,
+            learnable=(
+                self.config.model_settings.cascaded_branch.keyword.batchnorms.learnable
+                if hasattr(
+                    self.config.model_settings.cascaded_branch.keyword.batchnorms,
+                    "learnable",
+                )
+                else True
+            ),
         )
 
     def downsampling_audio_feat(
@@ -632,11 +673,13 @@ class KW_CascadedBranchPlus(GeneralBranch):
             "audio_feat": audio_feat,
             "audio_feat_len": audio_feat_len,
             "audio_feat_pad_mask": audio_feat_pad_mask,
-            "global_step": global_step
+            "global_step": global_step,
         }
 
         if not self.training:
-            input_target_len = None # We don't provide the downsampling target length during inference
+            input_target_len = (
+                None  # We don't provide the downsampling target length during inference
+            )
         else:
             if target_len is None:
                 input_target_len = (audio_feat_len / 20).round().long()
@@ -655,11 +698,16 @@ class KW_CascadedBranchPlus(GeneralBranch):
 
         return dsample_results
 
-    def forward(self, audio_feat: torch.Tensor, audio_feat_len: torch.Tensor, otherInputs: dict = {}) -> dict:
+    def forward(
+        self,
+        audio_feat: torch.Tensor,
+        audio_feat_len: torch.Tensor,
+        otherInputs: dict = {},
+    ) -> dict:
         """forward
 
         Args:
-            audio_feat (torch.Tensor) 
+            audio_feat (torch.Tensor)
             audio_feat_len (torch.Tensor)
             otherInputs (dict, optional)
 
@@ -669,9 +717,9 @@ class KW_CascadedBranchPlus(GeneralBranch):
         output = defaultdict(lambda: None)
         bsz, audio_max_len = audio_feat.shape[:2]
         device = audio_feat.device
-        audio_feat_pad_mask = get_keypadding_mask(
-            audio_max_len, audio_feat_len
-        ).to(device)
+        audio_feat_pad_mask = get_keypadding_mask(audio_max_len, audio_feat_len).to(
+            device
+        )
 
         # Extracting audio features from self-attention layers
         if hasattr(self, "self_att"):
@@ -684,10 +732,12 @@ class KW_CascadedBranchPlus(GeneralBranch):
             audio_feat=audio_feat,
             audio_feat_len=audio_feat_len,
             audio_feat_pad_mask=audio_feat_pad_mask,
-            target_len=otherInputs["target_len"]
-            if "target_len" in otherInputs
-            else None,
-            global_step=otherInputs["global_step"] if "global_step" in otherInputs else 0
+            target_len=(
+                otherInputs["target_len"] if "target_len" in otherInputs else None
+            ),
+            global_step=(
+                otherInputs["global_step"] if "global_step" in otherInputs else 0
+            ),
         )
         output["dsample_results"] = dsample_results
         audio_feat = dsample_results["dsample_feats"]
@@ -695,13 +745,13 @@ class KW_CascadedBranchPlus(GeneralBranch):
         # Feed keyword into clip text encoder
         vq_results, keywords = self.vq_audio_features(audio_feat)
         output["vq_results"] = vq_results
-        output["keywords"] = keywords      
+        output["keywords"] = keywords
         output["cascaded_audio_feat"] = self.clip.encode_keywords(
             keywords, dsample_results["dsample_feats_length"]
         )
 
         return output
-    
+
     def extract_hidden_states(
         self, audio_feat: torch.Tensor, audio_len: torch.Tensor
     ) -> Tuple:
@@ -716,8 +766,7 @@ class KW_CascadedBranchPlus(GeneralBranch):
         """
         bsz, max_audio_length = audio_feat.shape[:2]
         key_padding_mask = get_keypadding_mask(
-            max_length=max_audio_length, 
-            data_lens=audio_len
+            max_length=max_audio_length, data_lens=audio_len
         )
         if hasattr(self, "self_att"):
             hidden_states = self.self_att.extract_hidden_states(
@@ -726,12 +775,13 @@ class KW_CascadedBranchPlus(GeneralBranch):
             return tuple(hidden_states)
         else:
             return ()
-        
+
 
 class KW_HybridBranchPlus(KW_CascadedBranchPlus):
     """KW_HybridBranchPlus
     Hybrid Branch plus for SpeechCLIP+
     """
+
     def __init__(
         self, config, audio_dim: int, text_dim: int, out_dim: int, clip: ClipModel
     ) -> None:
@@ -745,15 +795,22 @@ class KW_HybridBranchPlus(KW_CascadedBranchPlus):
             clip (ClipModel): the CLIP model
         """
         super().__init__(config, audio_dim, text_dim, clip)
-        self.out_dim = out_dim          
+        self.out_dim = out_dim
         self.cls = self._create_cls(
             length=1,
-            cls_dim=self.config.model_settings.cascaded_branch.transformer_args.d_model
-        ) # Creating CLS token for the parallel barnch
-        self._create_self_attn_layer(self.config.model_settings.cascaded_branch) # select the main structure for transformer encoder layer
+            cls_dim=self.config.model_settings.cascaded_branch.transformer_args.d_model,
+        )  # Creating CLS token for the parallel barnch
+        self._create_self_attn_layer(
+            self.config.model_settings.cascaded_branch
+        )  # select the main structure for transformer encoder layer
         self.parallel_proj = nn.Linear(self.audio_dim, self.out_dim)
 
-    def forward(self, audio_feat: torch.Tensor, audio_feat_len: torch.Tensor, otherInputs: dict = {}) -> dict:
+    def forward(
+        self,
+        audio_feat: torch.Tensor,
+        audio_feat_len: torch.Tensor,
+        otherInputs: dict = {},
+    ) -> dict:
         """forward
 
         Args:
@@ -767,30 +824,33 @@ class KW_HybridBranchPlus(KW_CascadedBranchPlus):
         output = defaultdict(lambda: None)
         bsz, audio_max_len = audio_feat.shape[:2]
         audio_feat_pad_mask = get_keypadding_mask(
-            audio_max_len+1, audio_feat_len+1
+            audio_max_len + 1, audio_feat_len + 1
         ).to(audio_feat.device)
 
         # Extract features from the self-attention layer by CLS token
         cls = torch.cat([self.cls] * bsz, dim=0)
         audio_feat = torch.cat([cls, audio_feat], dim=1)
         post_audio_feat = self.self_att(
-            src=audio_feat, 
-            key_padding_mask=audio_feat_pad_mask
+            src=audio_feat, key_padding_mask=audio_feat_pad_mask
         )
         output["parallel_audio_feat"] = self.parallel_proj(
             post_audio_feat[:, :1].reshape(-1, self.audio_dim)
         )
-        post_audio_feat = post_audio_feat[:, 1:].reshape(-1, audio_max_len, self.audio_dim)
+        post_audio_feat = post_audio_feat[:, 1:].reshape(
+            -1, audio_max_len, self.audio_dim
+        )
 
         # Downsampling audio features by CIF
         dsample_results = self.downsampling_audio_feat(
             audio_feat=post_audio_feat,
             audio_feat_len=audio_feat_len,
             audio_feat_pad_mask=audio_feat_pad_mask[:, 1:],
-            target_len=otherInputs["target_len"]
-            if "target_len" in otherInputs
-            else None,
-            global_step=otherInputs["global_step"] if "global_step" in otherInputs else 0
+            target_len=(
+                otherInputs["target_len"] if "target_len" in otherInputs else None
+            ),
+            global_step=(
+                otherInputs["global_step"] if "global_step" in otherInputs else 0
+            ),
         )
         output["dsample_results"] = dsample_results
         dsample_feats = dsample_results["dsample_feats"]
@@ -802,10 +862,12 @@ class KW_HybridBranchPlus(KW_CascadedBranchPlus):
         output["cascaded_audio_feat"] = self.clip.encode_keywords(
             keywords, dsample_results["dsample_feats_length"]
         )
-        
+
         return output
-    
-    def extract_hidden_states(self, audio_feat: torch.Tensor, audio_len: torch.Tensor) -> Tuple:
+
+    def extract_hidden_states(
+        self, audio_feat: torch.Tensor, audio_len: torch.Tensor
+    ) -> Tuple:
         """extract_hidden_states
         Extract hiddenstates of parallel branch
         Args:
@@ -818,8 +880,7 @@ class KW_HybridBranchPlus(KW_CascadedBranchPlus):
         bsz, max_audio_length = audio_feat.shape[:2]
         cls = torch.cat([self.cls] * bsz, dim=0)
         key_padding_mask = get_keypadding_mask(
-            max_length=max_audio_length + 1, 
-            data_lens=audio_len + 1
+            max_length=max_audio_length + 1, data_lens=audio_len + 1
         )
         src = torch.cat([cls, audio_feat], dim=1)
         hidden_states = self.self_att.extract_hidden_states(

@@ -1,20 +1,25 @@
 from collections import defaultdict
 from typing import List
+
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
 from torch import nn
+from tqdm import tqdm
 
-
-__all__ = ["freeze_model", "unfreeze_model", "extract_fixed_keyword_neighbors", "extract_dynamic_keyword_neighbors"]
+__all__ = [
+    "freeze_model",
+    "unfreeze_model",
+    "extract_fixed_keyword_neighbors",
+    "extract_dynamic_keyword_neighbors",
+]
 
 
 class SpeechCLIPDecoder:
-    """Decoder of SpeechCLIP models
-    """
+    """Decoder of SpeechCLIP models"""
+
     def __init__(self, decoder: dict, indexMapping=None) -> None:
         self.decoder = decoder
-        self.indexMapping = indexMapping # Mapping of the reduced tokens' ids to the original tokens' ids
+        self.indexMapping = indexMapping  # Mapping of the reduced tokens' ids to the original tokens' ids
 
     def decode(self, tokenId) -> str:
         if self.indexMapping is not None:
@@ -58,13 +63,19 @@ def extract_fixed_keyword_neighbors(
     batch_size = model.config.data.dev_batch_size
     decoder = SpeechCLIPDecoder(
         decoder=model.clip.tokenizer.decoder,
-        indexMapping=model.clip.reducedl2Original if model.clip.selected_text_emb_ids is not None else None
+        indexMapping=(
+            model.clip.reducedl2Original
+            if model.clip.selected_text_emb_ids is not None
+            else None
+        ),
     )
 
     for i in tqdm(range(0, len(gold_texts) + batch_size, batch_size)):
         goldTextsBatch = gold_texts[i : i + batch_size]
-        currBsz = len(goldTextsBatch) # might be different from batch_size for the last batch
-        if currBsz == 0: 
+        currBsz = len(
+            goldTextsBatch
+        )  # might be different from batch_size for the last batch
+        if currBsz == 0:
             break
         if retrieve_method == "pseudo_inverse":
             emb_pinv = torch.linalg.pinv(tokenEmbeddings.T).float()
@@ -78,9 +89,7 @@ def extract_fixed_keyword_neighbors(
             ).permute(1, 0)
         else:
             kw_retrevial_score = F.cosine_similarity(
-                keywordEmbeddings[i : i + currBsz].view(
-                    -1, model.subword_embd_dim, 1
-                ),
+                keywordEmbeddings[i : i + currBsz].view(-1, model.subword_embd_dim, 1),
                 tokenEmbeddings.transpose(0, 1).unsqueeze(0),
                 dim=1,
             )
@@ -145,21 +154,31 @@ def extract_dynamic_keyword_neighbors(
     batch_size = model.config.data.dev_batch_size
     decoder = SpeechCLIPDecoder(
         decoder=model.clip.tokenizer.decoder,
-        indexMapping=model.clip.reducedl2Original if model.clip.selected_text_emb_ids is not None else None
+        indexMapping=(
+            model.clip.reducedl2Original
+            if model.clip.selected_text_emb_ids is not None
+            else None
+        ),
     )
-    for b_idx, i in tqdm(zip(
-        range(len(outputs)),
-        range(0, len(gold_texts), batch_size),
-    )):
-        goldTextsBatch = gold_texts[i : i + batch_size] # A small batch of all gold texts
-        kwEmbedLenBatch= kwEmbedLengths[i : i + batch_size] # A small batch of all legnths of the keyword embeddings
-        idxInBatch = 0 # Indicate the index of batch samples we should start to process
+    for b_idx, i in tqdm(
+        zip(
+            range(len(outputs)),
+            range(0, len(gold_texts), batch_size),
+        )
+    ):
+        goldTextsBatch = gold_texts[
+            i : i + batch_size
+        ]  # A small batch of all gold texts
+        kwEmbedLenBatch = kwEmbedLengths[
+            i : i + batch_size
+        ]  # A small batch of all legnths of the keyword embeddings
+        idxInBatch = 0  # Indicate the index of batch samples we should start to process
         for keyword_embeddings in keywordEmbeddings_list[b_idx]:
             # bszGPU stands for the batch size on a single GPU.
             # If you are using multiple GPUs with Data Parallelism (DP) for training, then bszGPU might differ from batch_size.
             # For example, if batch_size = 8 and you use 3 GPUs with DP for training,
             # then bszGPU = 3 for GPU 0, bszGPU = 3 for GPU 1, and bszGPU = 2 for GPU 2.
-            bszGPU, maxEmbedLen = keyword_embeddings.shape[:2] 
+            bszGPU, maxEmbedLen = keyword_embeddings.shape[:2]
             if retrieve_method == "pseudo_inverse":
                 emb_pinv = torch.linalg.pinv(tokenEmbeddings.T).float()
                 kw_retrevial_score = (
@@ -206,4 +225,3 @@ def extract_dynamic_keyword_neighbors(
             idxInBatch += bszGPU
 
     return all_retok_outputs
-

@@ -16,7 +16,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from ..base import OrderedNamespace
-from .kw_branches import *
 from ..module import (
     ClipModel,
     FairseqSpeechEncoder_Hubert,
@@ -25,14 +24,14 @@ from ..module import (
     losses,
     mutualRetrieval,
 )
-
 from ..optim import get_scheduler
 from ..util import (
     draw_embedding_space_PCA,
+    extract_dynamic_keyword_neighbors,
     extract_fixed_keyword_neighbors,
-    extract_dynamic_keyword_neighbors
 )
 from .base_model import BaseLightningModel
+from .kw_branches import *
 
 __all__ = [
     "KWClip_GeneralTransformer",
@@ -284,7 +283,7 @@ class KWClipBase(BaseLightningModel):
             if isinstance(outputs["others"][k], torch.Tensor):
                 outputs["others"][k] = outputs["others"][k].detach().cpu()
         return outputs["others"]
-    
+
     def validation_epoch_end(self, outputs: dict) -> dict:
         """validation_epoch_end
 
@@ -324,9 +323,15 @@ class KWClipBase(BaseLightningModel):
 
                 for i in range(kwNumRange):
                     kw_index = "kw" if self.keyword_num is None else f"kw_{i}"
-                    embeddings_stat_dict["mean"][kw_index] = all_keyword_embeddings[:, i, :].mean(0).mean()
-                    embeddings_stat_dict["std"][kw_index] = all_keyword_embeddings[:, i, :].std(0).mean()
-                    embeddings_stat_dict["norm"][kw_index] = all_keyword_embeddings[:, i, :].norm(p=2, dim=-1).mean()
+                    embeddings_stat_dict["mean"][kw_index] = (
+                        all_keyword_embeddings[:, i, :].mean(0).mean()
+                    )
+                    embeddings_stat_dict["std"][kw_index] = (
+                        all_keyword_embeddings[:, i, :].std(0).mean()
+                    )
+                    embeddings_stat_dict["norm"][kw_index] = (
+                        all_keyword_embeddings[:, i, :].norm(p=2, dim=-1).mean()
+                    )
 
                 if self.keyword_num is None:
                     all_keyword_embeddings.squeeze(1)
@@ -345,14 +350,16 @@ class KWClipBase(BaseLightningModel):
                     "kw_std_mse",
                     torch.std(
                         torch.norm(
-                            all_keyword_embeddings.view(-1, self.subword_embd_dim).std(0),
+                            all_keyword_embeddings.view(-1, self.subword_embd_dim).std(
+                                0
+                            ),
                             tokenEmbeddings.std(0),
                             p=2,
                         )
                     ),
                 )
 
-                # Drawing PCA 
+                # Drawing PCA
                 self.log_draw_pca_every_n_epoch = getattr(
                     self.config.log_setting, "log_draw_pca_every_n_epoch", 0
                 )
@@ -677,7 +684,9 @@ class KWClip_GeneralTransformer(KWClipBase):
         if self.config.model_settings.cascaded_objective_weight > 0:
             cBranchType = self.config.model_settings.cascaded_branch.type
             # Unify model name aliases
-            cBranchType = self.config.model_settings.cascaded_branch.type.replace("KW_", "")
+            cBranchType = self.config.model_settings.cascaded_branch.type.replace(
+                "KW_", ""
+            )
             cBranchType = cBranchType.replace("dynamic", "plus")
             if cBranchType == "CascadedBranch":
                 logger.info("Create Cascaded Branch")
@@ -709,7 +718,7 @@ class KWClip_GeneralTransformer(KWClipBase):
                     text_dim=self.subword_embd_dim,
                     out_dim=self.subword_embd_dim,
                     clip=self.clip,
-                )       
+                )
             elif cBranchType == "HybridBranch_plus":
                 assert (
                     self.config.model_settings.parallel_objective_weight > 0
@@ -731,7 +740,11 @@ class KWClip_GeneralTransformer(KWClipBase):
                 self.keyword_num = self.cascaded_branch.keyword_num
 
             # CIF's quantity loss
-            if hasattr(self.config.model_settings.cascaded_branch, "downsampling") and self.config.model_settings.cascaded_branch.downsampling.type == "cif":
+            if (
+                hasattr(self.config.model_settings.cascaded_branch, "downsampling")
+                and self.config.model_settings.cascaded_branch.downsampling.type
+                == "cif"
+            ):
                 self.quantity_loss_weight = getattr(
                     self.config.model_settings.cascaded_branch.downsampling.cif,
                     "quantity_loss_weight",
@@ -800,7 +813,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             list: list of trainable params in this class
         """
         _params = super().getTrainableParams()
-        
+
         if self.cascaded_branch is not None:
             logger.info("Add cascaded_branch parameters")
             _params += list(self.cascaded_branch.parameters())
@@ -827,7 +840,7 @@ class KWClip_GeneralTransformer(KWClipBase):
         self,
         batch: dict,
     ) -> dict:
-        
+
         wav = batch["wav"]
         wav_len = batch["wav_len"]
         image = batch["image"]
@@ -848,12 +861,11 @@ class KWClip_GeneralTransformer(KWClipBase):
             if isinstance(self.cascaded_branch, KW_CascadedBranchPlus):
                 otherInputs = {"global_step": self.global_step}
                 if getattr(self.cascaded_branch, "using_gt_len", False):
-                    assert "text" in batch, f"Text captions are required, {batch.keys()}"
+                    assert (
+                        "text" in batch
+                    ), f"Text captions are required, {batch.keys()}"
                     target_len = torch.LongTensor(
-                        [
-                            (t.squeeze().tolist().index(49407) - 1)
-                            for t in batch["text"]
-                        ]
+                        [(t.squeeze().tolist().index(49407) - 1) for t in batch["text"]]
                     ).to(wav.device)
                 else:
                     target_len = (audio_feat_len / 20).round().long()
@@ -863,7 +875,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             output = self.cascaded_branch(
                 audio_feat=audio_feat,
                 audio_feat_len=audio_feat_len,
-                otherInputs=otherInputs
+                otherInputs=otherInputs,
             )
         if self.parallel_branch is not None:
             output = self.parallel_branch(
@@ -878,11 +890,11 @@ class KWClip_GeneralTransformer(KWClipBase):
         keywords = output["keywords"]
         dsample_results = output["dsample_results"]
         if dsample_results is not None:
-            keywords_len = dsample_results["dsample_feats_length"] 
+            keywords_len = dsample_results["dsample_feats_length"]
         else:
-            keywords_len = None 
+            keywords_len = None
 
-        # Extract losses 
+        # Extract losses
         losses = {
             "id": id,
             "image_feat": image_feat,
@@ -909,8 +921,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             and self.cascaded_branch.downsampling_type == "cif"
         ):
             assert (
-                "target_len" in dsample_results
-                and "quantity_out" in dsample_results
+                "target_len" in dsample_results and "quantity_out" in dsample_results
             ), f"{dsample_results.keys()}"
             losses["cif_quantity_out"] = dsample_results["quantity_out"]
             losses["cif_target_len"] = dsample_results["target_len"]
@@ -935,7 +946,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             ), f"log keys: {vq_results_log_keys}, result: {vq_results.keys()}"
             vq_log_dict = {k: vq_results[k] for k in vq_results_log_keys}
             log_metrics.update(vq_log_dict)
-            
+
         return (
             losses,
             log_metrics,
@@ -984,7 +995,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             hidden_states = hidden_states + tuple(parallel_hidden_states[1:])
 
         return hidden_states[-1], hidden_states
-    
+
     def compute_loss(self, inputDict: dict):
         """compute the loss here
 
@@ -1027,7 +1038,7 @@ class KWClip_GeneralTransformer(KWClipBase):
             losses["loss"] += self.quantity_loss_weight * losses["quantity_loss"]
 
         return losses
-    
+
     def encode_speech(
         self,
         wav,
@@ -1051,7 +1062,9 @@ class KWClip_GeneralTransformer(KWClipBase):
 
         if self.cascaded_branch is not None:
             if self.cascaded_branch.clip.device != audio_feat.device:
-                self.cascaded_branch.clip = self.cascaded_branch.clip.to(audio_feat.device)
+                self.cascaded_branch.clip = self.cascaded_branch.clip.to(
+                    audio_feat.device
+                )
             output = self.cascaded_branch(
                 audio_feat=audio_feat,
                 audio_feat_len=audio_feat_len,
@@ -1080,10 +1093,11 @@ class KWClip_GeneralTransformer(KWClipBase):
     def extract_keywords(self, wav):
         audio_feat, audio_feat_len = self.forward_audio(wav, [len(wav)])
 
-        _, _, vq_results, _, dsample_results = self.cascaded_branch(audio_feat, audio_feat_len, {})
+        _, _, vq_results, _, dsample_results = self.cascaded_branch(
+            audio_feat, audio_feat_len, {}
+        )
         vq_results["targets"] = vq_results["targets"].flatten()
         vq_results["targets"] = [
-            self.clip.reducedl2Original[tok.item()]
-            for tok in vq_results["targets"]
+            self.clip.reducedl2Original[tok.item()] for tok in vq_results["targets"]
         ]
         return {"vq_results": vq_results, "dsample_results": dsample_results}

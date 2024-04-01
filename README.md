@@ -4,11 +4,6 @@
 
 ### Reminder: this repository also supports the original SpeechCLIP usage (e.g. loading checkpoint, training and testing)
 
-<!-- <style>
-    .inline-image{
-        display: inline-block;
-    }
-</style> -->
 
 <div style="text-align: center;">
     <div style="display: inline-block; width: 75%; text-align: center;">
