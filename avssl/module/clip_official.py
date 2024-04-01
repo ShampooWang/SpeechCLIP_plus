@@ -1,6 +1,8 @@
 import logging
 
 logger = logging.getLogger(__name__)
+
+from typing import Union
 import os
 import string
 
@@ -217,12 +219,12 @@ class ClipModel(nn.Module):
         """
         return self.model.encode_text(text)
 
-    def encode_keywords(self, keywords: torch.Tensor, keyword_num: int) -> torch.Tensor:
+    def encode_keywords(self, keywords: torch.Tensor, keyword_num: Union[int, torch.Tensor]) -> torch.Tensor:
         """encode_keywords
 
         Args:
             keywords (torch.Tensor): keywords input
-            keyword_num (int): number of keywords
+            keyword_num (Union[int, torch.Tensor]): number of keywords
 
         Returns:
             torch.Tensor: output of CLIP Text Encoder
@@ -242,24 +244,35 @@ class ClipModel(nn.Module):
             sot_token, eot_token = self.startOfTxt_reduced, self.endOfTxt_reduced
 
         text[:, 0] = torch.full(text[:, 0].size(), sot_token, device=self.device)
-        text[:, keyword_num + 1] = torch.full(
-            text[:, keyword_num + 1].size(), eot_token, device=self.device
-        )
+
+        if isinstance(keyword_num, torch.Tensor):
+            index = keyword_num.to(self.device)
+            index = torch.add(index, 1)
+            text = text.scatter(1, index.unsqueeze(1), eot_token)
+        else:
+            text[:, keyword_num + 1] = torch.full(
+                text[:, keyword_num + 1].size(), eot_token, device=self.device
+            )
 
         x = self.model.token_embedding(text)
-        x[:, 1 : 1 + keyword_num] = keywords
+
+        if isinstance(keyword_num, torch.Tensor):
+            for i in range(keywords.shape[0]):
+                x[i, 1 : index[i], :] = keywords[i, : index[i] - 1, :]
+        else:
+            x[:, 1 : 1 + keyword_num] = keywords
+
         x = x + self.model.positional_embedding
         x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.model.transformer(x)
         x = x.permute(1, 0, 2)  # LND -> NLD
         x = self.model.ln_final(x)
 
-        # x.shape = [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding (eot_token is the highest number in each sequence)
-        # x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.model.text_projection
-
         # take features from the eot embedding
-        x = x[:, 1 + keyword_num] @ self.model.text_projection
+        if isinstance(keyword_num, torch.Tensor):
+            x = x[torch.arange(x.shape[0]), index] @ self.model.text_projection
+        else:
+            x = x[:, 1 + keyword_num] @ self.model.text_projection
 
         return x
 

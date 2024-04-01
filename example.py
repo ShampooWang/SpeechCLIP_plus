@@ -6,14 +6,13 @@ import librosa
 device = torch.device("cuda")
 
 # use Parallel SpeechCLIP trained on Flickr8k for example
-model_fp = "slt_ckpts/SpeechCLIP/base/flickr/parallel/epoch_131-step_15443-val_recall_mean_1_36.0100.ckpt"
+model_fp = "/mnt/md1/user_jeffwang/Checkpoints/icassp_ckpts/base/flickr/hybrid+/epoch=80-step=9476-val_recall_mean_10=81.0300.ckpt"
 model = avssl.model.KWClip_GeneralTransformer.load_from_checkpoint(model_fp)
 model.to(device)
 model.eval()
 
 # load input wav (should be 16kHz)
-# wav_fps = ["data/flickr/flickr_audio/wavs/997722733_0cb5439472_3.wav","data/flickr/flickr_audio/wavs/997722733_0cb5439472_4.wav"]
-wav_fps = ["/home/atosystem/nas_disk/speechlab/svqa/flickr_dataset/flickr/flickr_audio/wavs/997722733_0cb5439472_3.wav"]
+wav_fps = ["/mnt/md1/user_jeffwang/Dataset/flickr/flickr_audio/wavs/667626_18933d713e_0.wav"]
 
 wav_data = []
 
@@ -32,6 +31,7 @@ with torch.no_grad():
     
     # Get semantic embedding for speech input
     output = model.encode_speech(wav=wav_data)
+
     # output = {
     #   "cascaded_audio_feat" : if cascaded branch exists
     #   "parallel_audio_feat" : if parallel branch exists
