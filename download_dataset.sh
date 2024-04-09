@@ -9,7 +9,6 @@ unzip data/flickr/Flickr8k_Dataset.zip -d  data/flickr/Images
 wget https://groups.csail.mit.edu/sls/downloads/flickraudio/downloads/flickr_audio.tar.gz -P data/flickr
 tar -xzvf data/flickr/flickr_audio.tar.gz -C data/flickr
 
-
 # Spoken COCO Audio
 mkdir data/coco/SpokenCOCO
 wget https://huggingface.co/speechclip/models/resolve/main/ksplit.tar.gz -P data/coco

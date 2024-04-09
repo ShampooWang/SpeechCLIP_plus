@@ -1,9 +1,13 @@
+# Checkpoints
+icassp_sasb_ckpts/
+
 # Other
 .DS_Store
 exp/
 exp_twsezjg982/
 tmp_tools/
 .conda_config/
+test.py
 
 # stat for experiments
 avssl/stats/
